@@ -1,0 +1,7 @@
+doc/parralelization/main.pdf
+*.aux
+*.bbl
+*.blg
+doc/parralelization/*.log
+*.gz
+settings.json

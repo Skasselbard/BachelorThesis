@@ -1,0 +1,95 @@
+\tikzset{%
+    >={Latex[width=2mm,length=2mm]},
+    % Specifications for style of nodes:
+    base/.style = {
+        rectangle, draw=black, 
+        drop shadow,
+        minimum width=2cm, 
+        minimum height=1cm,
+        text centered, 
+        font=\sffamily
+        },
+    method/.style = {base, fill=red!30, minimum width=3.5cm},
+    result/.style = {base, top color=green!20, bottom color=green!35},
+    note/.style = {base, fill=yellow!40, align=left},
+    class/.style = {base, rounded corners, minimum width=2.5cm, top color=blue!20, bottom color=blue!35, font=\ttfamily},
+    arrowDescription/.style = {fill=white},
+}
+\begin{tikzpicture}[node distance=2cm, align=center]
+
+    \node (Exploration)[class, thick, font=\bfseries]{\uline{Exploration}};
+    \node (ExplorationJoin)[below of= Exploration]{};
+    \node (NetStateJoin)[ left = of ExplorationJoin, xshift=0.5cm]{};
+    \node (PropertyJoin)[ left = of NetStateJoin, xshift=-1cm]{};
+    \node (StoreJoin)[ right = of ExplorationJoin, xshift=-0.5cm]{};
+    \node (FireListJoin)[ right = of StoreJoin, xshift=1cm]{};
+    \node (Property)[class, below =0.5cm of PropertyJoin]{Property};
+    \node (NetState)[class, below =0.5cm of NetStateJoin]{NetState};
+    \node (Store)[class, below =0.5cm of StoreJoin]{Store};
+    \node (FireList)[class, below =0.5cm of FireListJoin]{FireList};
+    \node (PlanningTask)[class, left = of Exploration]{PlanningTask};
+
+    \node (methodprops)[method, above = of Exploration,  align=left]
+        {DepthFirstSearch \\ FindPath \\ Sweepline \\ CoverBreadthFirst};
+    \node (method)[method, anchor=south] at (methodprops.north){Method};    
+
+    \node(result)[result, right= of Exploration]{True, False or Unknown\\ might not terminate};
+
+
+    %%%% Notes %%%%
+    \node(taskNotes)[note, above = of PlanningTask]
+    { 
+        \begin{varwidth}{3cm}
+            A problem which has to be analyzed\\
+            Something like:
+        \begin{itemize}[noitemsep]
+            \item Siphon/Trap
+            \item Reachability
+            \item Deadlock
+            \item etc.
+        \end{itemize}
+        \end{varwidth}
+    };
+    \node(propertyNotes)[note, below = of Property]
+    { 
+        \begin{varwidth}{2.5cm}
+        Can be true or false.\\
+        Checked for a specific marking.
+        \end{varwidth}
+    };
+    \node(NetStateNotes)[note, below = of NetState]
+    { 
+        \begin{varwidth}{2.5cm}
+        The current marking.
+        \end{varwidth}
+    };
+    \node(StoreNotes)[note, below = of Store]
+    { 
+        \begin{varwidth}{2.5cm}
+            Keeps track of all discovered markings
+        \end{varwidth}
+    };
+    \node(FireListNotes)[note, below = of FireList]
+    { 
+        \begin{varwidth}{2.5cm}
+            All active transitions in the current marking
+        \end{varwidth}
+    };
+
+    %%% Edges %%%
+    \draw[->]	(Exploration) -- node[arrowDescription]{works on}(ExplorationJoin.center) -- (PropertyJoin.center) -- (Property);
+    \draw[->]	(PlanningTask) -- node[arrowDescription]{calls} (Exploration);
+    \draw[->]	(Exploration) -- node[arrowDescription]{uses} (methodprops);
+    \draw[->]	(NetStateJoin.center) -- (NetState);
+    \draw[->]	(StoreJoin.center) -- (Store);
+    \draw[->]	(ExplorationJoin.center) -- (FireListJoin.center) -- (FireList);
+    \draw[->]	(Exploration) -- node[arrowDescription]{returns}(result);
+    
+    \draw[-](PlanningTask) -- (taskNotes);
+    \draw[-](Property) --(propertyNotes);
+    \draw[-](NetState) --(NetStateNotes);
+    \draw[-](Store) --(StoreNotes);
+    \draw[-](FireList) --(FireListNotes);
+
+
+\end{tikzpicture}

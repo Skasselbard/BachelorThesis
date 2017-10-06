@@ -1,0 +1,22 @@
+
+    \tikzset{%
+    >={Latex[width=2mm,length=2mm]},
+    % Specifications for style of nodes:
+    base/.style = {rectangle, draw=black, drop shadow,
+                              minimum width=2cm, minimum height=1cm,
+                              text centered, font=\sffamily},
+    phase/.style = {base, rounded corners, minimum width=2.5cm, top color=blue!20, bottom color=blue!35, font=\ttfamily},
+  }
+
+  
+  \begin{tikzpicture}[node distance=2cm, every node/.style={fill=white, font=\sffamily}, align=center]
+    \node (initialize)	[phase]	{Initialization};
+    \node (input)	[phase, below of=initialize]	{Process Input};
+  
+    
+    \draw[->]	(initialize) -- (input);
+  
+  
+  
+  \end{tikzpicture}
+  
