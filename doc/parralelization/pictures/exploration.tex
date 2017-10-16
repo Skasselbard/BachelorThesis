@@ -77,13 +77,13 @@
     };
 
     %%% Edges %%%
-    \draw[->]	(Exploration) -- node[arrowDescription]{works on}(ExplorationJoin.center) -- (PropertyJoin.center) -- (Property);
-    \draw[->]	(PlanningTask) -- node[arrowDescription]{calls} (Exploration);
-    \draw[->]	(Exploration) -- node[arrowDescription]{uses} (methodprops);
-    \draw[->]	(NetStateJoin.center) -- (NetState);
-    \draw[->]	(StoreJoin.center) -- (Store);
-    \draw[->]	(ExplorationJoin.center) -- (FireListJoin.center) -- (FireList);
-    \draw[->]	(Exploration) -- node[arrowDescription]{returns}(result);
+    \draw[->](Exploration) -- node[arrowDescription]{works on}(ExplorationJoin.center) -- (PropertyJoin.center) -- (Property);
+    \draw[->](PlanningTask) -- node[arrowDescription]{calls} (Exploration);
+    \draw[->](Exploration) -- node[arrowDescription]{uses} (methodprops);
+    \draw[->](NetStateJoin.center) -- (NetState);
+    \draw[->](StoreJoin.center) -- (Store);
+    \draw[->](ExplorationJoin.center) -- (FireListJoin.center) -- (FireList);
+    \draw[->](Exploration) -- node[arrowDescription]{returns}(result);
     
     \draw[-](PlanningTask) -- (taskNotes);
     \draw[-](Property) --(propertyNotes);

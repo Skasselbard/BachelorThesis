@@ -1,0 +1,184 @@
+\tikzset{%
+    >={Latex[width=2mm,length=2mm]},
+    % Specifications for style of nodes:
+    base/.style = {
+        rectangle, draw=black, 
+        minimum width=3cm,
+        minimum height=1cm,
+        text centered, 
+        font=\sffamily
+        },
+    start/.style = {base,ellipse, rounded corners, top color=yellow!20, bottom color=yellow!35},
+    operation/.style = {base, top color=blue!20, bottom color=blue!35},
+    subroutine/.style = {operation,double},
+    decision/.style = {diamond, draw, top color=orange!20, bottom color=orange!35},
+    class/.style={rectangle split,rectangle split parts=3, draw, fill=black!10!green!35},
+    edgeDescription/.style={fill=white},
+}
+\begin{tikzpicture}[node distance=1cm, align=center]
+
+    \node (start)[start]{Start};
+    \node (threadInit)[operation, below= of start]{Initialize Threads};
+    \node (semaphoreInit)[operation, below= of threadInit]{Initialize Semaphores};
+    \node (mutexInit)[operation, below= of semaphoreInit]{Initialize Mutexes};
+    \node (startThreads)[subroutine, below= of mutexInit]{
+        \begin{varwidth}{4cm}
+        Start Threads\\
+        // Spawns the defined number of threads\\
+        // Threads get function pointer to the actual dfs algorithm
+        \end{varwidth}
+        };
+    \node (waitForThreads)[operation, below= of startThreads]{Wait for Threads};
+    \node (cleanup)[operation, below= of waitForThreads]{Cleanup};
+    \node (end)[start, below= of cleanup]{return TRUE or FALSE};
+
+    %%% Edges %%%
+    \draw[->](start) -- (threadInit);
+    \draw[->](threadInit) -- (semaphoreInit);
+    \draw[->](semaphoreInit) -- (mutexInit);
+    \draw[->](mutexInit) -- (startThreads);
+    \draw[->](startThreads) -- (waitForThreads);
+    \draw[->](waitForThreads) -- (cleanup);
+    \draw[->](cleanup) -- (end);
+
+    %%% Type References %%%
+    \node (parallelExploration) [class,right= of start, xshift= 3cm, yshift=-5cm]{
+        \textbf{ParallelExploration}
+        \nodepart[align=left]{second}
+        \begin{varwidth}{12cm}
+        \begin{longtable}{p{3cm}p{3.1cm}}
+            restartSemaphores   &:semaphore[ ]\\ 
+            finished            &:bool\\
+            numSuspended        &:mutex\\
+            suspendedThreads    &:arrayIndex\\
+            searchStacks        &:SearchStack$<>$[ ]\\
+            threadNetStates     &:NetState[ ]\\
+            goalProperties      &:SimpleProperty[ ]\\
+            globalProperty      &:SimpleProperty*\\
+            globalBaseFireList  &:FireList*\\
+            globalStore         &:Store$<$void$>$*\\
+            globalProperty      &:mutex\\
+            threads             &:thread[ ]\\
+            numberOfThreads     &:int
+        \end{longtable}
+        \end{varwidth}
+    };
+    \node (threadArguments) [class, below = of parallelExploration]{
+        \textbf{ThreadArguments}
+        \nodepart[align=left]{second}
+            threadNumber :int\\ 
+            parent :ParallelExploration
+    };
+\end{tikzpicture}
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\oldHeight}{\paperheight}
+\newcommand{\oldWidth}{\paperwidth}
+\eject \pdfpagewidth=\oldWidth \pdfpageheight=150cm
+\begin{tikzpicture}[node distance=1.1cm, align=center]
+    
+        \node (start)[start]{Start};
+        \node (initialize)[operation, below= of start]{Initialization};
+        \node (initIsFinit)[decision, below= of initialize]{Property\\satisfied?};
+        \node (cleanupSuccess)[operation, right= of initIsFinit]{Successive cleanup};
+        \node (cleanupAbort)[operation, right= of cleanupSuccess]{Aborting cleanup};
+        \node (storeNetState)[operation, below= of initIsFinit]{Store net state};
+        \node (getFireList)[operation, below= of storeNetState]{Get FireList with\\the current index};
+        \node (externalFinish)[decision, below= of getFireList]{Other thread\\finished?};
+        \node (validEntry)[decision, below= of externalFinish]{Transition\\available?};
+        \node (fireTransition)[operation, below= of validEntry]{Fire current\\transition};
+        \node (stateExists)[decision, below= of fireTransition]{State\\exists?};
+        \node (backFireTransition)[operation, right= of fireTransition]{Backfire\\transition};
+        \node (stateSatisfiesProperty)[decision, below= of stateExists]{State satisfies\\property?};
+        \node (safeFireList)[operation, below= of stateSatisfiesProperty]{Safe\\FireList};
+        \node (magic)[decision, below= of safeFireList]{Can hand a\\transition to\\another thread?};
+        \node (lockMutex)[operation, right= of magic]{Lock Mutex};
+        \node (anyThreadSuspended)[decision, below= of lockMutex]{Any thread\\suspended?};
+        \node (unlockMutex)[operation, right= of anyThreadSuspended]{Unlock Mutex};
+        \node (getNewFireList)[operation, above= of lockMutex]{Get new \\ FireList};
+        \node (getSuspended)[operation, below=of anyThreadSuspended]{Get any\\suspended thread};
+        \node (unlockMutex2)[operation, below= of getSuspended]{Unlock Mutex};
+        \node (copyData)[operation, below= of unlockMutex2]{Copy exploration data\\for new thread};
+        \node (incrementSemaphore)[operation, below= of copyData]{Increment\\Semaphore};
+        \node (externalFinish2)[decision, below= of incrementSemaphore]{Other thread\\finished?};
+        \node (unsafeFireList)[operation, below= of externalFinish2]{Unsafe FireList};
+        \node (backFireTransition2)[operation, below= of unsafeFireList]{Backfire and return\\to original state};
+        \node (deleteFireList)[operation, below= of magic]{Delete FireList};
+        \node (stackIsEmpty)[decision, below= of deleteFireList]{Stack\\is empty?};
+        \node (popNewFireList)[operation, below= of stackIsEmpty]{Pop new\\FireList};
+        \node (backFireTransition3)[operation, below= of popNewFireList]{Backfire transition\\and update enabledness};
+        \node (updateResult)[operation, below= of backFireTransition3]{Update result};
+        \node (suspendSelf)[operation, below= of updateResult]{Add self to\\suspended threads};
+        \node (selfIsLast)[decision, below= of suspendSelf]{Self is\\last thread?};
+        \node (setFinished)[operation, below= of selfIsLast]{Set finished};
+        \node (wakeOthers)[operation, below= of setFinished]{Wake all\\other threads};
+        \node (decreaseSemaphore)[operation, below= of wakeOthers]{Decrease\\semaphore};
+        \node (isFinished)[decision, below= of decreaseSemaphore]{Is\\Finished?};
+        \node (reinitialize)[operation, below= of isFinished]{Reinitialize};
+        
+        \node (end)[start, right= of start]{Return satisfying NetState or null};
+    
+        %%% helper nodes %%%
+        \node (returnJoin)[right = of getNewFireList, xshift=3cm]{};
+        \node(n1)[left =of validEntry]{};
+        \node(n2)[left=of deleteFireList]{};
+        \node(n4)[left = of stackIsEmpty]{};
+        \node(n5)[left = of suspendSelf]{};
+        \node(n6)[left = of selfIsLast]{};
+        \node(n7)[left = of decreaseSemaphore]{};
+        
+        %%% Edges %%%
+        \draw[->](start) -- (initialize);
+        \draw[->](initialize) -- (initIsFinit);
+        \draw[->](initIsFinit) -- node[edgeDescription]{yes}(cleanupSuccess);
+        \draw[->](initIsFinit) -- node[edgeDescription]{no}(storeNetState);
+        \draw[->](storeNetState) -- (getFireList);
+        \draw[->](getFireList) -- (externalFinish);
+        \draw[->](externalFinish.east) -- node[edgeDescription]{yes}(cleanupAbort);
+        \draw[->](externalFinish) -- node[edgeDescription]{no}(validEntry);
+        \draw[->](validEntry) -- node[edgeDescription]{yes}(fireTransition);
+        \draw[->](validEntry) -- node[edgeDescription]{no}(n1.center) -- (n2.center) -- (deleteFireList);
+        \draw[->](stateExists) -- node[edgeDescription]{yes}(backFireTransition);
+        \draw[->](stateExists) -- node[edgeDescription]{no}(stateSatisfiesProperty);
+        \draw[->](fireTransition) -- (stateExists);
+        \draw[->](backFireTransition) -- (externalFinish);
+        \draw[->](stateSatisfiesProperty.east) -- node[edgeDescription]{yes}(cleanupSuccess);
+        \draw[->](stateSatisfiesProperty) -- node[edgeDescription]{no}(safeFireList);
+        \draw[->](safeFireList) -- (magic);
+        \draw[->](magic) -- node[edgeDescription]{yes}(lockMutex);
+        \draw[->](magic) -- node[edgeDescription]{no}(getNewFireList);
+        \draw[->](lockMutex) -- (anyThreadSuspended);
+        \draw[->](anyThreadSuspended) -- node[edgeDescription]{yes}(getSuspended);
+        \draw[->](anyThreadSuspended.east) -- node[edgeDescription]{no}(unlockMutex);
+        \draw[->](unlockMutex) -- (getNewFireList.east);
+        \draw[-](getNewFireList) -- (returnJoin.center);
+        \draw[->](returnJoin.center) -- (externalFinish);
+        \draw[->](getSuspended) -- (unlockMutex2);
+        \draw[->](unlockMutex2) -- (copyData);
+        \draw[->](copyData) -- (incrementSemaphore);
+        \draw[->](incrementSemaphore) -- (externalFinish2);
+        \draw[->](externalFinish2.east) -- node[edgeDescription]{yes}(cleanupAbort);
+        \draw[->](externalFinish2) -- node[edgeDescription]{no}(unsafeFireList);
+        \draw[->](unsafeFireList) -- (backFireTransition2);
+        \draw[-](backFireTransition2.east) -- (returnJoin.center);
+        \draw[->](deleteFireList) -- (stackIsEmpty);
+        \draw[->](stackIsEmpty) -- node[edgeDescription]{yes}(n4.center) -- (n5.center) --(suspendSelf);
+        \draw[->](stackIsEmpty) -- node[edgeDescription]{no}(popNewFireList);
+        \draw[->](popNewFireList) -- (backFireTransition3);
+        \draw[->](backFireTransition3) -- (updateResult);
+        \draw[-](updateResult.east) -- (returnJoin.center);
+        \draw[->](suspendSelf) -- (selfIsLast);
+        \draw[->](selfIsLast) -- node[edgeDescription]{yes}(setFinished);
+        \draw[->](selfIsLast) -- node[edgeDescription]{no}(n6.center) -- (n7.center) -- (decreaseSemaphore);
+        \draw[->](setFinished) -- (wakeOthers);
+        \draw[->](wakeOthers.east) -- (cleanupAbort);
+        \draw[->](decreaseSemaphore) -- (isFinished);
+        \draw[->](isFinished) -- node[edgeDescription]{yes}(cleanupAbort);
+        \draw[->](isFinished) -- node[edgeDescription]{no}(reinitialize);
+        \draw[->](reinitialize) -- (returnJoin.center);
+        
+        \draw[->](cleanupSuccess) -- (end);
+        \draw[->](cleanupAbort) -- (end);
+
+    \end{tikzpicture}
+    \eject \pdfpagewidth=\oldWidth{} \pdfpageheight=\oldHeight{}

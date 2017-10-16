@@ -1,16 +1,20 @@
 \documentclass[openright,fontsize=11pt,headinclude]{scrreprt}
-\usepackage{datetime,ulem,tikz,varwidth,enumitem}
+\usepackage{datetime,ulem,tikz,varwidth,enumitem, longtable}
 \usetikzlibrary{positioning,shapes,shadows,arrows, arrows.meta, calc}
 %\usepackage[a4paper,left=27mm,right=27mm, top=1cm, bottom=2cm]{geometry}
 
 \begin{document}
+
+\include{chapters/relatedWork}
+\include{pictures/parallelDFS}
 %\include{pictures/LoLABasicOverview}
 \newpage
 \include{pictures/exploration}
-\newpage
-\include{pictures/androidSample}
+%\newpage
+%\include{pictures/androidSample}
 % https://tex.stackexchange.com/questions/6834/change-paper-size-in-mid-document#6838
-\include{pictures/umlSample}
+%\include{pictures/umlSample}
 
 \bibliography{literature}
+\bibliographystyle{alpha}
 \end{document}
