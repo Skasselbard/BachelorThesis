@@ -73,10 +73,10 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
         }
 
         // return success and the current stack and property
-        pthread_mutex_lock(&global_property_mutex);
+        waitAndLock(&global_property_mutex);
         global_property->stack.swap(local_stack);
         global_property->initProperty(local_netstate);
-        pthread_mutex_unlock(&global_property_mutex);
+        unlock(&global_property_mutex);
 
         delete local_firelist;
 
@@ -132,10 +132,10 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
                 }
 
                 // return success and the current stack and property
-                pthread_mutex_lock(&global_property_mutex);
+                waitAndLock(&global_property_mutex);
                 global_property->stack.swap(local_stack);
                 global_property->initProperty(local_netstate);
-                pthread_mutex_unlock(&global_property_mutex);
+                unlock(&global_property_mutex);
 
                 // clean up and return
                 delete[] currentFirelist;
@@ -155,12 +155,12 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
             if (currentEntry >= 2 && num_suspended > 0)
             {
                 // try to lock
-                pthread_mutex_lock(&num_suspend_mutex);
+                waitAndLock(&num_suspend_mutex);
                 if (num_suspended > 0)
                 {
                     // there is another thread waiting for my data, get its thread number
                     arrayindex_t reader_thread_number = suspended_threads[--num_suspended];
-                    pthread_mutex_unlock(&num_suspend_mutex);
+                    unlock(&num_suspend_mutex);
 
                     // the destination thread is blocked at this point, waiting our data
                     // copy the data for the other thread
@@ -192,7 +192,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
                     // go on as nothing happened (i.e. pretend the new marking has already been in the store)
                     continue;
                 }
-                pthread_mutex_unlock(&num_suspend_mutex);
+                unlock(&num_suspend_mutex);
             }
             // current marking does not satisfy property --> continue search
             // grab a new firelist (old one is already on stack)
@@ -224,10 +224,10 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
 
             // maybe we have to go into an other sub-tree of the state-space
             // first get the counter mutex to be able to count the number of threads currently suspended
-            pthread_mutex_lock(&num_suspend_mutex);
+            waitAndLock(&num_suspend_mutex);
             suspended_threads[num_suspended++] = threadNumber;
             int local_num_suspended = num_suspended;
-            pthread_mutex_unlock(&num_suspend_mutex);
+            unlock(&num_suspend_mutex);
 
             // if we are the last thread going asleep, we have to wake up all the others and tell them that the search is over
             if (local_num_suspended == number_of_threads)
@@ -332,15 +332,8 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     // LCOV_EXCL_STOP
 
     // initialize mutexes
-    int mutex_creation_status = 0;
-    mutex_creation_status |= pthread_mutex_init(&num_suspend_mutex, NULL);
-    mutex_creation_status |= pthread_mutex_init(&global_property_mutex, NULL);
-    // LCOV_EXCL_START
-    if (UNLIKELY(mutex_creation_status))
-    {
-        RT::rep->status("mutexes could not be created");
-        RT::rep->abort(ERROR_THREADING);
-    }
+    atomic_init(&global_property_mutex, (bool)UNLOCKED);
+    atomic_init(&num_suspend_mutex, (bool)UNLOCKED);
     // LCOV_EXCL_STOP
 
     // initialize thread intercommunication data structures
@@ -378,18 +371,6 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
             ns = *reinterpret_cast<NetState *>(return_value);
         }
     }
-
-    // clean up mutexes
-    int mutex_destruction_status = 0;
-    mutex_destruction_status |= pthread_mutex_destroy(&num_suspend_mutex);
-    mutex_destruction_status |= pthread_mutex_destroy(&global_property_mutex);
-    // LCOV_EXCL_START
-    if (UNLIKELY(mutex_destruction_status))
-    {
-        RT::rep->status("mutexes could not be destroyed");
-        RT::rep->abort(ERROR_THREADING);
-    }
-    // LCOV_EXCL_STOP
 
     // clean up semaphores
     int semaphore_destruction_status = 0;

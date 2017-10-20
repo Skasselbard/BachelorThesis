@@ -28,6 +28,7 @@
 #include <Core/Dimensions.h>
 #include <Exploration/SearchStack.h>
 #include <Stores/Store.h>
+#include <atomic>
 
 class DFSExploration;
 struct CoverPayload;
@@ -135,7 +136,7 @@ private:
     bool finished;
 
     /// mutex to access the num_suspended variable
-    pthread_mutex_t num_suspend_mutex;
+    std::atomic_bool num_suspend_mutex;
     /// number of threads currently suspended
     int num_suspended;
     /// array of suspended thread
@@ -153,8 +154,8 @@ private:
     Firelist *global_baseFireList;
     Store<void> *global_store;
 
-    /// mutex to control writing to current marking varible, which contains the result of the parallel search
-    pthread_mutex_t global_property_mutex;
+    /// mutex to control writing to current marking variable, which contains the result of the parallel search
+    std::atomic_bool global_property_mutex;
 
     /// array containing the threads actually used for the parallel exploration
     pthread_t *threads;
@@ -186,4 +187,18 @@ private:
     \return this will either return NULL (no state fulfilling the property has been found by this thread) or the witness state itself
     */
     NetState *threadedExploration(threadid_t threadNumber);
+
+    enum LOCK{
+        LOCKED,
+        UNLOCKED
+    };
+    static inline void waitAndLock(std::atomic_bool* lock){
+        bool expected = UNLOCKED;
+        while (!lock->compare_exchange_strong(expected,LOCKED)){
+            expected = UNLOCKED;
+        }
+    }
+    static inline void unlock(std::atomic_bool* lock){
+        lock->store(UNLOCKED);
+    }
 };
