@@ -130,7 +130,7 @@ public:
 
 private:
     /// semaphore used to signal that a transition is able to be spared, one for each thread
-    sem_t **restartSemaphore;
+    std::atomic_bool **restartSemaphore;
 
     /// if true one of the threads has found a marking, which satisfies the property
     bool finished;
@@ -197,6 +197,14 @@ private:
         while (!lock->compare_exchange_strong(expected,LOCKED)){
             expected = UNLOCKED;
         }
+    }
+    static inline void waitForUnlock(std::atomic_bool* lock){
+        while (lock->load() != UNLOCKED){
+            continue;
+        }
+    }
+    static inline void lock(std::atomic_bool* lock){
+        lock->store(LOCKED);
     }
     static inline void unlock(std::atomic_bool* lock){
         lock->store(UNLOCKED);

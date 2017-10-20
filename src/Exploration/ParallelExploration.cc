@@ -69,7 +69,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
         // release all semaphores
         for (int i = 0; i < number_of_threads; i++)
         {
-            sem_post(restartSemaphore[i]);
+            unlock(restartSemaphore[i]);
         }
 
         // return success and the current stack and property
@@ -128,7 +128,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
                 // release all semaphores
                 for (int i = 0; i < number_of_threads; i++)
                 {
-                    sem_post(restartSemaphore[i]);
+                    unlock(restartSemaphore[i]);
                 }
 
                 // return success and the current stack and property
@@ -171,7 +171,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
                     thread_property[reader_thread_number] = local_property->copy();
 
                     // inform the other thread that the data is ready
-                    sem_post(restartSemaphore[reader_thread_number]);
+                    unlock(restartSemaphore[reader_thread_number]);
 
                     // LCOV_EXCL_START
                     if (finished)
@@ -236,12 +236,13 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
                 // release all semaphores, wake up all threads
                 for (int i = 0; i < number_of_threads; i++)
                 {
-                    sem_post(restartSemaphore[i]);
+                    unlock(restartSemaphore[i]);
                 }
                 // there is no such state
                 return NULL;
             }
-            sem_wait(restartSemaphore[threadNumber]);
+            waitAndLock(restartSemaphore[threadNumber]);
+            waitForUnlock(restartSemaphore[threadNumber]);
 
             // test if result is already known now
             // LCOV_EXCL_START
@@ -285,51 +286,19 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     thread_netstate = new NetState[number_of_threads];
     thread_property = new SimpleProperty*[number_of_threads];
     thread_stack = new SearchStack<SimpleStackEntry>[number_of_threads];
-    for (int i = 0; i < number_of_threads; i++)
-    {
+    for (int i = 0; i < number_of_threads; i++){
         NetState tmp_netstate(ns);
         thread_netstate[i].swap(tmp_netstate); // copy and swap
         thread_property[i] = property.copy();
     }
 
-    // allocate restart semaphore names (named semaphores used for MacOS compatibility)
-    std::string *restartSemaphoreName = new std::string[number_of_threads];
-    for (int i = 0; i < number_of_threads; i++)
-    {
-        std::stringstream out;
-        out << "PErestart" << i;
-        restartSemaphoreName[i] = out.str();
-    }
-
-    // try to clear restart semaphore first
-    for (int i = 0; i < number_of_threads; i++)
-    {
-        sem_unlink(restartSemaphoreName[i].c_str());
-    }
-
     // init the restart semaphore
-    restartSemaphore = new sem_t*[number_of_threads];
-    int sem_fail = 0;
-    int value_prober;
-    for (int i = 0; i < number_of_threads; i++)
-    {
-        restartSemaphore[i] = sem_open(restartSemaphoreName[i].c_str(), O_CREAT, 0600, 0);
-        sem_fail |= (!(long int)restartSemaphore[i]);
-        sem_getvalue(restartSemaphore[i], &value_prober);
-        if (value_prober != 0)
-        {
-            RT::rep->status("named semaphore (PErestart) has not been created as defined");
-            sem_wait(restartSemaphore[i]); // hack: decrement semaphore in order to eventually eliminate the problem
-            RT::rep->abort(ERROR_THREADING);
-        }
+    restartSemaphore = new std::atomic_bool*[number_of_threads];
+    for (int i = 0; i < number_of_threads; i++){
+        std::atomic_bool* currentSemaphore = new std::atomic_bool();
+        atomic_init(currentSemaphore, (bool)LOCKED);
+        restartSemaphore[i] = currentSemaphore;
     }
-    // LCOV_EXCL_START
-    if (UNLIKELY(sem_fail))
-    {
-        RT::rep->status("named semaphores could not be created");
-        RT::rep->abort(ERROR_THREADING);
-    }
-    // LCOV_EXCL_STOP
 
     // initialize mutexes
     atomic_init(&global_property_mutex, (bool)UNLOCKED);
@@ -373,19 +342,9 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     }
 
     // clean up semaphores
-    int semaphore_destruction_status = 0;
-    for (int i = 0; i < number_of_threads; i++)
-    {
-        semaphore_destruction_status |= sem_close(restartSemaphore[i]);
-        semaphore_destruction_status |= sem_unlink(restartSemaphoreName[i].c_str());
+    for (int i = 0; i < number_of_threads; i++){
+        delete restartSemaphore[i];
     }
-    // LCOV_EXCL_START
-    if (UNLIKELY(semaphore_destruction_status))
-    {
-        RT::rep->status("named semaphore could not be closed and/or unlinked");
-        RT::rep->abort(ERROR_THREADING);
-    }
-    // LCOV_EXCL_STOP
 
     // clean up thread intercommunication data structures
     for (int i = 0; i < number_of_threads; i++)
@@ -401,7 +360,6 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     delete[] args;
 
     // free the allocated memory
-    delete[] restartSemaphoreName;
     delete[] restartSemaphore;
     delete[] threads;
 
