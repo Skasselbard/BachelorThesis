@@ -264,7 +264,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
 
 bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
                                       Store<void> &myStore, Firelist &firelist,
-                                      threadid_t _number_of_threads)
+                                      int _number_of_threads)
 {
     // allocate space for threads
     threads = new pthread_t[_number_of_threads]();
@@ -272,7 +272,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     global_property = &property;
     global_store = &myStore;
     global_baseFireList = &firelist;
-    number_of_threads = _number_of_threads;
+    number_of_threads = static_cast<threadid_t>(_number_of_threads);
 
     // allocate space for thread arguments
     tpDFSArguments *args = new tpDFSArguments[number_of_threads]();

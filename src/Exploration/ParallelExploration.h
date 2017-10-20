@@ -85,7 +85,7 @@ public:
     \param threadNumber This parameter indicates the number of threads to be used for the search
      */
     virtual bool depth_first(SimpleProperty &property, NetState &ns, Store<void> &store,
-                             Firelist &firelist, threadid_t threadNumber);
+                             Firelist &firelist, int threadNumber);
 
     /*!
     \brief distributed evaluation of the property by the sweepline method.
