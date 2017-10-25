@@ -293,9 +293,9 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     }
 
     // init the restart semaphore
-    restartSemaphore = new std::atomic_bool*[number_of_threads];
+    restartSemaphore = new std::atomic<bool>*[number_of_threads];
     for (int i = 0; i < number_of_threads; i++){
-        std::atomic_bool* currentSemaphore = new std::atomic_bool();
+        std::atomic_bool* currentSemaphore = new std::atomic<bool>();
         atomic_init(currentSemaphore, (bool)LOCKED);
         restartSemaphore[i] = currentSemaphore;
     }
