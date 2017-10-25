@@ -247,7 +247,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
                 // there is no such state
                 return NULL;
             }
-            waitAndLock(restartSemaphore[threadNumber]);
+            lock(restartSemaphore[threadNumber]);
             waitForUnlock(restartSemaphore[threadNumber]);
 
             // test if result is already known now
