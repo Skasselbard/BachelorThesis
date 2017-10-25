@@ -42,6 +42,12 @@ struct tpDFSArguments
     ParallelExploration *pexploration;
 };
 
+ParallelExploration::ParallelExploration():    
+// initialize mutexes
+global_property_mutex((bool)UNLOCKED),
+num_suspend_mutex((bool)UNLOCKED)
+{}
+
 void *ParallelExploration::threadPrivateDFS(void *container)
 {
     tpDFSArguments *arguments = static_cast<tpDFSArguments *>(container);
@@ -295,15 +301,9 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     // init the restart semaphore
     restartSemaphore = new std::atomic<bool>*[number_of_threads];
     for (int i = 0; i < number_of_threads; i++){
-        std::atomic<bool>* currentSemaphore = new std::atomic<bool>();
-        atomic_init(currentSemaphore, (bool)LOCKED);
+        std::atomic<bool>* currentSemaphore = new std::atomic<bool>((bool)LOCKED);
         restartSemaphore[i] = currentSemaphore;
     }
-
-    // initialize mutexes
-    atomic_init(&global_property_mutex, (bool)UNLOCKED);
-    atomic_init(&num_suspend_mutex, (bool)UNLOCKED);
-    // LCOV_EXCL_STOP
 
     // initialize thread intercommunication data structures
     num_suspended = 0;

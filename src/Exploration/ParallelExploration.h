@@ -126,7 +126,8 @@ public:
                                           Store<CoverPayload> &store,
                                           Firelist &firelist, threadid_t number_of_threads, formula_t type);
 
-    virtual ~ParallelExploration() {}
+                                          ParallelExploration();
+                                          virtual ~ParallelExploration() {}
 
 private:
     /// semaphore used to signal that a transition is able to be spared, one for each thread
