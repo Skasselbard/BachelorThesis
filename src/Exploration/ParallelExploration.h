@@ -130,13 +130,13 @@ public:
 
 private:
     /// semaphore used to signal that a transition is able to be spared, one for each thread
-    std::atomic_bool **restartSemaphore;
+    std::atomic<bool> **restartSemaphore;
 
     /// if true one of the threads has found a marking, which satisfies the property
     bool finished;
 
     /// mutex to access the num_suspended variable
-    std::atomic_bool num_suspend_mutex;
+    std::atomic<bool> num_suspend_mutex;
     /// number of threads currently suspended
     int num_suspended;
     /// array of suspended thread
@@ -155,7 +155,7 @@ private:
     Store<void> *global_store;
 
     /// mutex to control writing to current marking variable, which contains the result of the parallel search
-    std::atomic_bool global_property_mutex;
+    std::atomic<bool> global_property_mutex;
 
     /// array containing the threads actually used for the parallel exploration
     pthread_t *threads;
@@ -192,21 +192,21 @@ private:
         LOCKED,
         UNLOCKED
     };
-    static inline void waitAndLock(std::atomic_bool* lock){
+    static inline void waitAndLock(std::atomic<bool>* lock){
         bool expected = UNLOCKED;
         while (!lock->compare_exchange_strong(expected,LOCKED)){
             expected = UNLOCKED;
         }
     }
-    static inline void waitForUnlock(std::atomic_bool* lock){
+    static inline void waitForUnlock(std::atomic<bool>* lock){
         while (lock->load() != UNLOCKED){
             continue;
         }
     }
-    static inline void lock(std::atomic_bool* lock){
+    static inline void lock(std::atomic<bool>* lock){
         lock->store(LOCKED);
     }
-    static inline void unlock(std::atomic_bool* lock){
+    static inline void unlock(std::atomic<bool>* lock){
         lock->store(UNLOCKED);
     }
 };
