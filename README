@@ -12,7 +12,8 @@ Setup and installation
 
 You need to configure LoLA by executing
 
-     $ cd lola-2.0-RC1
+     $ libtoolize
+     $ autoreconf -i
      $ ./configure
 
 The configuration should finish with a message like

@@ -12,13 +12,13 @@ src/lola
 .vscode/tasks.json
 config.status
 config.log
-tests/Makefile
-utils/Makefile
 tests/package.m4
 utils/killer
 utils/listener
 Makefile
 .vscode/launch.json
-doc/Makefile
 src/config.h
-src/Makefile
+autom4te.cache
+m4/l*.m4
+src/config.h.in~
+build-aux/ltmain.sh
