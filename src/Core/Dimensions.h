@@ -26,6 +26,8 @@
 
 #pragma once
 
+#define RERS
+
 // the macro _CONFIGURING is set while executing the configure script to avoid
 // inclusion of config.h before creating it
 #ifndef _CONFIGURING
@@ -214,6 +216,7 @@ typedef enum
     FORMULA_INITIAL,        ///< no temporal operator
     FORMULA_LTL,            ///< LTL formulae
     FORMULA_CTL,            ///< CTL formulae
+    FORMULA_BOTH,           ///< CTL and LTL formulae
     FORMULA_MODELCHECKING,  ///< CTL* formulae
     FORMULA_DEADLOCK,       ///< deadlock
     FORMULA_EFAG,           ///< EFAG
@@ -292,3 +295,8 @@ fairnessAssumption_t;
 // Nr of bytes reserved for a single status message
 
 #define STATUSLENGTH 1024
+
+#define MAXIMUM(X,Y) ( (X) > (Y) ? (X) : (Y) )
+
+// stop DNF generation for Sara if larger than this
+#define MAX_DNF_LENGTH 1000000 

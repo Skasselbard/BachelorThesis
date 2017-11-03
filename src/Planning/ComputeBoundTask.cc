@@ -31,6 +31,7 @@
 #include <Planning/ComputeBoundTask.h>
 #include <Exploration/StatePredicateProperty.h>
 #include <Exploration/FirelistStubbornComputeBound.h>
+#include <Exploration/FirelistStubbornComputeBoundCombined.h>
 #include <Exploration/ComputeBoundExploration.h>
 
 
@@ -46,32 +47,26 @@ extern kc::tFormula TheFormula;
 
 ComputeBoundTask::ComputeBoundTask()
 {
+	RT::data["task"]["workflow"] = "search";
+	taskname = "state space";
 	goStatus = false;
         // extract state predicate from formula
 	assert(TheFormula);
-    // prepare counting of place in the formula
-    extern bool *place_in_formula;
-    extern unsigned int places_mentioned;
-    extern unsigned int unique_places_mentioned;
-    place_in_formula = new bool[Net::Card[PL]]();
-    places_mentioned = 0;
-    unique_places_mentioned = 0;
 
         TheFormula->unparse(myprinter, kc::internal);
- //Task::outputFormulaAsProcessed();
+    Task::outputFormulaAsProcessed();
         spFormula = TheFormula->formula;
 	previousNrOfMarkings = 0;
 	// set the net
     ns = NetState::createNetStateFromInitial();
 
-        RT::data["store"]["search"] = "depth_first_search";
+        RT::data["task"]["search"]["type"] = "dfs";
 
         // choose a store
 	store = StoreCreator<void>::createStore(1); // 1 = nr_of_threads
 	covStore =NULL;
     // choose a simple property
-        RT::data["analysis"]["type"] = "modelchecking";
-            p = new StatePredicateProperty(spFormula);
+        p = new StatePredicateProperty(spFormula);
 	RT::rep->indent(-2);
 	RT::rep->status("SEARCH");
             switch(RT::args.stubborn_arg)
@@ -79,10 +74,17 @@ ComputeBoundTask::ComputeBoundTask()
 	    case stubborn_arg_off:
 RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
 		fl = new Firelist();
+	RT::data["task"]["search"]["stubborn"]["type"] = "no";
+		break;
+	   case stubborn_arg_tarjan:
+RT::rep->status("using bound preserving stubborn set method with insertion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
+                fl = new FirelistStubbornComputeBound(spFormula);
+	RT::data["task"]["search"]["stubborn"]["type"] = "bound preserving/insertion";
 		break;
 	    default: 
-RT::rep->status("using bound preserving stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn").str());
-                fl = new FirelistStubbornComputeBound(spFormula);
+	RT::data["task"]["search"]["stubborn"]["type"] = "bound preserving/combined";
+		RT::rep->status("using bound preserving stubborn set method with combined insertion/deletion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=combined").str());
+		fl = new FirelistStubbornComputeBoundCombined(spFormula);
             ; 
             }
 
@@ -139,23 +141,32 @@ void ComputeBoundTask::interpreteResult(ternary_t result)
 	}
         const double k = RT::args.hashfunctions_arg;
         const double m = static_cast<double>(BLOOM_FILTER_SIZE);
+        const double prob = pow((1.0 - exp((-k * n) / m)), k);
         RT::rep->status("Bloom filter: probability of false positive is %.10lf",
-                        pow((1.0 - exp((-k * n) / m)), k));
+                        prob);
+        const double opt_hash = log(m / n) / log(2.0);
         RT::rep->status("Bloom filter: optimal number of hash functions is %.1f",
-                        log(m / n) / log(2.0));
+                        opt_hash);
+	RT::data["task"]["search"]["bloom"]["prob_false_positive"] = prob;
+	RT::data["task"]["search"]["bloom"]["optimal_hash_functions"] = opt_hash;
     }
-    // if the Bloom store did not find anything, the result is unknown
+    // Bloom store result is not reliable
     if (RT::args.store_arg == store_arg_bloom)
     {
                 result = TERNARY_UNKNOWN;
     }
+	RT::data["result"]["value"] = static_cast<int>(resultvalue);
+	RT::data["result"]["produced_by"] = "search";
 	char * value = new char[1000];
     switch(result)
     {
     case TERNARY_FALSE:
         sprintf(value,"%lld",resultvalue);
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, value).str());
-        RT::data["analysis"]["result"] = (int)resultvalue;
+        RT::rep->status("produced by: %s", taskname);
+       	
+        RT::data["result"]["value"] = (int)resultvalue;
+	RT::data["result"]["produced_by"] = "search";
         sprintf(value,"The maximum value of the given expression is %lld",resultvalue);
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, value).str());
         break;
@@ -163,7 +174,9 @@ void ComputeBoundTask::interpreteResult(ternary_t result)
     case TERNARY_UNKNOWN:
         sprintf(value,"%lld",resultvalue);
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, value).str());
-        RT::data["analysis"]["result"] = (int)(resultvalue);
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = (int)(resultvalue);
+	RT::data["result"]["produced_by"] = "search";
         sprintf(value,"The maximum value of the given expression is at least %lld",resultvalue);
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING, value).str());
         break;
@@ -188,7 +201,7 @@ void ComputeBoundTask::getStatistics()
 	{
 		assert(false);
 	}
-	RT::data["analysis"]["stats"]["states"] = static_cast<int>(markingcount);
+	RT::data["result"]["markings"] = static_cast<int>(markingcount);
 	uint64_t edgecount;
     if (store)
     {
@@ -202,7 +215,7 @@ void ComputeBoundTask::getStatistics()
     {
 	assert(false);
     }
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int>(edgecount);
+    RT::data["result"]["edges"] = static_cast<int>(edgecount);
     RT::rep->status("%llu markings, %llu edges", markingcount, edgecount);
 } 
 

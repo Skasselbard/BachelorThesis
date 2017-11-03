@@ -49,6 +49,8 @@ This class wraps the liveness check by statespace exploration
 class TSCCExplorationAGEF;
 extern kc::tFormula TheFormula;
 
+// TODO update JSON to the new format
+
 AGEFTask::AGEFTask()
 {
 	// extract state predicate from formula
@@ -65,7 +67,7 @@ AGEFTask::AGEFTask()
 
 	TheFormula->unparse(myprinter, kc::internal);
         spFormula = TheFormula->formula;
- //Task::outputFormulaAsProcessed();
+ Task::outputFormulaAsProcessed();
 
 
 	previousNrOfMarkings = 0;
@@ -77,7 +79,8 @@ AGEFTask::AGEFTask()
     {
     case search_arg_covergraph:
     {
-        RT::data["store"]["search"] = "covergraph";
+        // TODO check properties
+        RT::data["task"]["store"]["type"] = "cover";
         if (RT::args.encoder_arg != encoder_arg_fullcopy)
         {
             RT::rep->status("warning: encoder does not fully support coverability graphs");
@@ -87,7 +90,7 @@ AGEFTask::AGEFTask()
     }
     default:
     {
-        RT::data["store"]["search"] = "depth_first_search";
+        RT::data["task"]["store"]["type"] = "dfs/tscc";
 
         // choose a store
 	store = StoreCreator<statenumber_t>::createStore(number_of_threads);
@@ -97,34 +100,37 @@ AGEFTask::AGEFTask()
     }
     // \todo switch for coverability graph
     // choose a simple property
-        RT::data["analysis"]["type"] = "modelchecking";
-            p = new StatePredicateProperty(spFormula);
+        p = new StatePredicateProperty(spFormula);
 	RT::rep->indent(-2);
 	RT::rep->status("SEARCH");
 	RT::rep->indent(2);
         if(RT::args.stubborn_arg==stubborn_arg_off)
         {
         RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
+RT::data["task"]["search"]["stubborn"]["type"] = "no";
 		fl = new Firelist();
 	}
 	else
 	{
         RT::rep->status("using tscc preserving stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn").str());
                 fl = new FirelistStubbornTsccAlwaysUpset(p);
+RT::data["task"]["search"]["stubborn"]["type"] = "tscc preserving/always up";
+
 	}
         exploration = new TSCCExplorationAGEF();
+
+        taskname = "tscc_search";
 }
 
 AGEFTask::~AGEFTask()
 {
 #ifndef USE_PERFORMANCE
-    delete ns;
-    delete store;
-    delete covStore;
-    delete p;
-    delete spFormula;
-    delete fl;
-    delete exploration;
+    //delete ns;
+    //delete store;
+    //delete p;
+    //delete spFormula;
+    //delete fl;
+    //delete exploration;
 #endif
 }
 
@@ -158,26 +164,34 @@ void AGEFTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+RT::rep->status("produced by: %s", taskname);
         RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The predicate is live.").str());
+	RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
+
+
 
         break;
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
 
+RT::rep->status("produced by: %s", taskname);
         RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The predicate is not live.").str());
+	RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
         break;
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
 
+RT::rep->status("produced by: %s", taskname);
         RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The predicate may or may not be live.").str());
 
+	RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
         break;
     }
 
@@ -218,7 +232,7 @@ void AGEFTask::getStatistics()
 	{
 		assert(false);
 	}
-	RT::data["analysis"]["stats"]["states"] = static_cast<int>(markingcount);
+	RT::data["result"]["markings"] = static_cast<int>(markingcount);
 	uint64_t edgecount;
     if (store)
     {
@@ -232,7 +246,7 @@ void AGEFTask::getStatistics()
     {
 	assert(false);
     }
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int>(edgecount);
+    RT::data["result"]["edges"] = static_cast<int>(edgecount);
     RT::rep->status("%llu markings, %llu edges", markingcount, edgecount);
 } 
 

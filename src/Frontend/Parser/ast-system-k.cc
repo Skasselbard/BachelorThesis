@@ -1077,118 +1077,10 @@ abstract_phylum impl_tBuechiAutomata_BuechiAutomaton::subphylum(int no) const
     }
     return 0;
 }
-abstract_phylum impl_tProduct_list::subphylum(int no) const
+abstract_phylum impl_tAtomicProposition_NNegation::subphylum(int no) const
 {
     switch(no){
-	case 0: return tTerm_1;
-	case 1: return tProduct_list_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tTerm_ProductList::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tProduct_list_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tTerm_Product::subphylum(int no) const
-{
-    switch(no){
-	case 0: return integer_1;
-	case 1: return tTerm_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tTerm_Difference::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tTerm_Sum::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tTerm_Number::subphylum(int no) const
-{
-    switch(no){
-	case 0: return integer_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tTerm_Node::subphylum(int no) const
-{
-    switch(no){
-	case 0: return integer_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_Unfireable::subphylum(int no) const
-{
-    switch(no){
-	case 0: return integer_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_Fireable::subphylum(int no) const
-{
-    switch(no){
-	case 0: return integer_1;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_LessEqualAtomicProposition::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_LessAtomicProposition::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_GreaterEqualAtomicProposition::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_GreaterAtomicProposition::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_NotEqualsAtomicProposition::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tAtomicProposition_EqualsAtomicProposition::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tTerm_1;
-	case 1: return tTerm_2;
+	case 0: return tAtomicProposition_1;
     }
     return 0;
 }
@@ -1406,13 +1298,6 @@ abstract_phylum impl_tFormula_Compound::subphylum(int no) const
     switch(no){
 	case 0: return tFormula_1;
 	case 1: return tFormula_2;
-    }
-    return 0;
-}
-abstract_phylum impl_tFormula_ComputeBound::subphylum(int no) const
-{
-    switch(no){
-	case 0: return tAtomicProposition_1;
     }
     return 0;
 }
@@ -2300,133 +2185,11 @@ void impl_tBuechiAutomata_BuechiAutomaton::set_subphylum(int no, abstract_phylum
     }
     assertNonNull(newval);
 }
-void impl_tProduct_list::set_subphylum(int no, abstract_phylum val)
+void impl_tAtomicProposition_NNegation::set_subphylum(int no, abstract_phylum val)
 {
     abstract_phylum newval=0;
     switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tProduct_list_1 = dynamic_cast<tProduct_list>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tTerm_ProductList::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tProduct_list_1 = dynamic_cast<tProduct_list>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tTerm_Product::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = integer_1 = dynamic_cast<integer>(val);break;
-	case 1: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tTerm_Difference::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tTerm_Sum::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tTerm_Number::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = integer_1 = dynamic_cast<integer>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tTerm_Node::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = integer_1 = dynamic_cast<integer>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_Unfireable::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = integer_1 = dynamic_cast<integer>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_Fireable::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = integer_1 = dynamic_cast<integer>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_LessEqualAtomicProposition::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_LessAtomicProposition::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_GreaterEqualAtomicProposition::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_GreaterAtomicProposition::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_NotEqualsAtomicProposition::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
-    }
-    assertNonNull(newval);
-}
-void impl_tAtomicProposition_EqualsAtomicProposition::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tTerm_1 = dynamic_cast<tTerm>(val);break;
-	case 1: newval = tTerm_2 = dynamic_cast<tTerm>(val);break;
+	case 0: newval = tAtomicProposition_1 = dynamic_cast<tAtomicProposition>(val);break;
     }
     assertNonNull(newval);
 }
@@ -2676,14 +2439,6 @@ void impl_tFormula_Compound::set_subphylum(int no, abstract_phylum val)
     }
     assertNonNull(newval);
 }
-void impl_tFormula_ComputeBound::set_subphylum(int no, abstract_phylum val)
-{
-    abstract_phylum newval=0;
-    switch(no) {
-	case 0: newval = tAtomicProposition_1 = dynamic_cast<tAtomicProposition>(val);break;
-    }
-    assertNonNull(newval);
-}
 void impl_tFormula_StatePredicateFormula::set_subphylum(int no, abstract_phylum val)
 {
     abstract_phylum newval=0;
@@ -2700,23 +2455,24 @@ copy_attributes(enum_phyla copyPhy, c_abstract_phylum kc_p1, abstract_phylum kc_
     case phylum_tFormula: {
 	c_tFormula p1 = dynamic_cast<c_tFormula>(kc_p1);
 	tFormula p2 = dynamic_cast<tFormula>(kc_p2);
+	p2->fs = p1->fs;
 	p2->type = p1->type;
 	p2->formula = p1->formula;
 	p2->ctl_formula = p1->ctl_formula;
 	p2->ltl_tree = p1->ltl_tree;
 	p2->cannotcompute = p1->cannotcompute;
 	p2->task = p1->task;
-	p2->containsDeadlock = p1->containsDeadlock;
 	p2->length = p1->length;
-	p2->number_of_or_dnf = p1->number_of_or_dnf;
-	p2->number_of_or = p1->number_of_or;
-	p2->number_of_and = p1->number_of_and;
 	p2->only_fireable = p1->only_fireable;
+	p2->containsNext = p1->containsNext;
 	break;
     }
     case phylum_tStatePredicate: {
 	c_tStatePredicate p1 = dynamic_cast<c_tStatePredicate>(kc_p1);
 	tStatePredicate p2 = dynamic_cast<tStatePredicate>(kc_p2);
+	p2->fs = p1->fs;
+	p2->shape = p1->shape;
+	p2->formula = p1->formula;
 	p2->containsTemporal = p1->containsTemporal;
 	p2->validCTLPathFormula = p1->validCTLPathFormula;
 	p2->validCTLStateFormula = p1->validCTLStateFormula;
@@ -2725,27 +2481,37 @@ copy_attributes(enum_phyla copyPhy, c_abstract_phylum kc_p1, abstract_phylum kc_
 	p2->task = p1->task;
 	p2->priority = p1->priority;
 	p2->type = p1->type;
-	p2->containsDeadlock = p1->containsDeadlock;
-	p2->length = p1->length;
-	p2->number_of_or_dnf = p1->number_of_or_dnf;
-	p2->number_of_or = p1->number_of_or;
-	p2->number_of_and = p1->number_of_and;
 	p2->only_fireable = p1->only_fireable;
+	p2->containsNext = p1->containsNext;
 	break;
     }
-    case phylum_tConjunction_list:
-	dynamic_cast<tConjunction_list>(kc_p2)->containsDeadlock = dynamic_cast<c_tConjunction_list>(kc_p1)->containsDeadlock;
+    case phylum_tConjunction_list: {
+	c_tConjunction_list p1 = dynamic_cast<c_tConjunction_list>(kc_p1);
+	tConjunction_list p2 = dynamic_cast<tConjunction_list>(kc_p2);
+	p2->fs = p1->fs;
+	p2->containsNext = p1->containsNext;
 	break;
-    case phylum_tDisjunction_list:
-	dynamic_cast<tDisjunction_list>(kc_p2)->containsDeadlock = dynamic_cast<c_tDisjunction_list>(kc_p1)->containsDeadlock;
+    }
+    case phylum_tDisjunction_list: {
+	c_tDisjunction_list p1 = dynamic_cast<c_tDisjunction_list>(kc_p1);
+	tDisjunction_list p2 = dynamic_cast<tDisjunction_list>(kc_p2);
+	p2->fs = p1->fs;
+	p2->containsNext = p1->containsNext;
 	break;
+    }
     case phylum_tAtomicProposition: {
 	c_tAtomicProposition p1 = dynamic_cast<c_tAtomicProposition>(kc_p1);
 	tAtomicProposition p2 = dynamic_cast<tAtomicProposition>(kc_p2);
+	p2->fs = p1->fs;
+	p2->shape = p1->shape;
+	p2->pred = p1->pred;
 	p2->only_fireable = p1->only_fireable;
-	p2->containsDeadlock = p1->containsDeadlock;
+	p2->containsNext = p1->containsNext;
 	break;
     }
+    case phylum_tTerm:
+	dynamic_cast<tTerm>(kc_p2)->ttt = dynamic_cast<c_tTerm>(kc_p1)->ttt;
+	break;
     case phylum_tBuechiAutomata:
 	dynamic_cast<tBuechiAutomata>(kc_p2)->automata = dynamic_cast<c_tBuechiAutomata>(kc_p1)->automata;
 	break;
@@ -2848,9 +2614,8 @@ KC_PHYLUM_INFO phylum_info[] = {
     { "tStatePredicate", sel_AtomicProposition, sel_DisjunctionList, kc_not_uniq },
     { "tConjunction_list", sel_NiltConjunction_list, sel_ConstConjunction_list, kc_not_uniq },
     { "tDisjunction_list", sel_NiltDisjunction_list, sel_ConstDisjunction_list, kc_not_uniq },
-    { "tAtomicProposition", sel_EqualsAtomicProposition, sel_Unfireable, kc_not_uniq },
-    { "tTerm", sel_Node, sel_ProductList, kc_not_uniq },
-    { "tProduct_list", sel_NiltProduct_list, sel_ConstProduct_list, kc_not_uniq },
+    { "tAtomicProposition", sel_Elementary, sel_Deadlock, kc_not_uniq },
+    { "tTerm", sel_Complex, sel_Complex, kc_not_uniq },
     { "tBuechiAutomata", sel_BuechiAutomaton, sel_BuechiNull, kc_not_uniq },
     { "tBuechiRules", sel_EmptyBuechiRules, sel_BuechiRules, kc_not_uniq },
     { "tTransitionRules", sel_EmptyTransitionRules, sel_TransitionRules, kc_not_uniq },
@@ -2895,7 +2660,6 @@ KC_PHYLUM_INFO phylum_info[] = {
 };
 
 static enum_phyla kc_subphyla_StatePredicateFormula[] = { phylum_tStatePredicate };
-static enum_phyla kc_subphyla_ComputeBound[] = { phylum_tAtomicProposition };
 static enum_phyla kc_subphyla_Compound[] = { phylum_tFormula, phylum_tFormula };
 static enum_phyla kc_subphyla_AtomicProposition[] = { phylum_tAtomicProposition };
 static enum_phyla kc_subphyla_Negation[] = { phylum_tStatePredicate };
@@ -2925,21 +2689,7 @@ static enum_phyla kc_subphyla_ConjunctionList[] = { phylum_tConjunction_list };
 static enum_phyla kc_subphyla_DisjunctionList[] = { phylum_tDisjunction_list };
 static enum_phyla kc_subphyla_ConstConjunction_list[] = { phylum_tStatePredicate, phylum_tConjunction_list };
 static enum_phyla kc_subphyla_ConstDisjunction_list[] = { phylum_tStatePredicate, phylum_tDisjunction_list };
-static enum_phyla kc_subphyla_EqualsAtomicProposition[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_NotEqualsAtomicProposition[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_GreaterAtomicProposition[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_GreaterEqualAtomicProposition[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_LessAtomicProposition[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_LessEqualAtomicProposition[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_Fireable[] = { phylum_integer };
-static enum_phyla kc_subphyla_Unfireable[] = { phylum_integer };
-static enum_phyla kc_subphyla_Node[] = { phylum_integer };
-static enum_phyla kc_subphyla_Number[] = { phylum_integer };
-static enum_phyla kc_subphyla_Sum[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_Difference[] = { phylum_tTerm, phylum_tTerm };
-static enum_phyla kc_subphyla_Product[] = { phylum_integer, phylum_tTerm };
-static enum_phyla kc_subphyla_ProductList[] = { phylum_tProduct_list };
-static enum_phyla kc_subphyla_ConstProduct_list[] = { phylum_tTerm, phylum_tProduct_list };
+static enum_phyla kc_subphyla_NNegation[] = { phylum_tAtomicProposition };
 static enum_phyla kc_subphyla_BuechiAutomaton[] = { phylum_tBuechiRules, phylum_tAcceptingSet };
 static enum_phyla kc_subphyla_BuechiRule[] = { phylum_integer, phylum_tTransitionRules };
 static enum_phyla kc_subphyla_ExpandedBuechiRule[] = { phylum_integer, phylum_tFormula, phylum_integer };
@@ -3047,7 +2797,7 @@ KC_OPERATOR_INFO operator_info[] = {
     { "_Int", 0, true, phylum_integer, 0, 0, 0, sizeof(impl_integer__Int) },
     { "_VoidPtr", 0, true, phylum_voidptr, 0, 0, 0, sizeof(impl_voidptr__VoidPtr) },
     { "StatePredicateFormula", 1, false, phylum_tFormula, kc_subphyla_StatePredicateFormula, 0, 0, sizeof(impl_tFormula_StatePredicateFormula) },
-    { "ComputeBound", 1, false, phylum_tFormula, kc_subphyla_ComputeBound, 0, 0, sizeof(impl_tFormula_ComputeBound) },
+    { "CompBound", 0, false, phylum_tFormula, 0, 0, 0, sizeof(impl_tFormula_CompBound) },
     { "Compound", 2, false, phylum_tFormula, kc_subphyla_Compound, 0, 0, sizeof(impl_tFormula_Compound) },
     { "AtomicProposition", 1, false, phylum_tStatePredicate, kc_subphyla_AtomicProposition, 0, 0, sizeof(impl_tStatePredicate_AtomicProposition) },
     { "Negation", 1, false, phylum_tStatePredicate, kc_subphyla_Negation, 0, 0, sizeof(impl_tStatePredicate_Negation) },
@@ -3079,27 +2829,13 @@ KC_OPERATOR_INFO operator_info[] = {
     { "ConstConjunction_list", 2, false, phylum_tConjunction_list, kc_subphyla_ConstConjunction_list, 0, 0, sizeof(impl_tConjunction_list) },
     { "NiltDisjunction_list", 0, false, phylum_tDisjunction_list, 0, 0, 0, sizeof(impl_tDisjunction_list) },
     { "ConstDisjunction_list", 2, false, phylum_tDisjunction_list, kc_subphyla_ConstDisjunction_list, 0, 0, sizeof(impl_tDisjunction_list) },
-    { "EqualsAtomicProposition", 2, false, phylum_tAtomicProposition, kc_subphyla_EqualsAtomicProposition, 0, 0, sizeof(impl_tAtomicProposition_EqualsAtomicProposition) },
-    { "NotEqualsAtomicProposition", 2, false, phylum_tAtomicProposition, kc_subphyla_NotEqualsAtomicProposition, 0, 0, sizeof(impl_tAtomicProposition_NotEqualsAtomicProposition) },
-    { "GreaterAtomicProposition", 2, false, phylum_tAtomicProposition, kc_subphyla_GreaterAtomicProposition, 0, 0, sizeof(impl_tAtomicProposition_GreaterAtomicProposition) },
-    { "GreaterEqualAtomicProposition", 2, false, phylum_tAtomicProposition, kc_subphyla_GreaterEqualAtomicProposition, 0, 0, sizeof(impl_tAtomicProposition_GreaterEqualAtomicProposition) },
-    { "LessAtomicProposition", 2, false, phylum_tAtomicProposition, kc_subphyla_LessAtomicProposition, 0, 0, sizeof(impl_tAtomicProposition_LessAtomicProposition) },
-    { "LessEqualAtomicProposition", 2, false, phylum_tAtomicProposition, kc_subphyla_LessEqualAtomicProposition, 0, 0, sizeof(impl_tAtomicProposition_LessEqualAtomicProposition) },
+    { "Elementary", 0, false, phylum_tAtomicProposition, 0, 0, 0, sizeof(impl_tAtomicProposition_Elementary) },
+    { "NNegation", 1, false, phylum_tAtomicProposition, kc_subphyla_NNegation, 0, 0, sizeof(impl_tAtomicProposition_NNegation) },
     { "True", 0, false, phylum_tAtomicProposition, 0, 0, 0, sizeof(impl_tAtomicProposition_True) },
     { "False", 0, false, phylum_tAtomicProposition, 0, 0, 0, sizeof(impl_tAtomicProposition_False) },
     { "NoDeadlock", 0, false, phylum_tAtomicProposition, 0, 0, 0, sizeof(impl_tAtomicProposition_NoDeadlock) },
     { "Deadlock", 0, false, phylum_tAtomicProposition, 0, 0, 0, sizeof(impl_tAtomicProposition_Deadlock) },
-    { "Initial", 0, false, phylum_tAtomicProposition, 0, 0, 0, sizeof(impl_tAtomicProposition_Initial) },
-    { "Fireable", 1, false, phylum_tAtomicProposition, kc_subphyla_Fireable, 0, 0, sizeof(impl_tAtomicProposition_Fireable) },
-    { "Unfireable", 1, false, phylum_tAtomicProposition, kc_subphyla_Unfireable, 0, 0, sizeof(impl_tAtomicProposition_Unfireable) },
-    { "Node", 1, false, phylum_tTerm, kc_subphyla_Node, 0, 0, sizeof(impl_tTerm_Node) },
-    { "Number", 1, false, phylum_tTerm, kc_subphyla_Number, 0, 0, sizeof(impl_tTerm_Number) },
-    { "Sum", 2, false, phylum_tTerm, kc_subphyla_Sum, 0, 0, sizeof(impl_tTerm_Sum) },
-    { "Difference", 2, false, phylum_tTerm, kc_subphyla_Difference, 0, 0, sizeof(impl_tTerm_Difference) },
-    { "Product", 2, false, phylum_tTerm, kc_subphyla_Product, 0, 0, sizeof(impl_tTerm_Product) },
-    { "ProductList", 1, false, phylum_tTerm, kc_subphyla_ProductList, 0, 0, sizeof(impl_tTerm_ProductList) },
-    { "NiltProduct_list", 0, false, phylum_tProduct_list, 0, 0, 0, sizeof(impl_tProduct_list) },
-    { "ConstProduct_list", 2, false, phylum_tProduct_list, kc_subphyla_ConstProduct_list, 0, 0, sizeof(impl_tProduct_list) },
+    { "Complex", 0, false, phylum_tTerm, 0, 0, 0, sizeof(impl_tTerm_Complex) },
     { "BuechiAutomaton", 2, false, phylum_tBuechiAutomata, kc_subphyla_BuechiAutomaton, 0, 0, sizeof(impl_tBuechiAutomata_BuechiAutomaton) },
     { "BuechiNull", 0, false, phylum_tBuechiAutomata, 0, 0, 0, sizeof(impl_tBuechiAutomata_BuechiNull) },
     { "EmptyBuechiRules", 0, false, phylum_tBuechiRules, 0, 0, 0, sizeof(impl_tBuechiRules_EmptyBuechiRules) },
@@ -3440,8 +3176,8 @@ impl_voidptr__VoidPtr::impl_voidptr__VoidPtr(void* _pointer)
 const enum_phyla impl_tFormula::phylum_sel_ = phylum_tFormula;
 impl_tFormula_Compound::impl_tFormula_Compound(tFormula _tFormula_1, tFormula _tFormula_2)
     : tFormula_1(_tFormula_1), tFormula_2(_tFormula_2) { }
-impl_tFormula_ComputeBound::impl_tFormula_ComputeBound(tAtomicProposition _tAtomicProposition_1)
-    : tAtomicProposition_1(_tAtomicProposition_1) { }
+impl_tFormula_CompBound::impl_tFormula_CompBound()
+    { }
 impl_tFormula_StatePredicateFormula::impl_tFormula_StatePredicateFormula(tStatePredicate _tStatePredicate_1)
     : tStatePredicate_1(_tStatePredicate_1) { }
 const enum_phyla impl_tStatePredicate::phylum_sel_ = phylum_tStatePredicate;
@@ -3504,12 +3240,6 @@ const enum_phyla impl_tDisjunction_list::phylum_sel_ = phylum_tDisjunction_list;
 impl_tDisjunction_list::impl_tDisjunction_list(tStatePredicate p1 , tDisjunction_list p2)
     : tStatePredicate_1(p1), tDisjunction_list_1(p2) { }
 const enum_phyla impl_tAtomicProposition::phylum_sel_ = phylum_tAtomicProposition;
-impl_tAtomicProposition_Unfireable::impl_tAtomicProposition_Unfireable(integer _integer_1)
-    : integer_1(_integer_1) { }
-impl_tAtomicProposition_Fireable::impl_tAtomicProposition_Fireable(integer _integer_1)
-    : integer_1(_integer_1) { }
-impl_tAtomicProposition_Initial::impl_tAtomicProposition_Initial()
-    { }
 impl_tAtomicProposition_Deadlock::impl_tAtomicProposition_Deadlock()
     { }
 impl_tAtomicProposition_NoDeadlock::impl_tAtomicProposition_NoDeadlock()
@@ -3518,34 +3248,13 @@ impl_tAtomicProposition_False::impl_tAtomicProposition_False()
     { }
 impl_tAtomicProposition_True::impl_tAtomicProposition_True()
     { }
-impl_tAtomicProposition_LessEqualAtomicProposition::impl_tAtomicProposition_LessEqualAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tAtomicProposition_LessAtomicProposition::impl_tAtomicProposition_LessAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tAtomicProposition_GreaterEqualAtomicProposition::impl_tAtomicProposition_GreaterEqualAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tAtomicProposition_GreaterAtomicProposition::impl_tAtomicProposition_GreaterAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tAtomicProposition_NotEqualsAtomicProposition::impl_tAtomicProposition_NotEqualsAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tAtomicProposition_EqualsAtomicProposition::impl_tAtomicProposition_EqualsAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
+impl_tAtomicProposition_NNegation::impl_tAtomicProposition_NNegation(tAtomicProposition _tAtomicProposition_1)
+    : tAtomicProposition_1(_tAtomicProposition_1) { }
+impl_tAtomicProposition_Elementary::impl_tAtomicProposition_Elementary()
+    { }
 const enum_phyla impl_tTerm::phylum_sel_ = phylum_tTerm;
-impl_tTerm_ProductList::impl_tTerm_ProductList(tProduct_list _tProduct_list_1)
-    : tProduct_list_1(_tProduct_list_1) { }
-impl_tTerm_Product::impl_tTerm_Product(integer _integer_1, tTerm _tTerm_1)
-    : integer_1(_integer_1), tTerm_1(_tTerm_1) { }
-impl_tTerm_Difference::impl_tTerm_Difference(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tTerm_Sum::impl_tTerm_Sum(tTerm _tTerm_1, tTerm _tTerm_2)
-    : tTerm_1(_tTerm_1), tTerm_2(_tTerm_2) { }
-impl_tTerm_Number::impl_tTerm_Number(integer _integer_1)
-    : integer_1(_integer_1) { }
-impl_tTerm_Node::impl_tTerm_Node(integer _integer_1)
-    : integer_1(_integer_1) { }
-const enum_phyla impl_tProduct_list::phylum_sel_ = phylum_tProduct_list;
-impl_tProduct_list::impl_tProduct_list(tTerm p1 , tProduct_list p2)
-    : tTerm_1(p1), tProduct_list_1(p2) { }
+impl_tTerm_Complex::impl_tTerm_Complex()
+    { }
 const enum_phyla impl_tBuechiAutomata::phylum_sel_ = phylum_tBuechiAutomata;
 impl_tBuechiAutomata_BuechiNull::impl_tBuechiAutomata_BuechiNull()
     { }
@@ -3887,120 +3596,123 @@ namespace { // all local to k.cc
 
 tFormula kc_initialize_tFormula(tFormula kc_x)
 {
-#line 49 "Frontend/Parser/formula_abstract.k"
-    kc_x->type =  FORMULA_MODELCHECKING;
-#line 50 "Frontend/Parser/formula_abstract.k"
-    kc_x->formula =  NULL;
-#line 51 "Frontend/Parser/formula_abstract.k"
-    kc_x->ctl_formula =  NULL;
-#line 52 "Frontend/Parser/formula_abstract.k"
-    kc_x->ltl_tree =  NULL;
-#line 53 "Frontend/Parser/formula_abstract.k"
-    kc_x->cannotcompute =  false;
 #line 55 "Frontend/Parser/formula_abstract.k"
-    kc_x->task =  NULL;
+    kc_x->type =  FORMULA_MODELCHECKING;
 #line 56 "Frontend/Parser/formula_abstract.k"
-    kc_x->containsDeadlock =  0;
+    kc_x->formula =  NULL;
+#line 57 "Frontend/Parser/formula_abstract.k"
+    kc_x->ctl_formula =  NULL;
 #line 58 "Frontend/Parser/formula_abstract.k"
-    kc_x->length =  0;
-#line 60 "Frontend/Parser/formula_abstract.k"
-    kc_x->number_of_or_dnf =  0;
+    kc_x->ltl_tree =  NULL;
+#line 59 "Frontend/Parser/formula_abstract.k"
+    kc_x->cannotcompute =  false;
+#line 61 "Frontend/Parser/formula_abstract.k"
+    kc_x->task =  NULL;
 #line 62 "Frontend/Parser/formula_abstract.k"
-    kc_x->number_of_or =  0;
+    kc_x->length =  0;
 #line 64 "Frontend/Parser/formula_abstract.k"
-    kc_x->number_of_and =  0;
-#line 66 "Frontend/Parser/formula_abstract.k"
     kc_x->only_fireable =  true;
+#line 65 "Frontend/Parser/formula_abstract.k"
+    kc_x->containsNext =  false;
 
-#line  3916 "ast-system-k.cc"
+#line  3619 "ast-system-k.cc"
     return kc_x;
 }
 
 tStatePredicate kc_initialize_tStatePredicate(tStatePredicate kc_x)
 {
+#line 98 "Frontend/Parser/formula_abstract.k"
+    kc_x->shape =  AT_TEMP;
 #line 99 "Frontend/Parser/formula_abstract.k"
-    kc_x->containsTemporal =  false;
+    kc_x->formula =  NULL;
 #line 101 "Frontend/Parser/formula_abstract.k"
-    kc_x->validCTLPathFormula =  false;
+    kc_x->containsTemporal =  false;
 #line 103 "Frontend/Parser/formula_abstract.k"
-    kc_x->validCTLStateFormula =  false;
+    kc_x->validCTLPathFormula =  false;
 #line 105 "Frontend/Parser/formula_abstract.k"
-    kc_x->validLTLFormula =  false;
+    kc_x->validCTLStateFormula =  false;
 #line 107 "Frontend/Parser/formula_abstract.k"
-    kc_x->cannotcompute =  false;
+    kc_x->validLTLFormula =  false;
 #line 109 "Frontend/Parser/formula_abstract.k"
-    kc_x->task =  NULL;
-#line 110 "Frontend/Parser/formula_abstract.k"
-    kc_x->priority =  0;
+    kc_x->cannotcompute =  false;
 #line 111 "Frontend/Parser/formula_abstract.k"
-    kc_x->type =  FORMULA_MODELCHECKING;
+    kc_x->task =  NULL;
 #line 112 "Frontend/Parser/formula_abstract.k"
-    kc_x->containsDeadlock =  0;
-#line 115 "Frontend/Parser/formula_abstract.k"
-    kc_x->length =  0;
-#line 117 "Frontend/Parser/formula_abstract.k"
-    kc_x->number_of_or_dnf =  0;
-#line 119 "Frontend/Parser/formula_abstract.k"
-    kc_x->number_of_or =  0;
-#line 121 "Frontend/Parser/formula_abstract.k"
-    kc_x->number_of_and =  0;
-#line 123 "Frontend/Parser/formula_abstract.k"
+    kc_x->priority =  0;
+#line 113 "Frontend/Parser/formula_abstract.k"
+    kc_x->type =  FORMULA_MODELCHECKING;
+#line 116 "Frontend/Parser/formula_abstract.k"
     kc_x->only_fireable =  true;
+#line 118 "Frontend/Parser/formula_abstract.k"
+    kc_x->containsNext =  false;
 
-#line  3951 "ast-system-k.cc"
+#line  3650 "ast-system-k.cc"
     return kc_x;
 }
 
 tConjunction_list kc_initialize_tConjunction_list(tConjunction_list kc_x)
 {
-#line 130 "Frontend/Parser/formula_abstract.k"
-    kc_x->containsDeadlock =  0;
+#line 126 "Frontend/Parser/formula_abstract.k"
+    kc_x->containsNext =  false;
 
-#line  3960 "ast-system-k.cc"
+#line  3659 "ast-system-k.cc"
     return kc_x;
 }
 
 tDisjunction_list kc_initialize_tDisjunction_list(tDisjunction_list kc_x)
 {
-#line 137 "Frontend/Parser/formula_abstract.k"
-    kc_x->containsDeadlock =  0;
+#line 134 "Frontend/Parser/formula_abstract.k"
+    kc_x->containsNext =  false;
 
-#line  3969 "ast-system-k.cc"
+#line  3668 "ast-system-k.cc"
     return kc_x;
 }
 
 tAtomicProposition kc_initialize_tAtomicProposition(tAtomicProposition kc_x)
 {
-#line 158 "Frontend/Parser/formula_abstract.k"
+#line 149 "Frontend/Parser/formula_abstract.k"
+    kc_x->shape =  AT_TEMP;
+#line 150 "Frontend/Parser/formula_abstract.k"
+    kc_x->pred =  NULL;
+#line 151 "Frontend/Parser/formula_abstract.k"
     kc_x->only_fireable =  true;
-#line 159 "Frontend/Parser/formula_abstract.k"
-    kc_x->containsDeadlock =  0;
+#line 152 "Frontend/Parser/formula_abstract.k"
+    kc_x->containsNext =  false;
 
-#line  3980 "ast-system-k.cc"
+#line  3683 "ast-system-k.cc"
+    return kc_x;
+}
+
+tTerm kc_initialize_tTerm(tTerm kc_x)
+{
+#line 159 "Frontend/Parser/formula_abstract.k"
+    kc_x->ttt =  NULL;
+
+#line  3692 "ast-system-k.cc"
     return kc_x;
 }
 
 type kc_initialize_type(type kc_x)
 {
-#line 235 "Frontend/Parser/formula_abstract.k"
+#line 221 "Frontend/Parser/formula_abstract.k"
     kc_x->is_finite =  false;
-#line 236 "Frontend/Parser/formula_abstract.k"
+#line 222 "Frontend/Parser/formula_abstract.k"
     kc_x->is_scalar =  false;
-#line 237 "Frontend/Parser/formula_abstract.k"
+#line 223 "Frontend/Parser/formula_abstract.k"
     kc_x->size =  0;
 
-#line  3993 "ast-system-k.cc"
+#line  3705 "ast-system-k.cc"
     return kc_x;
 }
 
 expression kc_initialize_expression(expression kc_x)
 {
-#line 355 "Frontend/Parser/formula_abstract.k"
+#line 341 "Frontend/Parser/formula_abstract.k"
     kc_x->check =  UNDEF;
-#line 356 "Frontend/Parser/formula_abstract.k"
+#line 342 "Frontend/Parser/formula_abstract.k"
     kc_x->is_constant =  false;
 
-#line  4004 "ast-system-k.cc"
+#line  3716 "ast-system-k.cc"
     return kc_x;
 }
 
@@ -4135,15 +3847,14 @@ StatePredicateFormula(tStatePredicate _tStatePredicate_1) {
     return static_cast<impl_tFormula_StatePredicateFormula*>(kc_x);
 }
 
-impl_tFormula_ComputeBound*
-ComputeBound(tAtomicProposition _tAtomicProposition_1) {
-    assertPhylum(_tAtomicProposition_1, phylum_tAtomicProposition);
-    tFormula kc_x = new impl_tFormula_ComputeBound(_tAtomicProposition_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_ComputeBound));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_ComputeBound));
+impl_tFormula_CompBound*
+CompBound() {
+    tFormula kc_x = new impl_tFormula_CompBound();
+    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_CompBound));
+    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_CompBound));
     kc_x->post_create();
     kc_x = kc_initialize_tFormula(kc_x);
-    return static_cast<impl_tFormula_ComputeBound*>(kc_x);
+    return static_cast<impl_tFormula_CompBound*>(kc_x);
 }
 
 impl_tFormula_Compound*
@@ -4499,76 +4210,25 @@ ConstDisjunction_list(tStatePredicate _tStatePredicate_1, tDisjunction_list _tDi
     return static_cast<impl_tDisjunction_list*>(kc_x);
 }
 
-impl_tAtomicProposition_EqualsAtomicProposition*
-EqualsAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_EqualsAtomicProposition(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_EqualsAtomicProposition));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_EqualsAtomicProposition));
+impl_tAtomicProposition_Elementary*
+Elementary() {
+    tAtomicProposition kc_x = new impl_tAtomicProposition_Elementary();
+    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Elementary));
+    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Elementary));
     kc_x->post_create();
     kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_EqualsAtomicProposition*>(kc_x);
+    return static_cast<impl_tAtomicProposition_Elementary*>(kc_x);
 }
 
-impl_tAtomicProposition_NotEqualsAtomicProposition*
-NotEqualsAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_NotEqualsAtomicProposition(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_NotEqualsAtomicProposition));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_NotEqualsAtomicProposition));
+impl_tAtomicProposition_NNegation*
+NNegation(tAtomicProposition _tAtomicProposition_1) {
+    assertPhylum(_tAtomicProposition_1, phylum_tAtomicProposition);
+    tAtomicProposition kc_x = new impl_tAtomicProposition_NNegation(_tAtomicProposition_1);
+    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_NNegation));
+    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_NNegation));
     kc_x->post_create();
     kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_NotEqualsAtomicProposition*>(kc_x);
-}
-
-impl_tAtomicProposition_GreaterAtomicProposition*
-GreaterAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_GreaterAtomicProposition(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_GreaterAtomicProposition));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_GreaterAtomicProposition));
-    kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_GreaterAtomicProposition*>(kc_x);
-}
-
-impl_tAtomicProposition_GreaterEqualAtomicProposition*
-GreaterEqualAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_GreaterEqualAtomicProposition(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_GreaterEqualAtomicProposition));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_GreaterEqualAtomicProposition));
-    kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_GreaterEqualAtomicProposition*>(kc_x);
-}
-
-impl_tAtomicProposition_LessAtomicProposition*
-LessAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_LessAtomicProposition(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_LessAtomicProposition));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_LessAtomicProposition));
-    kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_LessAtomicProposition*>(kc_x);
-}
-
-impl_tAtomicProposition_LessEqualAtomicProposition*
-LessEqualAtomicProposition(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_LessEqualAtomicProposition(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_LessEqualAtomicProposition));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_LessEqualAtomicProposition));
-    kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_LessEqualAtomicProposition*>(kc_x);
+    return static_cast<impl_tAtomicProposition_NNegation*>(kc_x);
 }
 
 impl_tAtomicProposition_True*
@@ -4611,119 +4271,14 @@ Deadlock() {
     return static_cast<impl_tAtomicProposition_Deadlock*>(kc_x);
 }
 
-impl_tAtomicProposition_Initial*
-Initial() {
-    tAtomicProposition kc_x = new impl_tAtomicProposition_Initial();
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Initial));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Initial));
+impl_tTerm_Complex*
+Complex() {
+    tTerm kc_x = new impl_tTerm_Complex();
+    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Complex));
+    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Complex));
     kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_Initial*>(kc_x);
-}
-
-impl_tAtomicProposition_Fireable*
-Fireable(integer _integer_1) {
-    assertPhylum(_integer_1, phylum_integer);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_Fireable(_integer_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Fireable));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Fireable));
-    kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_Fireable*>(kc_x);
-}
-
-impl_tAtomicProposition_Unfireable*
-Unfireable(integer _integer_1) {
-    assertPhylum(_integer_1, phylum_integer);
-    tAtomicProposition kc_x = new impl_tAtomicProposition_Unfireable(_integer_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Unfireable));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Unfireable));
-    kc_x->post_create();
-    kc_x = kc_initialize_tAtomicProposition(kc_x);
-    return static_cast<impl_tAtomicProposition_Unfireable*>(kc_x);
-}
-
-impl_tTerm_Node*
-Node(integer _integer_1) {
-    assertPhylum(_integer_1, phylum_integer);
-    tTerm kc_x = new impl_tTerm_Node(_integer_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Node));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Node));
-    kc_x->post_create();
-    return static_cast<impl_tTerm_Node*>(kc_x);
-}
-
-impl_tTerm_Number*
-Number(integer _integer_1) {
-    assertPhylum(_integer_1, phylum_integer);
-    tTerm kc_x = new impl_tTerm_Number(_integer_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Number));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Number));
-    kc_x->post_create();
-    return static_cast<impl_tTerm_Number*>(kc_x);
-}
-
-impl_tTerm_Sum*
-Sum(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tTerm kc_x = new impl_tTerm_Sum(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Sum));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Sum));
-    kc_x->post_create();
-    return static_cast<impl_tTerm_Sum*>(kc_x);
-}
-
-impl_tTerm_Difference*
-Difference(tTerm _tTerm_1, tTerm _tTerm_2) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tTerm_2, phylum_tTerm);
-    tTerm kc_x = new impl_tTerm_Difference(_tTerm_1, _tTerm_2);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Difference));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Difference));
-    kc_x->post_create();
-    return static_cast<impl_tTerm_Difference*>(kc_x);
-}
-
-impl_tTerm_Product*
-Product(integer _integer_1, tTerm _tTerm_1) {
-    assertPhylum(_integer_1, phylum_integer);
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    tTerm kc_x = new impl_tTerm_Product(_integer_1, _tTerm_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_Product));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_Product));
-    kc_x->post_create();
-    return static_cast<impl_tTerm_Product*>(kc_x);
-}
-
-impl_tTerm_ProductList*
-ProductList(tProduct_list _tProduct_list_1) {
-    assertPhylum(_tProduct_list_1, phylum_tProduct_list);
-    tTerm kc_x = new impl_tTerm_ProductList(_tProduct_list_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_ProductList));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_ProductList));
-    kc_x->post_create();
-    return static_cast<impl_tTerm_ProductList*>(kc_x);
-}
-
-impl_tProduct_list*
-NiltProduct_list() {
-    tProduct_list kc_x = new impl_tProduct_list();
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_NiltProduct_list));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_NiltProduct_list));
-    kc_x->post_create();
-    return static_cast<impl_tProduct_list*>(kc_x);
-}
-
-impl_tProduct_list*
-ConstProduct_list(tTerm _tTerm_1, tProduct_list _tProduct_list_1) {
-    assertPhylum(_tTerm_1, phylum_tTerm);
-    assertPhylum(_tProduct_list_1, phylum_tProduct_list);
-    tProduct_list kc_x = new impl_tProduct_list(_tTerm_1, _tProduct_list_1);
-    KC_COLLECT_STATS0(KC_CREATE_STATS(sel_ConstProduct_list));
-    KC_COLLECT_STATS0(KC_EXISTINGNOTFOUND_STATS(sel_ConstProduct_list));
-    kc_x->post_create();
-    return static_cast<impl_tProduct_list*>(kc_x);
+    kc_x = kc_initialize_tTerm(kc_x);
+    return static_cast<impl_tTerm_Complex*>(kc_x);
 }
 
 impl_tBuechiAutomata_BuechiAutomaton*
@@ -6409,28 +5964,8 @@ kc_create(enum_operators createOp, abstract_phylum kc_p1, abstract_phylum kc_p2,
 	return BuechiNull();
     case sel_BuechiAutomaton:
 	return BuechiAutomaton(phylum_cast<tBuechiRules>(kc_p1), phylum_cast<tAcceptingSet>(kc_p2));
-    case sel_ConstProduct_list:
-	return ConstProduct_list(phylum_cast<tTerm>(kc_p1), phylum_cast<tProduct_list>(kc_p2));
-    case sel_NiltProduct_list:
-	return NiltProduct_list();
-    case sel_ProductList:
-	return ProductList(phylum_cast<tProduct_list>(kc_p1));
-    case sel_Product:
-	return Product(phylum_cast<integer>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_Difference:
-	return Difference(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_Sum:
-	return Sum(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_Number:
-	return Number(phylum_cast<integer>(kc_p1));
-    case sel_Node:
-	return Node(phylum_cast<integer>(kc_p1));
-    case sel_Unfireable:
-	return Unfireable(phylum_cast<integer>(kc_p1));
-    case sel_Fireable:
-	return Fireable(phylum_cast<integer>(kc_p1));
-    case sel_Initial:
-	return Initial();
+    case sel_Complex:
+	return Complex();
     case sel_Deadlock:
 	return Deadlock();
     case sel_NoDeadlock:
@@ -6439,18 +5974,10 @@ kc_create(enum_operators createOp, abstract_phylum kc_p1, abstract_phylum kc_p2,
 	return False();
     case sel_True:
 	return True();
-    case sel_LessEqualAtomicProposition:
-	return LessEqualAtomicProposition(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_LessAtomicProposition:
-	return LessAtomicProposition(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_GreaterEqualAtomicProposition:
-	return GreaterEqualAtomicProposition(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_GreaterAtomicProposition:
-	return GreaterAtomicProposition(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_NotEqualsAtomicProposition:
-	return NotEqualsAtomicProposition(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
-    case sel_EqualsAtomicProposition:
-	return EqualsAtomicProposition(phylum_cast<tTerm>(kc_p1), phylum_cast<tTerm>(kc_p2));
+    case sel_NNegation:
+	return NNegation(phylum_cast<tAtomicProposition>(kc_p1));
+    case sel_Elementary:
+	return Elementary();
     case sel_ConstDisjunction_list:
 	return ConstDisjunction_list(phylum_cast<tStatePredicate>(kc_p1), phylum_cast<tDisjunction_list>(kc_p2));
     case sel_NiltDisjunction_list:
@@ -6513,8 +6040,8 @@ kc_create(enum_operators createOp, abstract_phylum kc_p1, abstract_phylum kc_p2,
 	return AtomicProposition(phylum_cast<tAtomicProposition>(kc_p1));
     case sel_Compound:
 	return Compound(phylum_cast<tFormula>(kc_p1), phylum_cast<tFormula>(kc_p2));
-    case sel_ComputeBound:
-	return ComputeBound(phylum_cast<tAtomicProposition>(kc_p1));
+    case sel_CompBound:
+	return CompBound();
     case sel_StatePredicateFormula:
 	return StatePredicateFormula(phylum_cast<tStatePredicate>(kc_p1));
     default:
@@ -7095,20 +6622,6 @@ void impl_tAtomicProposition::fprintdot(FILE *f, const char *root_label_prefix, 
     if (print_prologue_and_epilogue) fprintdotepilogue(f);
 }
 void impl_tTerm::fprintdot(FILE *f, const char *root_label_prefix, const char *edge_label_prefix, const char *edge_attributes, bool print_node_labels, bool use_context_when_sharing_leaves, bool print_prologue_and_epilogue) const
-{
-    int kc_edge_nr = 1;
-    kc_dotedgenode_t kc_edges = 0;
-    if (print_prologue_and_epilogue) fprintdotprologue(f);
-    /*if (kc_outmost)*/ kc_do_printdot_subgraph_prologue(f, this, root_label_prefix, edge_attributes, print_node_labels, use_context_when_sharing_leaves);
-    fprintdot_hashtable = new kc_dotedge_ht;
-    do_printdot(f, true, &kc_edge_nr, &kc_edges, edge_label_prefix, print_node_labels, use_context_when_sharing_leaves, 0, 0);
-    kc_do_printdot_edges(f, kc_edges, edge_attributes, use_context_when_sharing_leaves);
-    delete fprintdot_hashtable;
-    fprintdot_hashtable=0;
-    /*if (kc_outmost)*/ kc_do_printdot_subgraph_epilogue(f);
-    if (print_prologue_and_epilogue) fprintdotepilogue(f);
-}
-void impl_tProduct_list::fprintdot(FILE *f, const char *root_label_prefix, const char *edge_label_prefix, const char *edge_attributes, bool print_node_labels, bool use_context_when_sharing_leaves, bool print_prologue_and_epilogue) const
 {
     int kc_edge_nr = 1;
     kc_dotedgenode_t kc_edges = 0;
@@ -7955,47 +7468,6 @@ tStatePredicate
 impl_tDisjunction_list::reduce( tStatePredicate neutral, tStatePredicate (*kc_fp)(tStatePredicate, tStatePredicate))
 {
     return dynamic_cast<tStatePredicate>(do_reduce(neutral,(abstract_phylum(*)(abstract_phylum,abstract_phylum))kc_fp));
-}
-
-tProduct_list
-concat(c_tProduct_list kc_p1, c_tProduct_list kc_p2)
-{ return dynamic_cast<tProduct_list>(kc_p1->do_concat(kc_p2, sel_ConstProduct_list)); }
-
-tProduct_list
-impl_tProduct_list::reverse() const
-{ return dynamic_cast<tProduct_list>(do_reverse(NiltProduct_list(), sel_ConstProduct_list)); }
-
-tTerm
-impl_tProduct_list::last() const
-{ return dynamic_cast<tTerm>(impl_abstract_list::last()); }
-
-bool
-impl_tProduct_list::is_nil() const
-{
-    return tTerm_1==0 && tProduct_list_1==0;
-}
-
-tProduct_list
-impl_tProduct_list::map(tTerm (*kc_fp)(tTerm))
-{ return dynamic_cast<tProduct_list>(do_map((abstract_phylum (*)(abstract_phylum))kc_fp, sel_ConstProduct_list)); }
-tProduct_list
-impl_tProduct_list::filter(bool (*kc_fp)(tTerm))
-{ return dynamic_cast<tProduct_list>(do_filter((bool (*)(abstract_phylum))kc_fp, sel_ConstProduct_list)); }
-
-tProduct_list
-impl_tProduct_list::append(tTerm new_last)
-{
-    return dynamic_cast<tProduct_list>(do_append(new_last, NiltProduct_list()));
-}
-tProduct_list
-impl_tProduct_list::merge( tProduct_list second, tTerm (*kc_fp)(tTerm, tTerm))
-{
-    return dynamic_cast<tProduct_list>(do_merge(second,(abstract_phylum(*)(abstract_phylum,abstract_phylum))kc_fp, sel_ConstProduct_list));
-}
-tTerm
-impl_tProduct_list::reduce( tTerm neutral, tTerm (*kc_fp)(tTerm, tTerm))
-{
-    return dynamic_cast<tTerm>(do_reduce(neutral,(abstract_phylum(*)(abstract_phylum,abstract_phylum))kc_fp));
 }
 
 abstract_phylum

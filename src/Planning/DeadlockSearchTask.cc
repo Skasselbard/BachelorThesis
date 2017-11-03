@@ -20,6 +20,7 @@
 #include <Exploration/Firelist.h>
 #include <Exploration/DFSExploration.h>
 #include <Exploration/FirelistStubbornDeadlock.h>
+#include <Exploration/FirelistStubbornCombinedDeadlock.h>
 #include <Exploration/FirelistStubbornDeletion.h>
 #include <Exploration/ParallelExploration.h>
 #include <Exploration/DeadlockExploration.h>
@@ -41,6 +42,7 @@
 
 DeadlockSearchTask::DeadlockSearchTask()
 {
+     taskname = "state space";
      goStatus = false;
      previousNrOfMarkings = 0;
     // set the net
@@ -53,24 +55,24 @@ DeadlockSearchTask::DeadlockSearchTask()
     case search_arg_sweepline:
     {
         // dummy store for the sweepline method, only counts markings and calls
-        RT::data["store"]["type"] = "empty";
-        RT::data["store"]["search"] = "sweepline";
+        RT::data["task"]["search"]["type"] = "sweepline";
         store = new SweepEmptyStore();
 	covStore = NULL;
         break;
     }
     case search_arg_covergraph:
     {
-        RT::data["store"]["search"] = "covergraph";
+        RT::data["task"]["search"]["type"] = "cover";
         if (RT::args.encoder_arg != encoder_arg_fullcopy)
         {
-            RT::rep->status("warning: encoder does not support coverability graphs -- replacing");
+            RT::rep->status("state space: warning: encoder does not support coverability graphs -- replacing");
         }
         covStore = StoreCreator<CoverPayload>::createStore(number_of_threads);
 	store = NULL;
         break;
     }
 	default:
+	RT::data["task"]["search"]["type"] = "dfs";
         // choose a store
 	store = StoreCreator<void>::createStore(number_of_threads);
 	covStore = NULL;
@@ -78,43 +80,52 @@ DeadlockSearchTask::DeadlockSearchTask()
 
     
     RT::rep->indent(-2);
-    RT::rep->status("SEARCH");
+    RT::rep->status("SEARCH (state space)");
     RT::rep->indent(2);
     switch(RT::args.search_arg)
     {
     case search_arg_covergraph:
-                    RT::rep->status("using coverability graph (%s)", RT::rep->markup(MARKUP_PARAMETER,
+                    RT::rep->status("state space: using coverability graph (%s)", RT::rep->markup(MARKUP_PARAMETER,
                                     "--search=cover").str());
 	p = new StatePredicateProperty(new DeadlockPredicate(true));
 	break;
     case search_arg_sweepline:
-                    RT::rep->status("using sweep-line method (%s)", RT::rep->markup(MARKUP_PARAMETER,
+                    RT::rep->status("state space: using sweep-line method (%s)", RT::rep->markup(MARKUP_PARAMETER,
                                     "--search=sweep").str());
 	    p = new DeadlockExploration();
             break;
     default:
-                    RT::rep->status("using reachability graph (%s)", RT::rep->markup(MARKUP_PARAMETER,
+                    RT::rep->status("state space: using reachability graph (%s)", RT::rep->markup(MARKUP_PARAMETER,
                                     "--search=depth").str());
 	    p = new DeadlockExploration();
     }
     switch (RT::args.stubborn_arg)
     {
     case stubborn_arg_deletion:
-		RT::rep->status("using deadlock preserving stubborn set method with deletion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
+	RT::data["task"]["search"]["stubborn"]["type"] = "deadlock preserving/deletion";
+		RT::rep->status("state space: using deadlock preserving stubborn set method with deletion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
                 fl = new FirelistStubbornDeletion();
 		break;
     case stubborn_arg_tarjan:
-		RT::rep->status("using deadlock preserving stubborn set method with insertion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
+	RT::data["task"]["search"]["stubborn"]["type"] = "deadlock preserving/insertion";
+		RT::rep->status("state space: using deadlock preserving stubborn set method with insertion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
                 fl = new FirelistStubbornDeadlock();
 	 	break;
+    case stubborn_arg_combined:
+	RT::data["task"]["search"]["stubborn"]["type"] = "deadlock preserving/combined";
+		RT::rep->status("state space: using deadlock preserving stubborn set method with combined insertion/deletion algorithm(%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=combined").str());
+                fl = new FirelistStubbornCombinedDeadlock();
+	 	break;
     case stubborn_arg_off:
-		RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
+	RT::data["task"]["search"]["stubborn"]["type"] = "no";
+		RT::rep->status("state space: not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
 		fl = new Firelist();
 		break;
     default:
 	assert(false); // enumeration exhaustive
     }
     // set the correct exploration algorithm
+	RT::data["task"]["search"]["treads"] = number_of_threads;
     if (number_of_threads == 1)
     {
                 exploration = new DFSExploration();
@@ -212,7 +223,9 @@ void DeadlockSearchTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+        RT::rep->status("produced by: %s",taskname);
+        RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The net has deadlock(s).").str());
 
@@ -220,7 +233,9 @@ void DeadlockSearchTask::interpreteResult(ternary_t result)
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+        RT::rep->status("produced by: %s",taskname);
+        RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The net does not have deadlocks.").str());
@@ -230,7 +245,9 @@ void DeadlockSearchTask::interpreteResult(ternary_t result)
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+        RT::rep->status("produced by: %s",taskname);
+        RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The net may or may not have deadlocks.").str());
@@ -265,20 +282,23 @@ void DeadlockSearchTask::getStatistics()
         const double n = static_cast<double>(store->get_number_of_markings());
         const double k = RT::args.hashfunctions_arg;
         const double m = static_cast<double>(BLOOM_FILTER_SIZE);
+	const double prob = pow((1.0 - exp((-k * n) / m)), k);
+	const double opt_hash = log(m / n) / log(2.0);
         RT::rep->status("Bloom filter: probability of false positive is %.10lf",
-                        pow((1.0 - exp((-k * n) / m)), k));
+                        prob);
         RT::rep->status("Bloom filter: optimal number of hash functions is %.1f",
-                        log(m / n) / log(2.0));
+                        opt_hash);
+	RT::data["task"]["search"]["bloom"]["prob_false_positive"] = prob;
+	RT::data["task"]["search"]["bloom"]["optimal_hash_functions"] = opt_hash;
     }
 
 	uint64_t markingcount = store ? store -> get_number_of_markings() : 
                                     covStore -> get_number_of_markings();
         uint64_t edgecount = store ? store -> get_number_of_calls() :
-                                  covStore -> get_number_of_calls();
+                                covStore -> get_number_of_calls();
         RT::rep->status("%llu markings, %llu edges", markingcount, edgecount);
-RT::data["analysis"]["stats"]["states"] = static_cast<int>(markingcount);
-RT::data["analysis"]["stats"]["edges"] = static_cast<int>(edgecount);
-
+RT::data["result"]["markings"] = static_cast<int>(markingcount);
+RT::data["result"]["edges"] = static_cast<int>(edgecount);
 }
 
 char * DeadlockSearchTask::getStatus(uint64_t elapsed)
@@ -318,5 +338,4 @@ char * DeadlockSearchTask::getStatus(uint64_t elapsed)
             }
 	}
 	return result;
-
 }

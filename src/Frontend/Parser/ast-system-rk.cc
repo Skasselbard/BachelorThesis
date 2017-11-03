@@ -20,12 +20,6 @@ base_rview_class base_rview;
 goodbye_doublearrows_class goodbye_doublearrows;
 goodbye_singlearrows_class goodbye_singlearrows;
 goodbye_xor_class goodbye_xor;
-goodbye_fireable_class goodbye_fireable;
-goodbye_unfireable_class goodbye_unfireable;
-goodbye_initial_class goodbye_initial;
-sides_class sides;
-productlists_class productlists;
-leq_class leq;
 tautology_class tautology;
 emptyquantifiers_class emptyquantifiers;
 singletemporal_class singletemporal;
@@ -33,20 +27,12 @@ simpleneg_class simpleneg;
 booleanlists_class booleanlists;
 ctloperators_class ctloperators;
 rbuechi_class rbuechi;
-dnf_class dnf;
-simpletautology_class simpletautology;
 
 impl_rviews rviews[] = {
     {"base_rview",&base_rview},
     {"goodbye_doublearrows",&goodbye_doublearrows},
     {"goodbye_singlearrows",&goodbye_singlearrows},
     {"goodbye_xor",&goodbye_xor},
-    {"goodbye_fireable",&goodbye_fireable},
-    {"goodbye_unfireable",&goodbye_unfireable},
-    {"goodbye_initial",&goodbye_initial},
-    {"sides",&sides},
-    {"productlists",&productlists},
-    {"leq",&leq},
     {"tautology",&tautology},
     {"emptyquantifiers",&emptyquantifiers},
     {"singletemporal",&singletemporal},
@@ -54,8 +40,6 @@ impl_rviews rviews[] = {
     {"booleanlists",&booleanlists},
     {"ctloperators",&ctloperators},
     {"rbuechi",&rbuechi},
-    {"dnf",&dnf},
-    {"simpletautology",&simpletautology},
     {0,0}
 };
 
@@ -67,6 +51,9 @@ using namespace kc;
 #include <Frontend/Parser/ast-system-rk.h>
 #include <CoverGraph/CoverGraph.h>
 #include <Net/Marking.h>
+#include <Formula/StatePredicate/DeadlockPredicate.h>
+#include <Formula/StatePredicate/StatePredicate.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 #include <Net/Net.h>
 
 /*
@@ -81,166 +68,8 @@ Count the rule applications
 size_t rule_applications = 0;
 #define KC_TRACE_REWRITE_MATCH(VIEW,FILE,LINE,NODE) { ++rule_applications; }
 
-integer plus( integer a, integer b ) {
-    // +-----+-----+-----+-----+
-    // |   + |   y |  oo | -oo |
-    // +-----+-----+-----+-----+
-    // |   x | x+y |  oo | -oo |
-    // |  oo |  oo |  oo | n.d.|
-    // | -oo | -oo | n.d.| -oo |
-    // +-----+-----+-----+-----+
 
-    // exclude undefinied behavior
-    if(  (a->value == -OMEGA and b->value == OMEGA) ||
-	    (a->value == OMEGA and b->value == -OMEGA))
-    {
-	RT::rep->status("error in formula: invalid addition of oo or appearance of oo on both sides of a comparison");
-	RT::rep->abort(ERROR_SYNTAX);
-    }
-
-    if (a->value == OMEGA or b->value == OMEGA)
-    {
-	return mkinteger(OMEGA);
-    }
-
-    if (a->value == -OMEGA or b->value == -OMEGA)
-    {
-	return mkinteger(-OMEGA);
-    }
-
-    return mkinteger( a->value + b->value );
-}
-
-integer minus( integer a, integer b ) {
-    // +-----+-----+-----+-----+
-    // |   - |   y |  oo | -oo |
-    // +-----+-----+-----+-----+
-    // |   x | x-y | -oo |  oo |
-    // |  oo |  oo | n.d.|  oo |
-    // | -oo | -oo | -oo | n.d.|
-    // +-----+-----+-----+-----+
-
-    // exclude undefinied behavior
-    if(  (a->value == OMEGA and b->value == OMEGA) ||
-	    (a->value == -OMEGA and b->value == -OMEGA))
-    {
-	RT::rep->status("error in formula: invalid subtraction of oo or appearance of oo on both sides of a comparison");
-	RT::rep->abort(ERROR_SYNTAX);
-    }
-
-    if (a->value == OMEGA or b->value == -OMEGA)
-    {
-	return mkinteger(OMEGA);
-    }
-
-    if (a->value == -OMEGA or b->value == OMEGA)
-    {
-	return mkinteger(-OMEGA);
-    }
-
-    return mkinteger( a->value - b->value );
-}
-
-integer mult( integer a, integer b ) {
-    // exclude OMEGAS for now
-    if(a->value == OMEGA || b->value == OMEGA || a->value == -OMEGA || b->value == -OMEGA)
-    {
-	RT::rep->status("error in formula: invalid multiplication with oo");
-	RT::rep->abort(ERROR_SYNTAX);
-    }
-
-    return mkinteger( a->value * b->value );
-}
-
-/*!
-This function unfolds the FIREABLE() predicate to a conjunction that contains,
-for each preplace, a term from the arc weight.
-\only GreaterAtomicProposition will be performed
-\param x  the id of a transition
-\return  a statepredicate that is true if the given transition is fireable
-*/
-tStatePredicate FIREABLE_unfolder(const integer x)
-{
-    // start with TRUE and conjunct an atomic proposition for each preplace
-    // (the TRUE predicate will be removed in later rewriting %rview tautology;)
-    tStatePredicate result = AtomicProposition(True());
-
-    // iterate preset
-    for (arrayindex_t p = 0; p < Net::CardArcs[TR][PRE][x->value]; ++p)
-    {
-	result = Conjunction(
-	    result,
-	    AtomicProposition(
-		GreaterAtomicProposition(
-		    Node(mkinteger(Net::Arc[TR][PRE][x->value][p])),
-		    Number(minus(mkinteger(Net::Mult[TR][PRE][x->value][p]),mkinteger(1)))
-		)
-	    )
-	);
-    }
-
-    return result;
-}
-
-/*! This fuction unfolds the Unfireable() predicate to a disjunction that contains, for each preplace, a term from the arc weight.
-\only LessEqualAtomicProposition will be performed
-\parm x the id of a transition
-\return a statepredicate that is true if the given transition is not fireable
-*/
-tStatePredicate UNFIREABLE_unfolder(const integer x)
-{
-    // start with FALSE and disjunct an atomic proposition for each preplace
-    // (the FALSE predicate will be removed in later rewriting %rview tautology;)
-    tStatePredicate result = AtomicProposition(False());
-
-    // iterate preset
-    for (arrayindex_t p = 0; p < Net::CardArcs[TR][PRE][x->value]; ++p)
-    {
-	result = Disjunction(
-	    result,
-	    AtomicProposition(
-		LessEqualAtomicProposition(
-		    Node(mkinteger(Net::Arc[TR][PRE][x->value][p])),
-		    Number(minus(mkinteger(Net::Mult[TR][PRE][x->value][p]),mkinteger(1)))
-		)
-	    )
-	);
-    }
-
-    return result;
-}
-
-/*!
-This function unfolds the INITIAL() predicate to a conjunction that contains
-for each place a term from its initial marking.
-
-\return  a statpredicate that is exactly true in the initial marking
-*/
-tStatePredicate INITIAL_unfolder()
-{
-    // start with TRUE and conjunct an atomic proposition for each place
-    // (the TRUE predicate will be removed in later rewritings)
-    tStatePredicate result = AtomicProposition(True());
-
-    // iterate places
-    for (arrayindex_t p = 0; p < Net::Card[PL]; ++p)
-    {
-	result = Conjunction(
-	    result,
-	    AtomicProposition(
-		EqualsAtomicProposition(
-		    Node(mkinteger(p)),
-		    Number(mkinteger(Marking::Initial[p]))
-		)
-	    )
-	);
-    }
-
-    return result;
-}
-
-
-#line  244 "ast-system-rk.cc"
+#line  73 "ast-system-rk.cc"
 /* end included stuff */
 
 
@@ -271,17 +100,10 @@ tFormula impl_tFormula_Compound::rewrite(rview kc_current_view_base)
     }
 }
 
-tFormula impl_tFormula_ComputeBound::rewrite(rview kc_current_view_base)
+tFormula impl_tFormula_CompBound::rewrite(rview kc_current_view_base)
 {
-    tAtomicProposition l_tAtomicProposition_1 =
-	tAtomicProposition_1->rewrite(kc_current_view_base);
-    if ((l_tAtomicProposition_1 == tAtomicProposition_1))
-	return this;
-    else {
-	impl_tFormula_ComputeBound* kc_result= ComputeBound(l_tAtomicProposition_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
+    return this;
+
 }
 
 tFormula impl_tFormula_StatePredicateFormula::rewrite(rview kc_current_view_base)
@@ -291,75 +113,75 @@ tFormula impl_tFormula_StatePredicateFormula::rewrite(rview kc_current_view_base
     switch(kc_current_view_base) {
 	case singletemporal_enum: {
 	    singletemporal_class& kc_current_view=static_cast<singletemporal_class&>(kc_current_view_base);
-#line 825 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 825, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 825, this);
-#line 825 "Frontend/Parser/formula_rewrite.k"
+#line 553 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 553, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 553, this);
+#line 553 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 825 "Frontend/Parser/formula_rewrite.k"
+#line 553 "Frontend/Parser/formula_rewrite.k"
 		tFormula kc_result = StatePredicateFormula(y);
 
-#line  302 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",825,kc_result);
+#line  124 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",553,kc_result);
 		return (const_cast<const impl_tFormula*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 829 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 829, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 829, this);
-#line 829 "Frontend/Parser/formula_rewrite.k"
+#line 557 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 557, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 557, this);
+#line 557 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 829 "Frontend/Parser/formula_rewrite.k"
+#line 557 "Frontend/Parser/formula_rewrite.k"
 		tFormula kc_result = StatePredicateFormula(Negation(y));
 
-#line  314 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",829,kc_result);
+#line  136 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",557,kc_result);
 		return (const_cast<const impl_tFormula*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 804 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 804, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 804, this);
-#line 804 "Frontend/Parser/formula_rewrite.k"
+#line 532 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 532, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 532, this);
+#line 532 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 804 "Frontend/Parser/formula_rewrite.k"
+#line 532 "Frontend/Parser/formula_rewrite.k"
 		tFormula kc_result = StatePredicateFormula(y);
 
-#line  326 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",804,kc_result);
+#line  148 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",532,kc_result);
 		return (const_cast<const impl_tFormula*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 821 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 821, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 821, this);
-#line 821 "Frontend/Parser/formula_rewrite.k"
+#line 549 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 549, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 549, this);
+#line 549 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 821 "Frontend/Parser/formula_rewrite.k"
+#line 549 "Frontend/Parser/formula_rewrite.k"
 		tFormula kc_result = StatePredicateFormula(Negation(y));
 
-#line  338 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",821,kc_result);
+#line  160 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",549,kc_result);
 		return (const_cast<const impl_tFormula*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 812 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 812, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 812, this);
-#line 812 "Frontend/Parser/formula_rewrite.k"
+#line 540 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 540, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 540, this);
+#line 540 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 812 "Frontend/Parser/formula_rewrite.k"
+#line 540 "Frontend/Parser/formula_rewrite.k"
 		tFormula kc_result = StatePredicateFormula(y);
 
-#line  350 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",812,kc_result);
+#line  172 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",540,kc_result);
 		return (const_cast<const impl_tFormula*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 816 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 816, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 816, this);
-#line 816 "Frontend/Parser/formula_rewrite.k"
+#line 544 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (KC_TRACE_PROVIDED((not phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 544, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 544, this);
+#line 544 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 816 "Frontend/Parser/formula_rewrite.k"
+#line 544 "Frontend/Parser/formula_rewrite.k"
 		tFormula kc_result = StatePredicateFormula(Negation(y));
 
-#line  362 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",816,kc_result);
+#line  184 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",544,kc_result);
 		return (const_cast<const impl_tFormula*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -550,75 +372,75 @@ tStatePredicate impl_tStatePredicate_Release::rewrite(rview kc_current_view_base
     switch(kc_current_view_base) {
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 503 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 503, this);
-#line 503 "Frontend/Parser/formula_rewrite.k"
+#line 168 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 168, this);
+#line 168 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 503 "Frontend/Parser/formula_rewrite.k"
+#line 168 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  561 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",503,kc_result);
+#line  383 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",168,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 512 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 512, this);
-#line 512 "Frontend/Parser/formula_rewrite.k"
+#line 177 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 177, this);
+#line 177 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 512 "Frontend/Parser/formula_rewrite.k"
+#line 177 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Always(x);
 
-#line  573 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",512,kc_result);
+#line  395 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",177,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 533 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 533, this);
-#line 533 "Frontend/Parser/formula_rewrite.k"
+#line 198 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 198, this);
+#line 198 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 533 "Frontend/Parser/formula_rewrite.k"
+#line 198 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  585 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",533,kc_result);
+#line  407 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",198,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 536 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 536, this);
-#line 536 "Frontend/Parser/formula_rewrite.k"
+#line 201 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 201, this);
+#line 201 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 536 "Frontend/Parser/formula_rewrite.k"
+#line 201 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Always(x);
 
-#line  597 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",536,kc_result);
+#line  419 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",201,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 500 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 500, this);
-#line 500 "Frontend/Parser/formula_rewrite.k"
+#line 165 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 165, this);
+#line 165 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 500 "Frontend/Parser/formula_rewrite.k"
+#line 165 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = y;
 
-#line  609 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",500,kc_result);
+#line  431 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",165,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 515 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 515, this);
-#line 515 "Frontend/Parser/formula_rewrite.k"
+#line 180 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 180, this);
+#line 180 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 515 "Frontend/Parser/formula_rewrite.k"
+#line 180 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = y;
 
-#line  621 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",515,kc_result);
+#line  443 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",180,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -645,103 +467,255 @@ tStatePredicate impl_tStatePredicate_Until::rewrite(rview kc_current_view_base)
     switch(kc_current_view_base) {
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 497 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 497, this);
-#line 497 "Frontend/Parser/formula_rewrite.k"
+#line 417 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_Until) && (phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1)->tAtomicProposition_1 -> pred -> magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1 -> pred -> magicnumber), "Frontend/Parser/formula_rewrite.k", 417, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 417, this);
+#line 417 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 417 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1)->tAtomicProposition_1;
+#line 417 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
+#line 417 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1;
+#line 417 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Until(y, a);
+
+#line  484 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",417,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 387 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->pred->magicnumber==phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->pred->magicnumber), "Frontend/Parser/formula_rewrite.k", 387, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 387, this);
+#line 387 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = l_tStatePredicate_1;
+#line 387 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 387 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition y = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1;
+#line 387 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = a;
+
+#line  500 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",387,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 390 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->pred->magicnumber== - phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->pred->magicnumber), "Frontend/Parser/formula_rewrite.k", 390, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 390, this);
+#line 390 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 390 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = l_tStatePredicate_2;
+#line 390 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition y = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1;
+#line 390 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Eventually(a);
+
+#line  516 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",390,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 420 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_Until) && (phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_2)->tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_2)->tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1 -> pred -> magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_2)->tStatePredicate_2)->tAtomicProposition_1 -> pred -> magicnumber), "Frontend/Parser/formula_rewrite.k", 420, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 420, this);
+#line 420 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = l_tStatePredicate_1;
+#line 420 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 420 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_2)->tStatePredicate_1;
+#line 420 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_2)->tStatePredicate_2)->tAtomicProposition_1;
+#line 420 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Until(y, a);
+
+#line  534 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",420,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 162 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 162, this);
+#line 162 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 497 "Frontend/Parser/formula_rewrite.k"
+#line 162 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Eventually(x);
 
-#line  656 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",497,kc_result);
+#line  546 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",162,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 509 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 509, this);
-#line 509 "Frontend/Parser/formula_rewrite.k"
+#line 174 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 174, this);
+#line 174 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 509 "Frontend/Parser/formula_rewrite.k"
+#line 174 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  668 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",509,kc_result);
+#line  558 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",174,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 527 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 527, this);
-#line 527 "Frontend/Parser/formula_rewrite.k"
+#line 192 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 192, this);
+#line 192 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 527 "Frontend/Parser/formula_rewrite.k"
+#line 192 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  680 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",527,kc_result);
+#line  570 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",192,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 530 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 530, this);
-#line 530 "Frontend/Parser/formula_rewrite.k"
+#line 195 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 195, this);
+#line 195 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 530 "Frontend/Parser/formula_rewrite.k"
+#line 195 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Eventually(x);
 
-#line  692 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",530,kc_result);
+#line  582 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",195,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 703 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 703, this);
-#line 703 "Frontend/Parser/formula_rewrite.k"
+#line 399 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 399, this);
+#line 399 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate z = l_tStatePredicate_1;
+#line 399 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
+#line 399 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 399 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Conjunction(y, z);
+
+#line  598 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",399,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 402 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 402, this);
+#line 402 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate z = l_tStatePredicate_1;
+#line 402 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
+#line 402 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 402 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Conjunction(y, z);
+
+#line  614 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",402,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 414 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Until) && (phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2)->tAtomicProposition_1 -> pred -> magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1 -> pred -> magicnumber), "Frontend/Parser/formula_rewrite.k", 414, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 414, this);
+#line 414 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 414 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
+#line 414 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2)->tAtomicProposition_1;
+#line 414 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1;
+#line 414 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Until(y, a);
+
+#line  632 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",414,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 381 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 381, this);
+#line 381 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 703 "Frontend/Parser/formula_rewrite.k"
+#line 381 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_2)->tStatePredicate_1;
-#line 703 "Frontend/Parser/formula_rewrite.k"
+#line 381 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = NextState(Until(x, y));
 
-#line  706 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",703,kc_result);
+#line  646 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",381,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 494 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 494, this);
-#line 494 "Frontend/Parser/formula_rewrite.k"
+#line 405 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 405, this);
+#line 405 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate z = l_tStatePredicate_1;
+#line 405 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 405 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 494 "Frontend/Parser/formula_rewrite.k"
+#line 405 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Until(x, Conjunction(y, z));
+
+#line  662 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",405,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 159 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 159, this);
+#line 159 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 159 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  674 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",159,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 171 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 171, this);
+#line 171 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 171 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  686 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",171,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 396 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 396, this);
+#line 396 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = l_tStatePredicate_1;
+#line 396 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 396 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate z = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tStatePredicate_1;
+#line 396 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  702 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",396,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 393 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 393, this);
+#line 393 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = l_tStatePredicate_1;
+#line 393 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 393 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate z = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1;
+#line 393 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = y;
 
 #line  718 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",494,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 506 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 506, this);
-#line 506 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate y = l_tStatePredicate_2;
-#line 506 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = y;
-
-#line  730 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",506,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 706 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_Until) && (phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_2)->tStatePredicate_1->eq(l_tStatePredicate_1))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 706, this);
-#line 706 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_1;
-#line 706 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_2;
-#line 706 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
-
-#line  744 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",706,kc_result);
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",393,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -763,38 +737,6 @@ tStatePredicate impl_tStatePredicate_NextState::rewrite(rview kc_current_view_ba
 {
     tStatePredicate l_tStatePredicate_1 =
 	tStatePredicate_1->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case tautology_enum: {
-	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 476 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 476, this);
-#line 476 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_1;
-#line 476 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = x;
-
-#line  777 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",476,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 479 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 479, this);
-#line 479 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_1;
-#line 479 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = x;
-
-#line  789 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",479,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
     if ((l_tStatePredicate_1 == tStatePredicate_1))
 	return this;
     else {
@@ -811,63 +753,77 @@ tStatePredicate impl_tStatePredicate_Eventually::rewrite(rview kc_current_view_b
     switch(kc_current_view_base) {
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 464 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 464, this);
-#line 464 "Frontend/Parser/formula_rewrite.k"
+#line 129 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 129, this);
+#line 129 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 464 "Frontend/Parser/formula_rewrite.k"
+#line 129 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  822 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",464,kc_result);
+#line  764 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",129,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 467 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 467, this);
-#line 467 "Frontend/Parser/formula_rewrite.k"
+#line 132 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 132, this);
+#line 132 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 467 "Frontend/Parser/formula_rewrite.k"
+#line 132 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  834 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",467,kc_result);
+#line  776 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",132,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 521 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 521, this);
-#line 521 "Frontend/Parser/formula_rewrite.k"
+#line 186 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 186, this);
+#line 186 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 521 "Frontend/Parser/formula_rewrite.k"
+#line 186 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  846 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",521,kc_result);
+#line  788 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",186,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 682 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 682, this);
-#line 682 "Frontend/Parser/formula_rewrite.k"
+#line 360 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 360, this);
+#line 360 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 682 "Frontend/Parser/formula_rewrite.k"
+#line 360 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  858 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",682,kc_result);
+#line  800 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",360,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 667 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 667, this);
-#line 667 "Frontend/Parser/formula_rewrite.k"
+#line 345 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 345, this);
+#line 345 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 667 "Frontend/Parser/formula_rewrite.k"
+#line 345 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  870 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",667,kc_result);
+#line  812 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",345,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 408 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 408, this);
+#line 408 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 408 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
+#line 408 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Eventually(y);
+
+#line  826 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",408,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -892,51 +848,65 @@ tStatePredicate impl_tStatePredicate_Always::rewrite(rview kc_current_view_base)
     switch(kc_current_view_base) {
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 470 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 470, this);
-#line 470 "Frontend/Parser/formula_rewrite.k"
+#line 135 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 135, this);
+#line 135 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 470 "Frontend/Parser/formula_rewrite.k"
+#line 135 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  903 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",470,kc_result);
+#line  859 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",135,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 473 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 473, this);
-#line 473 "Frontend/Parser/formula_rewrite.k"
+#line 138 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 138, this);
+#line 138 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 473 "Frontend/Parser/formula_rewrite.k"
+#line 138 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  915 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",473,kc_result);
+#line  871 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",138,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 524 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 524, this);
-#line 524 "Frontend/Parser/formula_rewrite.k"
+#line 189 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 189, this);
+#line 189 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 524 "Frontend/Parser/formula_rewrite.k"
+#line 189 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  927 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",524,kc_result);
+#line  883 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",189,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 685 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 685, this);
-#line 685 "Frontend/Parser/formula_rewrite.k"
+#line 363 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 363, this);
+#line 363 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 685 "Frontend/Parser/formula_rewrite.k"
+#line 363 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  939 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",685,kc_result);
+#line  895 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",363,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 411 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 411, this);
+#line 411 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 411 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
+#line 411 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Conjunction(Always(Eventually(y)), Always(Conjunction(x, y)));
+
+#line  909 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",411,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -961,67 +931,67 @@ tStatePredicate impl_tStatePredicate_ExPath::rewrite(rview kc_current_view_base)
     switch(kc_current_view_base) {
 	case ctloperators_enum: {
 	    ctloperators_class& kc_current_view=static_cast<ctloperators_class&>(kc_current_view_base);
-#line 886 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 886, this);
-#line 886 "Frontend/Parser/formula_rewrite.k"
+#line 611 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 611, this);
+#line 611 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 886 "Frontend/Parser/formula_rewrite.k"
+#line 611 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = EU(AtomicProposition(True()), x);
 
-#line  972 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",886,kc_result);
+#line  942 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",611,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 888 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 888, this);
-#line 888 "Frontend/Parser/formula_rewrite.k"
+#line 613 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 613, this);
+#line 613 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 888 "Frontend/Parser/formula_rewrite.k"
+#line 613 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = EX(x);
 
-#line  984 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",888,kc_result);
+#line  954 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",613,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 891 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 891, this);
-#line 891 "Frontend/Parser/formula_rewrite.k"
+#line 616 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 616, this);
+#line 616 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 891 "Frontend/Parser/formula_rewrite.k"
+#line 616 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Negation(AU(AtomicProposition(True()), Negation(x)));
 
-#line  996 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",891,kc_result);
+#line  966 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",616,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 893 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 893, this);
-#line 893 "Frontend/Parser/formula_rewrite.k"
+#line 618 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 618, this);
+#line 618 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 893 "Frontend/Parser/formula_rewrite.k"
+#line 618 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 893 "Frontend/Parser/formula_rewrite.k"
+#line 618 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = EU(x, y);
 
-#line  1010 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",893,kc_result);
+#line  980 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",618,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 896 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Release)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 896, this);
-#line 896 "Frontend/Parser/formula_rewrite.k"
+#line 621 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Release)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 621, this);
+#line 621 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Release*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 896 "Frontend/Parser/formula_rewrite.k"
+#line 621 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Release*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 896 "Frontend/Parser/formula_rewrite.k"
+#line 621 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Negation(AU(Negation(x), Negation(y)));
 
-#line  1024 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",896,kc_result);
+#line  994 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",621,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1029,15 +999,15 @@ tStatePredicate impl_tStatePredicate_ExPath::rewrite(rview kc_current_view_base)
 	}
 	case emptyquantifiers_enum: {
 	    emptyquantifiers_class& kc_current_view=static_cast<emptyquantifiers_class&>(kc_current_view_base);
-#line 769 "Frontend/Parser/formula_rewrite.k"
-	    if ((KC_TRACE_PROVIDED((not l_tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 769, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 769, this);
-#line 769 "Frontend/Parser/formula_rewrite.k"
+#line 496 "Frontend/Parser/formula_rewrite.k"
+	    if ((KC_TRACE_PROVIDED((not l_tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 496, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 496, this);
+#line 496 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 769 "Frontend/Parser/formula_rewrite.k"
+#line 496 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1040 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",769,kc_result);
+#line  1010 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",496,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1045,113 +1015,141 @@ tStatePredicate impl_tStatePredicate_ExPath::rewrite(rview kc_current_view_base)
 	}
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 700 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 700, this);
-#line 700 "Frontend/Parser/formula_rewrite.k"
+#line 378 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 378, this);
+#line 378 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 700 "Frontend/Parser/formula_rewrite.k"
+#line 378 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1056 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",700,kc_result);
+#line  1026 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",378,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 694 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 694, this);
-#line 694 "Frontend/Parser/formula_rewrite.k"
+#line 372 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 372, this);
+#line 372 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 694 "Frontend/Parser/formula_rewrite.k"
+#line 372 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1068 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",694,kc_result);
+#line  1038 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",372,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 482 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 482, this);
-#line 482 "Frontend/Parser/formula_rewrite.k"
+#line 147 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 147, this);
+#line 147 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 482 "Frontend/Parser/formula_rewrite.k"
+#line 147 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1080 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",482,kc_result);
+#line  1050 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",147,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 485 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 485, this);
-#line 485 "Frontend/Parser/formula_rewrite.k"
+#line 150 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 150, this);
+#line 150 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 485 "Frontend/Parser/formula_rewrite.k"
+#line 150 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1092 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",485,kc_result);
+#line  1062 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",150,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 542 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 542, this);
-#line 542 "Frontend/Parser/formula_rewrite.k"
+#line 207 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 207, this);
+#line 207 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 542 "Frontend/Parser/formula_rewrite.k"
+#line 207 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1104 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",542,kc_result);
+#line  1074 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",207,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 548 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 548, this);
-#line 548 "Frontend/Parser/formula_rewrite.k"
+#line 213 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 213, this);
+#line 213 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 548 "Frontend/Parser/formula_rewrite.k"
+#line 213 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1116 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",548,kc_result);
+#line  1086 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",213,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 676 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 676, this);
-#line 676 "Frontend/Parser/formula_rewrite.k"
+#line 480 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 480, this);
+#line 480 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Disjunction*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
+#line 480 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_Disjunction*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_2;
+#line 480 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Disjunction(ExPath(Eventually(a)), ExPath(Eventually(b)));
+
+#line  1100 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",480,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 486 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 486, this);
+#line 486 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Disjunction*>(phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
+#line 486 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_Disjunction*>(phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_2;
+#line 486 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Disjunction(ExPath(NextState(a)), ExPath(NextState(b)));
+
+#line  1114 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",486,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 354 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 354, this);
+#line 354 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 676 "Frontend/Parser/formula_rewrite.k"
+#line 354 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1128 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",676,kc_result);
+#line  1126 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",354,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 679 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 679, this);
-#line 679 "Frontend/Parser/formula_rewrite.k"
+#line 357 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 357, this);
+#line 357 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 679 "Frontend/Parser/formula_rewrite.k"
+#line 357 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1140 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",679,kc_result);
+#line  1138 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",357,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 731 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 731, this);
-#line 731 "Frontend/Parser/formula_rewrite.k"
+#line 465 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 465, this);
+#line 465 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 731 "Frontend/Parser/formula_rewrite.k"
+#line 465 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 731 "Frontend/Parser/formula_rewrite.k"
+#line 465 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Disjunction(ExPath(x), ExPath(y));
 
-#line  1154 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",731,kc_result);
+#line  1152 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",465,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1176,67 +1174,67 @@ tStatePredicate impl_tStatePredicate_AllPath::rewrite(rview kc_current_view_base
     switch(kc_current_view_base) {
 	case ctloperators_enum: {
 	    ctloperators_class& kc_current_view=static_cast<ctloperators_class&>(kc_current_view_base);
-#line 899 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 899, this);
-#line 899 "Frontend/Parser/formula_rewrite.k"
+#line 624 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 624, this);
+#line 624 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 899 "Frontend/Parser/formula_rewrite.k"
+#line 624 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AU(AtomicProposition(True()), x);
 
-#line  1187 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",899,kc_result);
+#line  1185 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",624,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 901 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 901, this);
-#line 901 "Frontend/Parser/formula_rewrite.k"
+#line 626 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 626, this);
+#line 626 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 901 "Frontend/Parser/formula_rewrite.k"
+#line 626 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AX(x);
 
-#line  1199 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",901,kc_result);
+#line  1197 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",626,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 904 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 904, this);
-#line 904 "Frontend/Parser/formula_rewrite.k"
+#line 629 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 629, this);
+#line 629 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 904 "Frontend/Parser/formula_rewrite.k"
+#line 629 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Negation(EU(AtomicProposition(True()), Negation(x)));
 
-#line  1211 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",904,kc_result);
+#line  1209 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",629,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 906 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 906, this);
-#line 906 "Frontend/Parser/formula_rewrite.k"
+#line 631 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 631, this);
+#line 631 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 906 "Frontend/Parser/formula_rewrite.k"
+#line 631 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 906 "Frontend/Parser/formula_rewrite.k"
+#line 631 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AU(x, y);
 
-#line  1225 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",906,kc_result);
+#line  1223 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",631,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 909 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Release)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 909, this);
-#line 909 "Frontend/Parser/formula_rewrite.k"
+#line 634 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Release)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 634, this);
+#line 634 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Release*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 909 "Frontend/Parser/formula_rewrite.k"
+#line 634 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Release*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 909 "Frontend/Parser/formula_rewrite.k"
+#line 634 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Negation(EU(Negation(x), Negation(y)));
 
-#line  1239 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",909,kc_result);
+#line  1237 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",634,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1244,15 +1242,15 @@ tStatePredicate impl_tStatePredicate_AllPath::rewrite(rview kc_current_view_base
 	}
 	case emptyquantifiers_enum: {
 	    emptyquantifiers_class& kc_current_view=static_cast<emptyquantifiers_class&>(kc_current_view_base);
-#line 770 "Frontend/Parser/formula_rewrite.k"
-	    if ((KC_TRACE_PROVIDED((not l_tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 770, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 770, this);
-#line 770 "Frontend/Parser/formula_rewrite.k"
+#line 497 "Frontend/Parser/formula_rewrite.k"
+	    if ((KC_TRACE_PROVIDED((not l_tStatePredicate_1->containsTemporal), "Frontend/Parser/formula_rewrite.k", 497, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 497, this);
+#line 497 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 770 "Frontend/Parser/formula_rewrite.k"
+#line 497 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1255 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",770,kc_result);
+#line  1253 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",497,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1260,125 +1258,153 @@ tStatePredicate impl_tStatePredicate_AllPath::rewrite(rview kc_current_view_base
 	}
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 697 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 697, this);
-#line 697 "Frontend/Parser/formula_rewrite.k"
+#line 375 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 375, this);
+#line 375 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 697 "Frontend/Parser/formula_rewrite.k"
+#line 375 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1271 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",697,kc_result);
+#line  1269 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",375,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 688 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 688, this);
-#line 688 "Frontend/Parser/formula_rewrite.k"
+#line 366 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 366, this);
+#line 366 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 688 "Frontend/Parser/formula_rewrite.k"
+#line 366 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1283 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",688,kc_result);
+#line  1281 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",366,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 691 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 691, this);
-#line 691 "Frontend/Parser/formula_rewrite.k"
+#line 369 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 369, this);
+#line 369 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 691 "Frontend/Parser/formula_rewrite.k"
+#line 369 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1295 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",691,kc_result);
+#line  1293 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",369,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 488 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 488, this);
-#line 488 "Frontend/Parser/formula_rewrite.k"
+#line 153 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 153, this);
+#line 153 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 488 "Frontend/Parser/formula_rewrite.k"
+#line 153 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1307 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",488,kc_result);
+#line  1305 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",153,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 491 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 491, this);
-#line 491 "Frontend/Parser/formula_rewrite.k"
+#line 156 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 156, this);
+#line 156 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 491 "Frontend/Parser/formula_rewrite.k"
+#line 156 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1319 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",491,kc_result);
+#line  1317 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",156,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 539 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 539, this);
-#line 539 "Frontend/Parser/formula_rewrite.k"
+#line 204 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 204, this);
+#line 204 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 539 "Frontend/Parser/formula_rewrite.k"
+#line 204 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1331 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",539,kc_result);
+#line  1329 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",204,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 545 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 545, this);
-#line 545 "Frontend/Parser/formula_rewrite.k"
+#line 210 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 210, this);
+#line 210 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 545 "Frontend/Parser/formula_rewrite.k"
+#line 210 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1343 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",545,kc_result);
+#line  1341 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",210,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 670 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 670, this);
-#line 670 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_1;
-#line 670 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
+#line 477 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 477, this);
+#line 477 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Conjunction*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
+#line 477 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_Conjunction*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_2;
+#line 477 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Conjunction(AllPath(Always(a)), AllPath(Always(b)));
 
 #line  1355 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",670,kc_result);
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",477,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 673 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 673, this);
-#line 673 "Frontend/Parser/formula_rewrite.k"
+#line 483 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 483, this);
+#line 483 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Conjunction*>(phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
+#line 483 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_Conjunction*>(phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_2;
+#line 483 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = Conjunction(AllPath(NextState(a)), AllPath(NextState(b)));
+
+#line  1369 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",483,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 348 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 348, this);
+#line 348 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 673 "Frontend/Parser/formula_rewrite.k"
+#line 348 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1367 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",673,kc_result);
+#line  1381 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",348,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 734 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 734, this);
-#line 734 "Frontend/Parser/formula_rewrite.k"
+#line 351 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 351, this);
+#line 351 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = l_tStatePredicate_1;
+#line 351 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = a;
+
+#line  1393 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",351,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 468 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 468, this);
+#line 468 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 734 "Frontend/Parser/formula_rewrite.k"
+#line 468 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 734 "Frontend/Parser/formula_rewrite.k"
+#line 468 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Conjunction(AllPath(x), AllPath(y));
 
-#line  1381 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",734,kc_result);
+#line  1407 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",468,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1405,17 +1431,17 @@ tStatePredicate impl_tStatePredicate_Equivalence::rewrite(rview kc_current_view_
     switch(kc_current_view_base) {
 	case goodbye_doublearrows_enum: {
 	    goodbye_doublearrows_class& kc_current_view=static_cast<goodbye_doublearrows_class&>(kc_current_view_base);
-#line 220 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 220, this);
-#line 220 "Frontend/Parser/formula_rewrite.k"
+#line 63 "Frontend/Parser/formula_rewrite.k"
+	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 63, this);
+#line 63 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 220 "Frontend/Parser/formula_rewrite.k"
+#line 63 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 221 "Frontend/Parser/formula_rewrite.k"
+#line 64 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Conjunction(Disjunction(x, Negation(y)), Disjunction(Negation(x), y));
 
-#line  1418 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",221,kc_result);
+#line  1444 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",64,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    }
@@ -1440,17 +1466,17 @@ tStatePredicate impl_tStatePredicate_Implication::rewrite(rview kc_current_view_
     switch(kc_current_view_base) {
 	case goodbye_singlearrows_enum: {
 	    goodbye_singlearrows_class& kc_current_view=static_cast<goodbye_singlearrows_class&>(kc_current_view_base);
-#line 226 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 226, this);
-#line 226 "Frontend/Parser/formula_rewrite.k"
+#line 69 "Frontend/Parser/formula_rewrite.k"
+	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 69, this);
+#line 69 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 226 "Frontend/Parser/formula_rewrite.k"
+#line 69 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 226 "Frontend/Parser/formula_rewrite.k"
+#line 69 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Disjunction(Negation(x), y);
 
-#line  1453 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",226,kc_result);
+#line  1479 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",69,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    }
@@ -1475,17 +1501,17 @@ tStatePredicate impl_tStatePredicate_ExclusiveDisjunction::rewrite(rview kc_curr
     switch(kc_current_view_base) {
 	case goodbye_xor_enum: {
 	    goodbye_xor_class& kc_current_view=static_cast<goodbye_xor_class&>(kc_current_view_base);
-#line 231 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 231, this);
-#line 231 "Frontend/Parser/formula_rewrite.k"
+#line 74 "Frontend/Parser/formula_rewrite.k"
+	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 74, this);
+#line 74 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 231 "Frontend/Parser/formula_rewrite.k"
+#line 74 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 231 "Frontend/Parser/formula_rewrite.k"
+#line 74 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Disjunction(Conjunction(x, Negation(y)), Conjunction(Negation(x), y));
 
-#line  1488 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",231,kc_result);
+#line  1514 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",74,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    }
@@ -1508,298 +1534,234 @@ tStatePredicate impl_tStatePredicate_Disjunction::rewrite(rview kc_current_view_
     tStatePredicate l_tStatePredicate_2 =
 	tStatePredicate_2->rewrite(kc_current_view_base);
     switch(kc_current_view_base) {
-	case simpletautology_enum: {
-	    simpletautology_class& kc_current_view=static_cast<simpletautology_class&>(kc_current_view_base);
-#line 963 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 963, this);
-#line 963 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_2;
-#line 963 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
-
-#line  1521 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",963,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 965 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 965, this);
-#line 965 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate t = l_tStatePredicate_1;
-#line 965 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = t;
-
-#line  1533 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",965,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 975 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 975, this);
-#line 975 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 975 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 975 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate z = l_tStatePredicate_2;
-#line 975 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = Disjunction(x, Disjunction(y, z));
-
-#line  1549 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",975,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 962 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 962, this);
-#line 962 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_1;
-#line 962 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
-
-#line  1561 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",962,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 964 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 964, this);
-#line 964 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate t = l_tStatePredicate_2;
-#line 964 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = t;
-
-#line  1573 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",964,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
 	case booleanlists_enum: {
 	    booleanlists_class& kc_current_view=static_cast<booleanlists_class&>(kc_current_view_base);
-#line 871 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 871, this);
-#line 871 "Frontend/Parser/formula_rewrite.k"
+#line 596 "Frontend/Parser/formula_rewrite.k"
+	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 596, this);
+#line 596 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 871 "Frontend/Parser/formula_rewrite.k"
+#line 596 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 871 "Frontend/Parser/formula_rewrite.k"
+#line 596 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = DisjunctionList(ConstDisjunction_list(x, ConstDisjunction_list(y, NiltDisjunction_list())));
 
-#line  1591 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",871,kc_result);
+#line  1549 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",596,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    }
 	}
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 570 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 570, this);
-#line 570 "Frontend/Parser/formula_rewrite.k"
+#line 426 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->pred->magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1 -> pred->magicnumber), "Frontend/Parser/formula_rewrite.k", 426, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 426, this);
+#line 426 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_1;
+#line 426 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 426 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1;
+#line 426 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  1568 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",426,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 432 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->pred->magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1 -> pred->magicnumber), "Frontend/Parser/formula_rewrite.k", 432, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 432, this);
+#line 432 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 432 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 432 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1;
+#line 432 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  1584 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",432,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 235 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 235, this);
+#line 235 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(True());
+
+#line  1594 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",235,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 236 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 236, this);
+#line 236 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(True());
 
 #line  1604 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",570,kc_result);
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",236,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 571 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 571, this);
-#line 571 "Frontend/Parser/formula_rewrite.k"
+#line 237 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 237, this);
+#line 237 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = l_tStatePredicate_2;
+#line 237 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = x;
+
+#line  1616 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",237,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 238 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 238, this);
+#line 238 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = l_tStatePredicate_2;
+#line 238 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = x;
+
+#line  1628 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",238,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 225 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 225, this);
+#line 225 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(True());
 
-#line  1614 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",571,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 572 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 572, this);
-#line 572 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_2;
-#line 572 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = x;
-
-#line  1626 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",572,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 573 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Disjunction) && (phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 573, this);
-#line 573 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_2;
-#line 573 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = x;
-
 #line  1638 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",573,kc_result);
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",225,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 560 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 560, this);
-#line 560 "Frontend/Parser/formula_rewrite.k"
+#line 226 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 226, this);
+#line 226 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(True());
 
 #line  1648 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",560,kc_result);
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",226,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 561 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 561, this);
-#line 561 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(True());
-
-#line  1658 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",561,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 562 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 562, this);
-#line 562 "Frontend/Parser/formula_rewrite.k"
+#line 227 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 227, this);
+#line 227 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 562 "Frontend/Parser/formula_rewrite.k"
+#line 227 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1670 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",562,kc_result);
+#line  1660 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",227,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 563 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 563, this);
-#line 563 "Frontend/Parser/formula_rewrite.k"
+#line 228 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 228, this);
+#line 228 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 563 "Frontend/Parser/formula_rewrite.k"
+#line 228 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1682 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",563,kc_result);
+#line  1672 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",228,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 746 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (l_tStatePredicate_2->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 746, this);
-#line 746 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 746 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_2)->tStatePredicate_1)->tStatePredicate_1;
-#line 746 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = ExPath(Eventually(Disjunction(a, b)));
+#line 121 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 121, this);
+#line 121 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate a = l_tStatePredicate_2;
+#line 121 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = a;
+
+#line  1684 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",121,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 123 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 123, this);
+#line 123 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate t = l_tStatePredicate_1;
+#line 123 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = t;
 
 #line  1696 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",746,kc_result);
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",123,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 752 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 752, this);
-#line 752 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_NextState*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 752 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_NextState*>(phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_2)->tStatePredicate_1)->tStatePredicate_1;
-#line 752 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = ExPath(NextState(Disjunction(a, b)));
-
-#line  1710 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",752,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 456 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 456, this);
-#line 456 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_2;
-#line 456 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
-
-#line  1722 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",456,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 458 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 458, this);
-#line 458 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate t = l_tStatePredicate_1;
-#line 458 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = t;
-
-#line  1734 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",458,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 717 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (l_tStatePredicate_2->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 717, this);
-#line 717 "Frontend/Parser/formula_rewrite.k"
+#line 451 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually) && (l_tStatePredicate_2->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 451, this);
+#line 451 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 717 "Frontend/Parser/formula_rewrite.k"
+#line 451 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1;
-#line 717 "Frontend/Parser/formula_rewrite.k"
+#line 451 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Eventually(Disjunction(x, y));
 
-#line  1748 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",717,kc_result);
+#line  1710 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",451,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 726 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 726, this);
-#line 726 "Frontend/Parser/formula_rewrite.k"
+#line 460 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 460, this);
+#line 460 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 726 "Frontend/Parser/formula_rewrite.k"
+#line 460 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_2)->tStatePredicate_1;
-#line 726 "Frontend/Parser/formula_rewrite.k"
+#line 460 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = NextState(Disjunction(x, y));
 
-#line  1762 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",726,kc_result);
+#line  1724 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",460,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 587 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 587, this);
-#line 587 "Frontend/Parser/formula_rewrite.k"
+#line 252 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 252, this);
+#line 252 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 587 "Frontend/Parser/formula_rewrite.k"
+#line 252 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 587 "Frontend/Parser/formula_rewrite.k"
+#line 252 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate z = l_tStatePredicate_2;
-#line 587 "Frontend/Parser/formula_rewrite.k"
+#line 252 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Disjunction(x, Disjunction(y, z));
 
-#line  1778 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",587,kc_result);
+#line  1740 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",252,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 455 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 455, this);
-#line 455 "Frontend/Parser/formula_rewrite.k"
+#line 120 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 120, this);
+#line 120 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 455 "Frontend/Parser/formula_rewrite.k"
+#line 120 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  1790 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",455,kc_result);
+#line  1752 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",120,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 457 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 457, this);
-#line 457 "Frontend/Parser/formula_rewrite.k"
+#line 122 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 122, this);
+#line 122 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate t = l_tStatePredicate_2;
-#line 457 "Frontend/Parser/formula_rewrite.k"
+#line 122 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = t;
 
-#line  1802 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",457,kc_result);
+#line  1764 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",122,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -1824,334 +1786,234 @@ tStatePredicate impl_tStatePredicate_Conjunction::rewrite(rview kc_current_view_
     tStatePredicate l_tStatePredicate_2 =
 	tStatePredicate_2->rewrite(kc_current_view_base);
     switch(kc_current_view_base) {
-	case simpletautology_enum: {
-	    simpletautology_class& kc_current_view=static_cast<simpletautology_class&>(kc_current_view_base);
-#line 957 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 957, this);
-#line 957 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_2;
-#line 957 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
-
-#line  1837 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",957,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 959 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 959, this);
-#line 959 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate f = l_tStatePredicate_1;
-#line 959 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = f;
-
-#line  1849 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",959,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 972 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 972, this);
-#line 972 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 972 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 972 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate z = l_tStatePredicate_2;
-#line 972 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = Conjunction(x, Conjunction(y, z));
-
-#line  1865 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",972,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 956 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 956, this);
-#line 956 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = l_tStatePredicate_1;
-#line 956 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = a;
-
-#line  1877 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",956,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 958 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 958, this);
-#line 958 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate f = l_tStatePredicate_2;
-#line 958 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = f;
-
-#line  1889 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",958,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	case dnf_enum: {
-	    dnf_class& kc_current_view=static_cast<dnf_class&>(kc_current_view_base);
-#line 932 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 932, this);
-#line 932 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 932 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate z = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 932 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_2;
-#line 933 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = Disjunction(Conjunction(y, x), Conjunction(z, x));
-
-#line  1909 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",933,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 928 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 928, this);
-#line 928 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate x = l_tStatePredicate_1;
-#line 928 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_1;
-#line 928 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate z = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_2)->tStatePredicate_2;
-#line 929 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = Disjunction(Conjunction(x, y), Conjunction(x, z));
-
-#line  1925 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",929,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
 	case booleanlists_enum: {
 	    booleanlists_class& kc_current_view=static_cast<booleanlists_class&>(kc_current_view_base);
-#line 867 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 867, this);
-#line 867 "Frontend/Parser/formula_rewrite.k"
+#line 592 "Frontend/Parser/formula_rewrite.k"
+	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 592, this);
+#line 592 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_1;
-#line 867 "Frontend/Parser/formula_rewrite.k"
+#line 592 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = l_tStatePredicate_2;
-#line 867 "Frontend/Parser/formula_rewrite.k"
+#line 592 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = ConjunctionList(ConstConjunction_list(x, ConstConjunction_list(y, NiltConjunction_list())));
 
-#line  1943 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",867,kc_result);
+#line  1801 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",592,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    }
 	}
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 575 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 575, this);
-#line 575 "Frontend/Parser/formula_rewrite.k"
+#line 423 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->pred->magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1 -> pred->magicnumber), "Frontend/Parser/formula_rewrite.k", 423, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 423, this);
+#line 423 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 423 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_2;
+#line 423 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1;
+#line 423 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  1820 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",423,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 429 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (l_tStatePredicate_2->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->pred->magicnumber == phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1 -> pred->magicnumber), "Frontend/Parser/formula_rewrite.k", 429, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 429, this);
+#line 429 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = l_tStatePredicate_1;
+#line 429 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 429 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition z = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1;
+#line 429 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  1836 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",429,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 240 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 240, this);
+#line 240 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  1956 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",575,kc_result);
+#line  1846 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",240,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 576 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 576, this);
-#line 576 "Frontend/Parser/formula_rewrite.k"
+#line 241 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 241, this);
+#line 241 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  1966 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",576,kc_result);
+#line  1856 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",241,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 577 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 577, this);
-#line 577 "Frontend/Parser/formula_rewrite.k"
+#line 242 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 242, this);
+#line 242 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 577 "Frontend/Parser/formula_rewrite.k"
+#line 242 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1978 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",577,kc_result);
+#line  1868 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",242,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 578 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 578, this);
-#line 578 "Frontend/Parser/formula_rewrite.k"
+#line 243 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_Conjunction) && (phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_2)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 243, this);
+#line 243 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 578 "Frontend/Parser/formula_rewrite.k"
+#line 243 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  1990 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",578,kc_result);
+#line  1880 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",243,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 565 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 565, this);
-#line 565 "Frontend/Parser/formula_rewrite.k"
+#line 230 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 230, this);
+#line 230 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2000 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",565,kc_result);
+#line  1890 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",230,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 566 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 566, this);
-#line 566 "Frontend/Parser/formula_rewrite.k"
+#line 231 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 231, this);
+#line 231 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2010 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",566,kc_result);
+#line  1900 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",231,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 567 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 567, this);
-#line 567 "Frontend/Parser/formula_rewrite.k"
+#line 232 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 232, this);
+#line 232 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 567 "Frontend/Parser/formula_rewrite.k"
+#line 232 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  2022 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",567,kc_result);
+#line  1912 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",232,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 568 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 568, this);
-#line 568 "Frontend/Parser/formula_rewrite.k"
+#line 233 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock) && (l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 233, this);
+#line 233 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = l_tStatePredicate_2;
-#line 568 "Frontend/Parser/formula_rewrite.k"
+#line 233 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  2034 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",568,kc_result);
+#line  1924 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",233,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 743 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (l_tStatePredicate_2->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 743, this);
-#line 743 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 743 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_2)->tStatePredicate_1)->tStatePredicate_1;
-#line 743 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AllPath(Always(Conjunction(a, b)));
-
-#line  2048 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",743,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 749 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_2)->tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 749, this);
-#line 749 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate a = phylum_cast<const impl_tStatePredicate_NextState*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 749 "Frontend/Parser/formula_rewrite.k"
-		const tStatePredicate b = phylum_cast<const impl_tStatePredicate_NextState*>(phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_2)->tStatePredicate_1)->tStatePredicate_1;
-#line 749 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AllPath(NextState(Conjunction(a, b)));
-
-#line  2062 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",749,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 450 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 450, this);
-#line 450 "Frontend/Parser/formula_rewrite.k"
+#line 115 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 115, this);
+#line 115 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_2;
-#line 450 "Frontend/Parser/formula_rewrite.k"
+#line 115 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  2074 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",450,kc_result);
+#line  1936 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",115,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 452 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 452, this);
-#line 452 "Frontend/Parser/formula_rewrite.k"
+#line 117 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 117, this);
+#line 117 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate f = l_tStatePredicate_1;
-#line 452 "Frontend/Parser/formula_rewrite.k"
+#line 117 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = f;
 
-#line  2086 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",452,kc_result);
+#line  1948 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",117,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 720 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (l_tStatePredicate_2->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 720, this);
-#line 720 "Frontend/Parser/formula_rewrite.k"
+#line 454 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always) && (l_tStatePredicate_2->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 454, this);
+#line 454 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 720 "Frontend/Parser/formula_rewrite.k"
+#line 454 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_2)->tStatePredicate_1;
-#line 720 "Frontend/Parser/formula_rewrite.k"
+#line 454 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Always(Conjunction(x, y));
 
-#line  2100 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",720,kc_result);
+#line  1962 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",454,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 723 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 723, this);
-#line 723 "Frontend/Parser/formula_rewrite.k"
+#line 457 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState) && (l_tStatePredicate_2->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 457, this);
+#line 457 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 723 "Frontend/Parser/formula_rewrite.k"
+#line 457 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_2)->tStatePredicate_1;
-#line 723 "Frontend/Parser/formula_rewrite.k"
+#line 457 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = NextState(Conjunction(x, y));
 
-#line  2114 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",723,kc_result);
+#line  1976 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",457,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 584 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 584, this);
-#line 584 "Frontend/Parser/formula_rewrite.k"
+#line 249 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 249, this);
+#line 249 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 584 "Frontend/Parser/formula_rewrite.k"
+#line 249 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 584 "Frontend/Parser/formula_rewrite.k"
+#line 249 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate z = l_tStatePredicate_2;
-#line 584 "Frontend/Parser/formula_rewrite.k"
+#line 249 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Conjunction(x, Conjunction(y, z));
 
-#line  2130 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",584,kc_result);
+#line  1992 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",249,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 449 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 449, this);
-#line 449 "Frontend/Parser/formula_rewrite.k"
+#line 114 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 114, this);
+#line 114 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate a = l_tStatePredicate_1;
-#line 449 "Frontend/Parser/formula_rewrite.k"
+#line 114 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = a;
 
-#line  2142 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",449,kc_result);
+#line  2004 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",114,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 451 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 451, this);
-#line 451 "Frontend/Parser/formula_rewrite.k"
+#line 116 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_2->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_2)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 116, this);
+#line 116 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate f = l_tStatePredicate_2;
-#line 451 "Frontend/Parser/formula_rewrite.k"
+#line 116 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = f;
 
-#line  2154 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",451,kc_result);
+#line  2016 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",116,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -2176,123 +2038,123 @@ tStatePredicate impl_tStatePredicate_Negation::rewrite(rview kc_current_view_bas
     switch(kc_current_view_base) {
 	case simpleneg_enum: {
 	    simpleneg_class& kc_current_view=static_cast<simpleneg_class&>(kc_current_view_base);
-#line 840 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 840, this);
-#line 840 "Frontend/Parser/formula_rewrite.k"
+#line 587 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 587, this);
+#line 587 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tAtomicProposition_1;
+#line 587 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(x);
+
+#line  2049 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",587,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 569 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 569, this);
+#line 569 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2185 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",840,kc_result);
+#line  2059 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",569,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 843 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 843, this);
-#line 843 "Frontend/Parser/formula_rewrite.k"
+#line 572 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 572, this);
+#line 572 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(True());
 
-#line  2195 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",843,kc_result);
+#line  2069 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",572,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 846 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 846, this);
-#line 846 "Frontend/Parser/formula_rewrite.k"
+#line 575 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 575, this);
+#line 575 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(NoDeadlock());
 
-#line  2205 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",846,kc_result);
+#line  2079 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",575,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 849 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 849, this);
-#line 849 "Frontend/Parser/formula_rewrite.k"
+#line 578 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 578, this);
+#line 578 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(Deadlock());
 
-#line  2215 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",849,kc_result);
+#line  2089 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",578,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 852 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Fireable)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 852, this);
-#line 852 "Frontend/Parser/formula_rewrite.k"
-		const integer t = phylum_cast<const impl_tAtomicProposition_Fireable*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->integer_1;
-#line 852 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(Unfireable(t));
+#line 586 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 586, this);
+#line 586 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 586 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(NNegation(x));
 
-#line  2227 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",852,kc_result);
+#line  2101 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",586,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 855 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Unfireable)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 855, this);
-#line 855 "Frontend/Parser/formula_rewrite.k"
-		const integer t = phylum_cast<const impl_tAtomicProposition_Unfireable*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->integer_1;
-#line 855 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(Fireable(t));
+#line 561 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Negation)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 561, this);
+#line 561 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Negation*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 561 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = x;
 
-#line  2239 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",855,kc_result);
+#line  2113 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",561,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 858 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_GreaterAtomicProposition)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 858, this);
-#line 858 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = phylum_cast<const impl_tAtomicProposition_GreaterAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_1;
-#line 858 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tAtomicProposition_GreaterAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_2;
-#line 858 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(LessEqualAtomicProposition(p, n));
-
-#line  2253 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",858,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 861 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_LessEqualAtomicProposition)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 861, this);
-#line 861 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_1;
-#line 861 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_2;
-#line 861 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(GreaterAtomicProposition(p, n));
-
-#line  2267 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",861,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 834 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 834, this);
-#line 834 "Frontend/Parser/formula_rewrite.k"
+#line 563 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 563, this);
+#line 563 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 834 "Frontend/Parser/formula_rewrite.k"
+#line 563 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 834 "Frontend/Parser/formula_rewrite.k"
+#line 563 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Disjunction(Negation(x), Negation(y));
 
-#line  2281 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",834,kc_result);
+#line  2127 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",563,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 837 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 837, this);
-#line 837 "Frontend/Parser/formula_rewrite.k"
+#line 566 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 566, this);
+#line 566 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 837 "Frontend/Parser/formula_rewrite.k"
+#line 566 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 837 "Frontend/Parser/formula_rewrite.k"
+#line 566 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Conjunction(Negation(x), Negation(y));
 
-#line  2295 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",837,kc_result);
+#line  2141 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",566,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+		    goto kc_rewrite_default;
+	}
+	case singletemporal_enum: {
+	    singletemporal_class& kc_current_view=static_cast<singletemporal_class&>(kc_current_view_base);
+#line 529 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_Negation)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 529, this);
+#line 529 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Negation*>(l_tStatePredicate_1)->tStatePredicate_1;
+#line 529 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = y;
+
+#line  2157 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",529,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -2300,223 +2162,195 @@ tStatePredicate impl_tStatePredicate_Negation::rewrite(rview kc_current_view_bas
 	}
 	case tautology_enum: {
 	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
-#line 606 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_GreaterAtomicProposition)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 606, this);
-#line 606 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = phylum_cast<const impl_tAtomicProposition_GreaterAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_1;
-#line 606 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tAtomicProposition_GreaterAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_2;
-#line 606 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(LessEqualAtomicProposition(p, n));
+#line 298 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 298, this);
+#line 298 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tAtomicProposition_1;
+#line 298 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(x);
 
-#line  2313 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",606,kc_result);
+#line  2173 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",298,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 609 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_LessEqualAtomicProposition)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 609, this);
-#line 609 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_1;
-#line 609 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->tTerm_2;
-#line 609 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(GreaterAtomicProposition(p, n));
-
-#line  2327 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",609,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 612 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 612, this);
-#line 612 "Frontend/Parser/formula_rewrite.k"
+#line 277 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 277, this);
+#line 277 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2337 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",612,kc_result);
+#line  2183 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",277,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 615 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 615, this);
-#line 615 "Frontend/Parser/formula_rewrite.k"
+#line 280 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 280, this);
+#line 280 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(True());
 
-#line  2347 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",615,kc_result);
+#line  2193 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",280,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 618 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 618, this);
-#line 618 "Frontend/Parser/formula_rewrite.k"
+#line 283 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 283, this);
+#line 283 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(NoDeadlock());
 
-#line  2357 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",618,kc_result);
+#line  2203 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",283,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 621 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 621, this);
-#line 621 "Frontend/Parser/formula_rewrite.k"
+#line 286 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 286, this);
+#line 286 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AtomicProposition(Deadlock());
 
-#line  2367 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",621,kc_result);
+#line  2213 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",286,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 624 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Fireable)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 624, this);
-#line 624 "Frontend/Parser/formula_rewrite.k"
-		const integer t = phylum_cast<const impl_tAtomicProposition_Fireable*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->integer_1;
-#line 624 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(Unfireable(t));
+#line 295 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 295, this);
+#line 295 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1;
+#line 295 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(NNegation(x));
 
-#line  2379 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",624,kc_result);
+#line  2225 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",295,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 627 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Unfireable)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 627, this);
-#line 627 "Frontend/Parser/formula_rewrite.k"
-		const integer t = phylum_cast<const impl_tAtomicProposition_Unfireable*>(phylum_cast<const impl_tStatePredicate_AtomicProposition*>(l_tStatePredicate_1)->tAtomicProposition_1)->integer_1;
-#line 627 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = AtomicProposition(Fireable(t));
-
-#line  2391 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",627,kc_result);
-		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 632 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Negation)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 632, this);
-#line 632 "Frontend/Parser/formula_rewrite.k"
+#line 310 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Negation)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 310, this);
+#line 310 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Negation*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 632 "Frontend/Parser/formula_rewrite.k"
+#line 310 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = x;
 
-#line  2403 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",632,kc_result);
+#line  2237 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",310,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 635 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 635, this);
-#line 635 "Frontend/Parser/formula_rewrite.k"
+#line 313 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Conjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 313, this);
+#line 313 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 635 "Frontend/Parser/formula_rewrite.k"
+#line 313 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Conjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 635 "Frontend/Parser/formula_rewrite.k"
+#line 313 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Disjunction(Negation(x), Negation(y));
 
-#line  2417 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",635,kc_result);
+#line  2251 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",313,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 638 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 638, this);
-#line 638 "Frontend/Parser/formula_rewrite.k"
+#line 316 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Disjunction)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 316, this);
+#line 316 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 638 "Frontend/Parser/formula_rewrite.k"
+#line 316 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Disjunction*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 638 "Frontend/Parser/formula_rewrite.k"
+#line 316 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Conjunction(Negation(x), Negation(y));
 
-#line  2431 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",638,kc_result);
+#line  2265 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",316,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 643 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 643, this);
-#line 643 "Frontend/Parser/formula_rewrite.k"
+#line 321 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_AllPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 321, this);
+#line 321 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_AllPath*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 643 "Frontend/Parser/formula_rewrite.k"
+#line 321 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = ExPath(Negation(x));
 
-#line  2443 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",643,kc_result);
+#line  2277 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",321,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 646 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 646, this);
-#line 646 "Frontend/Parser/formula_rewrite.k"
+#line 324 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_ExPath)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 324, this);
+#line 324 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_ExPath*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 646 "Frontend/Parser/formula_rewrite.k"
+#line 324 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = AllPath(Negation(x));
 
-#line  2455 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",646,kc_result);
+#line  2289 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",324,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 649 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 649, this);
-#line 649 "Frontend/Parser/formula_rewrite.k"
+#line 327 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Always)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 327, this);
+#line 327 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Always*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 649 "Frontend/Parser/formula_rewrite.k"
+#line 327 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Eventually(Negation(x));
 
-#line  2467 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",649,kc_result);
+#line  2301 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",327,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 652 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 652, this);
-#line 652 "Frontend/Parser/formula_rewrite.k"
+#line 330 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Eventually)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 330, this);
+#line 330 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Eventually*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 652 "Frontend/Parser/formula_rewrite.k"
+#line 330 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Always(Negation(x));
 
-#line  2479 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",652,kc_result);
+#line  2313 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",330,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 655 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 655, this);
-#line 655 "Frontend/Parser/formula_rewrite.k"
+#line 333 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_NextState)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 333, this);
+#line 333 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_NextState*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 655 "Frontend/Parser/formula_rewrite.k"
+#line 333 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = NextState(Negation(x));
 
-#line  2491 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",655,kc_result);
+#line  2325 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",333,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 658 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 658, this);
-#line 658 "Frontend/Parser/formula_rewrite.k"
+#line 336 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Until)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 336, this);
+#line 336 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 658 "Frontend/Parser/formula_rewrite.k"
+#line 336 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Until*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 658 "Frontend/Parser/formula_rewrite.k"
+#line 336 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Release(Negation(x), Negation(y));
 
-#line  2505 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",658,kc_result);
+#line  2339 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",336,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 661 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_Release)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 661, this);
-#line 661 "Frontend/Parser/formula_rewrite.k"
+#line 339 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_Release)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 339, this);
+#line 339 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate x = phylum_cast<const impl_tStatePredicate_Release*>(l_tStatePredicate_1)->tStatePredicate_1;
-#line 661 "Frontend/Parser/formula_rewrite.k"
+#line 339 "Frontend/Parser/formula_rewrite.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Release*>(l_tStatePredicate_1)->tStatePredicate_2;
-#line 661 "Frontend/Parser/formula_rewrite.k"
+#line 339 "Frontend/Parser/formula_rewrite.k"
 		tStatePredicate kc_result = Until(Negation(x), Negation(y));
 
-#line  2519 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",661,kc_result);
+#line  2353 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",339,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -2539,83 +2373,133 @@ tStatePredicate impl_tStatePredicate_AtomicProposition::rewrite(rview kc_current
     tAtomicProposition l_tAtomicProposition_1 =
 	tAtomicProposition_1->rewrite(kc_current_view_base);
     switch(kc_current_view_base) {
-	case leq_enum: {
-	    leq_class& kc_current_view=static_cast<leq_class&>(kc_current_view_base);
-#line 412 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tAtomicProposition_1->prod_sel() == sel_EqualsAtomicProposition) && (phylum_cast<const impl_tAtomicProposition_EqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 412, this);
-#line 412 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = phylum_cast<const impl_tAtomicProposition_EqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_1;
-#line 412 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tAtomicProposition_EqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_2;
-#line 412 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tAtomicProposition_EqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_2)->integer_1;
-#line 412 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = Conjunction(AtomicProposition(LessEqualAtomicProposition(x, n)), AtomicProposition(GreaterAtomicProposition(x, Number(minus(y, mkinteger(1))))));
+	case tautology_enum: {
+	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
+#line 101 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1->pred->magicnumber == MAGIC_NUMBER_FALSE), "Frontend/Parser/formula_rewrite.k", 101, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 101, this);
+#line 101 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 101 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1;
+#line 101 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(True());
 
-#line  2556 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",412,kc_result);
+#line  2388 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",101,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 415 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tAtomicProposition_1->prod_sel() == sel_NotEqualsAtomicProposition) && (phylum_cast<const impl_tAtomicProposition_NotEqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 415, this);
-#line 415 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = phylum_cast<const impl_tAtomicProposition_NotEqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_1;
-#line 415 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tAtomicProposition_NotEqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_2;
-#line 415 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tAtomicProposition_NotEqualsAtomicProposition*>(l_tAtomicProposition_1)->tTerm_2)->integer_1;
-#line 415 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = Disjunction(AtomicProposition(LessEqualAtomicProposition(x, Number(minus(y, mkinteger(1))))), AtomicProposition(GreaterAtomicProposition(x, n)));
+#line 103 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1->pred->magicnumber == MAGIC_NUMBER_TRUE), "Frontend/Parser/formula_rewrite.k", 103, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 103, this);
+#line 103 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 103 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1;
+#line 103 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2572 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",415,kc_result);
+#line  2402 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",103,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-		    goto kc_rewrite_default;
-	}
-	case goodbye_initial_enum: {
-	    goodbye_initial_class& kc_current_view=static_cast<goodbye_initial_class&>(kc_current_view_base);
-#line 246 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tAtomicProposition_1->prod_sel() == sel_Initial)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 246, this);
-#line 246 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = INITIAL_unfolder();
+#line 93 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED(((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->shape == AT_TRUE), "Frontend/Parser/formula_rewrite.k", 93, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 93, this);
+#line 93 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 93 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(True());
 
-#line  2586 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",246,kc_result);
+#line  2414 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",93,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-		    goto kc_rewrite_default;
-	}
-	case goodbye_unfireable_enum: {
-	    goodbye_unfireable_class& kc_current_view=static_cast<goodbye_unfireable_class&>(kc_current_view_base);
-#line 241 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tAtomicProposition_1->prod_sel() == sel_Unfireable)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 241, this);
-#line 241 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tAtomicProposition_Unfireable*>(l_tAtomicProposition_1)->integer_1;
-#line 241 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = UNFIREABLE_unfolder(x);
+#line 95 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED(((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->shape == AT_FALSE), "Frontend/Parser/formula_rewrite.k", 95, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 95, this);
+#line 95 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 95 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2602 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",241,kc_result);
+#line  2426 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",95,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-		    goto kc_rewrite_default;
-	}
-	case goodbye_fireable_enum: {
-	    goodbye_fireable_class& kc_current_view=static_cast<goodbye_fireable_class&>(kc_current_view_base);
-#line 236 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tAtomicProposition_1->prod_sel() == sel_Fireable)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 236, this);
-#line 236 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tAtomicProposition_Fireable*>(l_tAtomicProposition_1)->integer_1;
-#line 236 "Frontend/Parser/formula_rewrite.k"
-		tStatePredicate kc_result = FIREABLE_unfolder(x);
+#line 97 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((l_tAtomicProposition_1->pred->magicnumber == MAGIC_NUMBER_FALSE), "Frontend/Parser/formula_rewrite.k", 97, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 97, this);
+#line 97 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 97 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = l_tAtomicProposition_1;
+#line 97 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(False());
 
-#line  2618 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",236,kc_result);
+#line  2440 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",97,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 99 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((l_tAtomicProposition_1->pred->magicnumber == MAGIC_NUMBER_TRUE), "Frontend/Parser/formula_rewrite.k", 99, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 99, this);
+#line 99 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 99 "Frontend/Parser/formula_rewrite.k"
+		const tAtomicProposition x = l_tAtomicProposition_1;
+#line 99 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(True());
+
+#line  2454 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",99,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 105 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->shape == AT_DL) && ((DeadlockPredicate*)((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->formula))->sign), "Frontend/Parser/formula_rewrite.k", 105, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 105, this);
+#line 105 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 105 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(Deadlock());
+
+#line  2466 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",105,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 107 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->shape == AT_DL) && !(((DeadlockPredicate*)((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->formula))->sign)), "Frontend/Parser/formula_rewrite.k", 107, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 107, this);
+#line 107 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 107 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(NoDeadlock());
+
+#line  2478 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",107,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 109 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->shape == AT_COMP) && (((AtomicStatePredicate*)((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->formula))->cardPos == 0) && (((AtomicStatePredicate*)((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->formula))->threshold >= 0)), "Frontend/Parser/formula_rewrite.k", 109, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 109, this);
+#line 109 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 109 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(True());
+
+#line  2490 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",109,kc_result);
+		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
+
+	    } else
+#line 111 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_Elementary) && (KC_TRACE_PROVIDED((((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->shape == AT_COMP) && (((AtomicStatePredicate*)((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->formula))->cardNeg == 0) && (((AtomicStatePredicate*)((((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1))->formula))->threshold < 0)), "Frontend/Parser/formula_rewrite.k", 111, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 111, this);
+#line 111 "Frontend/Parser/formula_rewrite.k"
+		const tStatePredicate f = (((l_tAtomicProposition_1 == tAtomicProposition_1)) ? this : AtomicProposition(l_tAtomicProposition_1));
+#line 111 "Frontend/Parser/formula_rewrite.k"
+		tStatePredicate kc_result = AtomicProposition(False());
+
+#line  2502 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",111,kc_result);
 		return (const_cast<const impl_tStatePredicate*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -2645,17 +2529,17 @@ tConjunction_list impl_tConjunction_list::rewrite(rview kc_current_view_base)
 	switch(kc_current_view_base) {
 	    case booleanlists_enum: {
 		booleanlists_class& kc_current_view=static_cast<booleanlists_class&>(kc_current_view_base);
-#line 868 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_ConjunctionList)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 868, this);
-#line 868 "Frontend/Parser/formula_rewrite.k"
+#line 593 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_ConjunctionList)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 593, this);
+#line 593 "Frontend/Parser/formula_rewrite.k"
 		    const tConjunction_list x = phylum_cast<const impl_tStatePredicate_ConjunctionList*>(l_tStatePredicate_1)->tConjunction_list_1;
-#line 868 "Frontend/Parser/formula_rewrite.k"
+#line 593 "Frontend/Parser/formula_rewrite.k"
 		    const tConjunction_list y = l_tConjunction_list_1;
-#line 868 "Frontend/Parser/formula_rewrite.k"
+#line 593 "Frontend/Parser/formula_rewrite.k"
 		    tConjunction_list kc_result = concat(x, y);
 
-#line  2658 "ast-system-rk.cc"
-		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",868,kc_result);
+#line  2542 "ast-system-rk.cc"
+		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",593,kc_result);
 		    return (const_cast<const impl_tConjunction_list*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 		} else
@@ -2685,17 +2569,17 @@ tDisjunction_list impl_tDisjunction_list::rewrite(rview kc_current_view_base)
 	switch(kc_current_view_base) {
 	    case booleanlists_enum: {
 		booleanlists_class& kc_current_view=static_cast<booleanlists_class&>(kc_current_view_base);
-#line 872 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tStatePredicate_1->prod_sel() == sel_DisjunctionList)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 872, this);
-#line 872 "Frontend/Parser/formula_rewrite.k"
+#line 597 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tStatePredicate_1->prod_sel() == sel_DisjunctionList)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 597, this);
+#line 597 "Frontend/Parser/formula_rewrite.k"
 		    const tDisjunction_list x = phylum_cast<const impl_tStatePredicate_DisjunctionList*>(l_tStatePredicate_1)->tDisjunction_list_1;
-#line 872 "Frontend/Parser/formula_rewrite.k"
+#line 597 "Frontend/Parser/formula_rewrite.k"
 		    const tDisjunction_list y = l_tDisjunction_list_1;
-#line 872 "Frontend/Parser/formula_rewrite.k"
+#line 597 "Frontend/Parser/formula_rewrite.k"
 		    tDisjunction_list kc_result = concat(x, y);
 
-#line  2698 "ast-system-rk.cc"
-		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",872,kc_result);
+#line  2582 "ast-system-rk.cc"
+		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",597,kc_result);
 		    return (const_cast<const impl_tDisjunction_list*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 		} else
@@ -2711,38 +2595,6 @@ tDisjunction_list impl_tDisjunction_list::rewrite(rview kc_current_view_base)
 	    kc_result->rewrite_members(this);
 	    return kc_result;
 	}   }
-}
-
-tAtomicProposition impl_tAtomicProposition_Unfireable::rewrite(rview kc_current_view_base)
-{
-    integer l_integer_1 =
-	integer_1->rewrite(kc_current_view_base);
-    if ((l_integer_1 == integer_1))
-	return this;
-    else {
-	impl_tAtomicProposition_Unfireable* kc_result= Unfireable(l_integer_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tAtomicProposition impl_tAtomicProposition_Fireable::rewrite(rview kc_current_view_base)
-{
-    integer l_integer_1 =
-	integer_1->rewrite(kc_current_view_base);
-    if ((l_integer_1 == integer_1))
-	return this;
-    else {
-	impl_tAtomicProposition_Fireable* kc_result= Fireable(l_integer_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tAtomicProposition impl_tAtomicProposition_Initial::rewrite(rview kc_current_view_base)
-{
-    return this;
-
 }
 
 tAtomicProposition impl_tAtomicProposition_Deadlock::rewrite(rview kc_current_view_base)
@@ -2769,769 +2621,61 @@ tAtomicProposition impl_tAtomicProposition_True::rewrite(rview kc_current_view_b
 
 }
 
-tAtomicProposition impl_tAtomicProposition_LessEqualAtomicProposition::rewrite(rview kc_current_view_base)
+tAtomicProposition impl_tAtomicProposition_NNegation::rewrite(rview kc_current_view_base)
 {
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
+    tAtomicProposition l_tAtomicProposition_1 =
+	tAtomicProposition_1->rewrite(kc_current_view_base);
     switch(kc_current_view_base) {
-	case leq_enum: {
-	    leq_class& kc_current_view=static_cast<leq_class&>(kc_current_view_base);
-#line 426 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value <= phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 426, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 426, this);
-#line 426 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 426 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 426 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  2791 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",426,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 427 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value > phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 427, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 427, this);
-#line 427 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 427 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 427 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  2805 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",427,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 310 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 310, this);
-#line 310 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 310 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 310 "Frontend/Parser/formula_rewrite.k"
-		const integer z = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 310 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(y, Number(minus(z, x)));
-
-#line  2825 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",310,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 374 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value <= phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 374, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 374, this);
-#line 374 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 374 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 374 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  2839 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",374,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 375 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value > phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 375, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 375, this);
-#line 375 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 375 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 375 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  2853 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",375,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 319 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 319, this);
-#line 319 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 319 "Frontend/Parser/formula_rewrite.k"
-		const tTerm m = l_tTerm_2;
-#line 319 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(Product(mkinteger(1), n), m);
-
-#line  2867 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",319,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 363 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value == OMEGA), "Frontend/Parser/formula_rewrite.k", 363, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 363, this);
-#line 363 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 363 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  2879 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",363,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 287 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 287, this);
-#line 287 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 287 "Frontend/Parser/formula_rewrite.k"
-		const tTerm s = l_tTerm_2;
-#line 287 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(Difference(x, s), Number(mkinteger(0)));
-
-#line  2893 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",287,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 294 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 294, this);
-#line 294 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 294 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = l_tTerm_2;
-#line 294 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(Difference(x, p), Number(mkinteger(0)));
-
-#line  2907 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",294,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 301 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 301, this);
-#line 301 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 301 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 301 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(Difference(x, n), Number(mkinteger(0)));
-
-#line  2921 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",301,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tAtomicProposition_LessEqualAtomicProposition* kc_result= LessEqualAtomicProposition(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tAtomicProposition impl_tAtomicProposition_LessAtomicProposition::rewrite(rview kc_current_view_base)
-{
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case leq_enum: {
-	    leq_class& kc_current_view=static_cast<leq_class&>(kc_current_view_base);
-#line 421 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 421, this);
-#line 421 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 421 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 421 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(x, Number(minus(y, mkinteger(1))));
-
-#line  2958 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",421,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 311 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 311, this);
-#line 311 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 311 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 311 "Frontend/Parser/formula_rewrite.k"
-		const integer z = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 311 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessAtomicProposition(y, Number(minus(z, x)));
-
-#line  2978 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",311,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 376 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value < phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 376, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 376, this);
-#line 376 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 376 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 376 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  2992 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",376,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 377 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value >= phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 377, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 377, this);
-#line 377 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 377 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 377 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  3006 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",377,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 320 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 320, this);
-#line 320 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 320 "Frontend/Parser/formula_rewrite.k"
-		const tTerm m = l_tTerm_2;
-#line 320 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessAtomicProposition(Product(mkinteger(1), n), m);
-
-#line  3020 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",320,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 357 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value == OMEGA), "Frontend/Parser/formula_rewrite.k", 357, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 357, this);
-#line 357 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 357 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 357 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(x, Number(mkinteger(FINITE)));
-
-#line  3034 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",357,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 288 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 288, this);
-#line 288 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 288 "Frontend/Parser/formula_rewrite.k"
-		const tTerm s = l_tTerm_2;
-#line 288 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessAtomicProposition(Difference(x, s), Number(mkinteger(0)));
-
-#line  3048 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",288,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 295 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 295, this);
-#line 295 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 295 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = l_tTerm_2;
-#line 295 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessAtomicProposition(Difference(x, p), Number(mkinteger(0)));
-
-#line  3062 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",295,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
+	case tautology_enum: {
+	    tautology_class& kc_current_view=static_cast<tautology_class&>(kc_current_view_base);
 #line 302 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 302, this);
+	    if ((l_tAtomicProposition_1->prod_sel() == sel_Deadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 302, this);
 #line 302 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 302 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 302 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessAtomicProposition(Difference(x, n), Number(mkinteger(0)));
+		tAtomicProposition kc_result = NoDeadlock();
 
-#line  3076 "ast-system-rk.cc"
+#line  2637 "ast-system-rk.cc"
 		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",302,kc_result);
 		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tAtomicProposition_LessAtomicProposition* kc_result= LessAtomicProposition(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tAtomicProposition impl_tAtomicProposition_GreaterEqualAtomicProposition::rewrite(rview kc_current_view_base)
-{
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case leq_enum: {
-	    leq_class& kc_current_view=static_cast<leq_class&>(kc_current_view_base);
-#line 418 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 418, this);
-#line 418 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 418 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 418 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterAtomicProposition(x, Number(minus(y, mkinteger(1))));
-
-#line  3113 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",418,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 312 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 312, this);
-#line 312 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 312 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 312 "Frontend/Parser/formula_rewrite.k"
-		const integer z = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 312 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterEqualAtomicProposition(y, Number(minus(z, x)));
-
-#line  3133 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",312,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 378 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value >= phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 378, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 378, this);
-#line 378 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 378 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 378 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  3147 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",378,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 379 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value < phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 379, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 379, this);
-#line 379 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 379 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 379 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  3161 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",379,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 321 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 321, this);
-#line 321 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 321 "Frontend/Parser/formula_rewrite.k"
-		const tTerm m = l_tTerm_2;
-#line 321 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterEqualAtomicProposition(Product(mkinteger(1), n), m);
-
-#line  3175 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",321,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 366 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value == OMEGA), "Frontend/Parser/formula_rewrite.k", 366, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 366, this);
-#line 366 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 366 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 366 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(Product(mkinteger(-1), x), Number(minus(mkinteger(0), y)));
-
-#line  3189 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",366,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 289 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 289, this);
-#line 289 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 289 "Frontend/Parser/formula_rewrite.k"
-		const tTerm s = l_tTerm_2;
-#line 289 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterEqualAtomicProposition(Difference(x, s), Number(mkinteger(0)));
-
-#line  3203 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",289,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 296 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 296, this);
-#line 296 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 296 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = l_tTerm_2;
-#line 296 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterEqualAtomicProposition(Difference(x, p), Number(mkinteger(0)));
-
-#line  3217 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",296,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
 #line 303 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 303, this);
+		if ((l_tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 303, this);
 #line 303 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 303 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 303 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterEqualAtomicProposition(Difference(x, n), Number(mkinteger(0)));
+		tAtomicProposition kc_result = Deadlock();
 
-#line  3231 "ast-system-rk.cc"
+#line  2647 "ast-system-rk.cc"
 		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",303,kc_result);
 		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tAtomicProposition_GreaterEqualAtomicProposition* kc_result= GreaterEqualAtomicProposition(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tAtomicProposition impl_tAtomicProposition_GreaterAtomicProposition::rewrite(rview kc_current_view_base)
-{
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case leq_enum: {
-	    leq_class& kc_current_view=static_cast<leq_class&>(kc_current_view_base);
-#line 430 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value > phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 430, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 430, this);
-#line 430 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 430 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 430 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  3268 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",430,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 431 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value <= phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 431, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 431, this);
-#line 431 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 431 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 431 "Frontend/Parser/formula_rewrite.k"
+#line 304 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_True)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 304, this);
+#line 304 "Frontend/Parser/formula_rewrite.k"
 		tAtomicProposition kc_result = False();
 
-#line  3282 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",431,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 313 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 313, this);
-#line 313 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 313 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 313 "Frontend/Parser/formula_rewrite.k"
-		const integer z = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 313 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterAtomicProposition(y, Number(minus(z, x)));
-
-#line  3302 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",313,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 380 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value > phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 380, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 380, this);
-#line 380 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 380 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 380 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  3316 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",380,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 381 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value <= phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 381, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 381, this);
-#line 381 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 381 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 381 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  3330 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",381,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 322 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 322, this);
-#line 322 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 322 "Frontend/Parser/formula_rewrite.k"
-		const tTerm m = l_tTerm_2;
-#line 322 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterAtomicProposition(Product(mkinteger(1), n), m);
-
-#line  3344 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",322,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 360 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value == OMEGA), "Frontend/Parser/formula_rewrite.k", 360, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 360, this);
-#line 360 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 360 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  3356 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",360,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 290 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 290, this);
-#line 290 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 290 "Frontend/Parser/formula_rewrite.k"
-		const tTerm s = l_tTerm_2;
-#line 290 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterAtomicProposition(Difference(x, s), Number(mkinteger(0)));
-
-#line  3370 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",290,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 297 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 297, this);
-#line 297 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 297 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = l_tTerm_2;
-#line 297 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterAtomicProposition(Difference(x, p), Number(mkinteger(0)));
-
-#line  3384 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",297,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 304 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 304, this);
-#line 304 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 304 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 304 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = GreaterAtomicProposition(Difference(x, n), Number(mkinteger(0)));
-
-#line  3398 "ast-system-rk.cc"
+#line  2657 "ast-system-rk.cc"
 		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",304,kc_result);
 		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tAtomicProposition_GreaterAtomicProposition* kc_result= GreaterAtomicProposition(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tAtomicProposition impl_tAtomicProposition_NotEqualsAtomicProposition::rewrite(rview kc_current_view_base)
-{
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 315 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 315, this);
-#line 315 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 315 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 315 "Frontend/Parser/formula_rewrite.k"
-		const integer z = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 315 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = NotEqualsAtomicProposition(y, Number(minus(z, x)));
-
-#line  3437 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",315,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 384 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value != phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 384, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 384, this);
-#line 384 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 384 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 384 "Frontend/Parser/formula_rewrite.k"
+#line 305 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tAtomicProposition_1->prod_sel() == sel_False)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 305, this);
+#line 305 "Frontend/Parser/formula_rewrite.k"
 		tAtomicProposition kc_result = True();
 
-#line  3451 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",384,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 385 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value == phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 385, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 385, this);
-#line 385 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 385 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 385 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  3465 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",385,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 324 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 324, this);
-#line 324 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 324 "Frontend/Parser/formula_rewrite.k"
-		const tTerm m = l_tTerm_2;
-#line 324 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = NotEqualsAtomicProposition(Product(mkinteger(1), n), m);
-
-#line  3479 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",324,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 371 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value == OMEGA), "Frontend/Parser/formula_rewrite.k", 371, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 371, this);
-#line 371 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 371 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 371 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(x, Number(mkinteger(FINITE)));
-
-#line  3493 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",371,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 292 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 292, this);
-#line 292 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 292 "Frontend/Parser/formula_rewrite.k"
-		const tTerm s = l_tTerm_2;
-#line 292 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = NotEqualsAtomicProposition(Difference(x, s), Number(mkinteger(0)));
-
-#line  3507 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",292,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 299 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 299, this);
-#line 299 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 299 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = l_tTerm_2;
-#line 299 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = NotEqualsAtomicProposition(Difference(x, p), Number(mkinteger(0)));
-
-#line  3521 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",299,kc_result);
+#line  2667 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",305,kc_result);
 		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
 #line 306 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 306, this);
+		if ((l_tAtomicProposition_1->prod_sel() == sel_NNegation)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 306, this);
 #line 306 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(l_tAtomicProposition_1)->tAtomicProposition_1;
 #line 306 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 306 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = NotEqualsAtomicProposition(Difference(x, n), Number(mkinteger(0)));
+		tAtomicProposition kc_result = x;
 
-#line  3535 "ast-system-rk.cc"
+#line  2679 "ast-system-rk.cc"
 		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",306,kc_result);
 		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
@@ -3541,619 +2685,25 @@ tAtomicProposition impl_tAtomicProposition_NotEqualsAtomicProposition::rewrite(r
 	kc_rewrite_default:
 	default:;
     }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
+    if ((l_tAtomicProposition_1 == tAtomicProposition_1))
 	return this;
     else {
-	impl_tAtomicProposition_NotEqualsAtomicProposition* kc_result= NotEqualsAtomicProposition(l_tTerm_1, l_tTerm_2);
+	impl_tAtomicProposition_NNegation* kc_result= NNegation(l_tAtomicProposition_1);
 	kc_result->rewrite_members(this);
 	return kc_result;
     }
 }
 
-tAtomicProposition impl_tAtomicProposition_EqualsAtomicProposition::rewrite(rview kc_current_view_base)
+tAtomicProposition impl_tAtomicProposition_Elementary::rewrite(rview kc_current_view_base)
 {
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 314 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 314, this);
-#line 314 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 314 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 314 "Frontend/Parser/formula_rewrite.k"
-		const integer z = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 314 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = EqualsAtomicProposition(y, Number(minus(z, x)));
+    return this;
 
-#line  3574 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",314,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 382 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value == phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 382, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 382, this);
-#line 382 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 382 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 382 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = True();
-
-#line  3588 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",382,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 383 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value != phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 383, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 383, this);
-#line 383 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 383 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 383 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = False();
-
-#line  3602 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",383,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 323 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 323, this);
-#line 323 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 323 "Frontend/Parser/formula_rewrite.k"
-		const tTerm m = l_tTerm_2;
-#line 323 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = EqualsAtomicProposition(Product(mkinteger(1), n), m);
-
-#line  3616 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",323,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 369 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1->value == OMEGA), "Frontend/Parser/formula_rewrite.k", 369, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 369, this);
-#line 369 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 369 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 369 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = LessEqualAtomicProposition(Product(mkinteger(-1), x), Number(minus(mkinteger(0), y)));
-
-#line  3630 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",369,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 291 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 291, this);
-#line 291 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 291 "Frontend/Parser/formula_rewrite.k"
-		const tTerm s = l_tTerm_2;
-#line 291 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = EqualsAtomicProposition(Difference(x, s), Number(mkinteger(0)));
-
-#line  3644 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",291,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 298 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 298, this);
-#line 298 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 298 "Frontend/Parser/formula_rewrite.k"
-		const tTerm p = l_tTerm_2;
-#line 298 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = EqualsAtomicProposition(Difference(x, p), Number(mkinteger(0)));
-
-#line  3658 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",298,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 305 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 305, this);
-#line 305 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 305 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 305 "Frontend/Parser/formula_rewrite.k"
-		tAtomicProposition kc_result = EqualsAtomicProposition(Difference(x, n), Number(mkinteger(0)));
-
-#line  3672 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",305,kc_result);
-		return (const_cast<const impl_tAtomicProposition*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tAtomicProposition_EqualsAtomicProposition* kc_result= EqualsAtomicProposition(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
 }
 
-tTerm impl_tTerm_ProductList::rewrite(rview kc_current_view_base)
+tTerm impl_tTerm_Complex::rewrite(rview kc_current_view_base)
 {
-    tProduct_list l_tProduct_list_1 =
-	tProduct_list_1->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case productlists_enum: {
-	    productlists_class& kc_current_view=static_cast<productlists_class&>(kc_current_view_base);
-#line 404 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tProduct_list_1->prod_sel() == sel_NiltProduct_list)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 404, this);
-#line 404 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Number(mkinteger(0));
+    return this;
 
-#line  3703 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",404,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tProduct_list_1 == tProduct_list_1))
-	return this;
-    else {
-	impl_tTerm_ProductList* kc_result= ProductList(l_tProduct_list_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tTerm impl_tTerm_Product::rewrite(rview kc_current_view_base)
-{
-    integer l_integer_1 =
-	integer_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case productlists_enum: {
-	    productlists_class& kc_current_view=static_cast<productlists_class&>(kc_current_view_base);
-#line 402 "Frontend/Parser/formula_rewrite.k"
-	    if ((KC_TRACE_PROVIDED((l_integer_1->value == 0), "Frontend/Parser/formula_rewrite.k", 402, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 402, this);
-#line 402 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 402 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Number(mkinteger(0));
-
-#line  3738 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",402,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 345 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 345, this);
-#line 345 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 345 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 345 "Frontend/Parser/formula_rewrite.k"
-		const tTerm z = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 345 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(Number(mult(x, y)), Product(x, z));
-
-#line  3758 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",345,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 282 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Sum) && (KC_TRACE_PROVIDED((l_integer_1->value == 1), "Frontend/Parser/formula_rewrite.k", 282, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 282, this);
-#line 282 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 282 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = l_tTerm_1;
-#line 282 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = y;
-
-#line  3772 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",282,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 283 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 283, this);
-#line 283 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 283 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 283 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Number(mult(x, y));
-
-#line  3786 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",283,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 344 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Product)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 344, this);
-#line 344 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 344 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->integer_1;
-#line 344 "Frontend/Parser/formula_rewrite.k"
-		const tTerm z = phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1;
-#line 344 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Product(mult(x, y), z);
-
-#line  3802 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",344,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 346 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 346, this);
-#line 346 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 346 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1;
-#line 346 "Frontend/Parser/formula_rewrite.k"
-		const tTerm z = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 346 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(Product(x, y), Product(x, z));
-
-#line  3818 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",346,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 281 "Frontend/Parser/formula_rewrite.k"
-		if ((KC_TRACE_PROVIDED((l_integer_1->value == 0), "Frontend/Parser/formula_rewrite.k", 281, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 281, this);
-#line 281 "Frontend/Parser/formula_rewrite.k"
-		const integer x = l_integer_1;
-#line 281 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Number(mkinteger(0));
-
-#line  3830 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",281,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_integer_1 == integer_1) &&  (l_tTerm_1 == tTerm_1))
-	return this;
-    else {
-	impl_tTerm_Product* kc_result= Product(l_integer_1, l_tTerm_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tTerm impl_tTerm_Difference::rewrite(rview kc_current_view_base)
-{
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 331 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 331, this);
-#line 331 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 331 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = l_tTerm_2;
-#line 331 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(x, Product(mkinteger(-1), y));
-
-#line  3867 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",331,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    }
-	}
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tTerm_Difference* kc_result= Difference(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tTerm impl_tTerm_Sum::rewrite(rview kc_current_view_base)
-{
-    tTerm l_tTerm_1 =
-	tTerm_1->rewrite(kc_current_view_base);
-    tTerm l_tTerm_2 =
-	tTerm_2->rewrite(kc_current_view_base);
-    switch(kc_current_view_base) {
-	case productlists_enum: {
-	    productlists_class& kc_current_view=static_cast<productlists_class&>(kc_current_view_base);
-#line 390 "Frontend/Parser/formula_rewrite.k"
-	    { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 390, this);
-#line 390 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 390 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = l_tTerm_2;
-#line 390 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = ProductList(ConstProduct_list(x, ConstProduct_list(y, NiltProduct_list())));
-
-#line  3902 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",390,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    }
-	}
-	case sides_enum: {
-	    sides_class& kc_current_view=static_cast<sides_class&>(kc_current_view_base);
-#line 279 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_2)->tTerm_1->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 279, this);
-#line 279 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 279 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tTerm_Sum*>(l_tTerm_2)->tTerm_1)->integer_1;
-#line 279 "Frontend/Parser/formula_rewrite.k"
-		const tTerm z = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_2)->tTerm_2;
-#line 279 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(Number(plus(x, y)), z);
-
-#line  3921 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",279,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 278 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 278, this);
-#line 278 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 278 "Frontend/Parser/formula_rewrite.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(l_tTerm_2)->integer_1;
-#line 278 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Number(plus(x, y));
-
-#line  3935 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",278,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 280 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value == 0), "Frontend/Parser/formula_rewrite.k", 280, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 280, this);
-#line 280 "Frontend/Parser/formula_rewrite.k"
-		const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 280 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = l_tTerm_2;
-#line 280 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = y;
-
-#line  3949 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",280,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 326 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 326, this);
-#line 326 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_1;
-#line 326 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = l_tTerm_2;
-#line 326 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(Product(mkinteger(1), n), y);
-
-#line  3963 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",326,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 340 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Sum)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 340, this);
-#line 340 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_1;
-#line 340 "Frontend/Parser/formula_rewrite.k"
-		const tTerm y = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_1)->tTerm_2;
-#line 340 "Frontend/Parser/formula_rewrite.k"
-		const tTerm z = l_tTerm_2;
-#line 340 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(x, Sum(y, z));
-
-#line  3979 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",340,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 336 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Sum) && (phylum_cast<const impl_tTerm_Sum*>(l_tTerm_2)->tTerm_1->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 336, this);
-#line 336 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 336 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_2)->tTerm_1;
-#line 336 "Frontend/Parser/formula_rewrite.k"
-		const tTerm z = phylum_cast<const impl_tTerm_Sum*>(l_tTerm_2)->tTerm_2;
-#line 336 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(n, Sum(x, z));
-
-#line  3995 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",336,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 327 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Node)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 327, this);
-#line 327 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 327 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 327 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(x, Product(mkinteger(1), n));
-
-#line  4009 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",327,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-#line 335 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_2->prod_sel() == sel_Number)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 335, this);
-#line 335 "Frontend/Parser/formula_rewrite.k"
-		const tTerm x = l_tTerm_1;
-#line 335 "Frontend/Parser/formula_rewrite.k"
-		const tTerm n = l_tTerm_2;
-#line 335 "Frontend/Parser/formula_rewrite.k"
-		tTerm kc_result = Sum(n, x);
-
-#line  4023 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",335,kc_result);
-		return (const_cast<const impl_tTerm*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-	    } else
-		    goto kc_rewrite_default;
-	}
-	kc_rewrite_default:
-	default:;
-    }
-    if ((l_tTerm_1 == tTerm_1) &&  (l_tTerm_2 == tTerm_2))
-	return this;
-    else {
-	impl_tTerm_Sum* kc_result= Sum(l_tTerm_1, l_tTerm_2);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tTerm impl_tTerm_Number::rewrite(rview kc_current_view_base)
-{
-    integer l_integer_1 =
-	integer_1->rewrite(kc_current_view_base);
-    if ((l_integer_1 == integer_1))
-	return this;
-    else {
-	impl_tTerm_Number* kc_result= Number(l_integer_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tTerm impl_tTerm_Node::rewrite(rview kc_current_view_base)
-{
-    integer l_integer_1 =
-	integer_1->rewrite(kc_current_view_base);
-    if ((l_integer_1 == integer_1))
-	return this;
-    else {
-	impl_tTerm_Node* kc_result= Node(l_integer_1);
-	kc_result->rewrite_members(this);
-	return kc_result;
-    }
-}
-
-tProduct_list impl_tProduct_list::rewrite(rview kc_current_view_base)
-{
-    if (is_nil()) {
-	return this;
-    } else { // not Nil, Cons
-	tTerm l_tTerm_1 =
-	    tTerm_1->rewrite(kc_current_view_base);
-	tProduct_list l_tProduct_list_1 =
-	    tProduct_list_1->rewrite(kc_current_view_base);
-	switch(kc_current_view_base) {
-	    case productlists_enum: {
-		productlists_class& kc_current_view=static_cast<productlists_class&>(kc_current_view_base);
-#line 399 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTerm_1->prod_sel() == sel_Product) && (phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Node) && (l_tProduct_list_1->prod_sel() == sel_ConstProduct_list) && ((l_tProduct_list_1)->tTerm_1->prod_sel() == sel_Product) && (phylum_cast<const impl_tTerm_Product*>((l_tProduct_list_1)->tTerm_1)->tTerm_1->prod_sel() == sel_Node) && (phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>((l_tProduct_list_1)->tTerm_1)->tTerm_1)->integer_1->eq(phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1)->integer_1))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 399, this);
-#line 399 "Frontend/Parser/formula_rewrite.k"
-		    const integer x = phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->integer_1;
-#line 399 "Frontend/Parser/formula_rewrite.k"
-		    const integer u = phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 399 "Frontend/Parser/formula_rewrite.k"
-		    const integer y = phylum_cast<const impl_tTerm_Product*>((l_tProduct_list_1)->tTerm_1)->integer_1;
-#line 399 "Frontend/Parser/formula_rewrite.k"
-		    const tProduct_list l = (l_tProduct_list_1)->tProduct_list_1;
-#line 399 "Frontend/Parser/formula_rewrite.k"
-		    tProduct_list kc_result = ConstProduct_list(Product(plus(x, y), Node(u)), l);
-
-#line  4093 "ast-system-rk.cc"
-		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",399,kc_result);
-		    return (const_cast<const impl_tProduct_list*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-		} else
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    if ((l_tTerm_1->prod_sel() == sel_Product) && (phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1->prod_sel() == sel_Node) && (l_tProduct_list_1->prod_sel() == sel_ConstProduct_list) && ((l_tProduct_list_1)->tTerm_1->prod_sel() == sel_Product) && (phylum_cast<const impl_tTerm_Product*>((l_tProduct_list_1)->tTerm_1)->tTerm_1->prod_sel() == sel_Node) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1)->integer_1->value > phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>((l_tProduct_list_1)->tTerm_1)->tTerm_1)->integer_1->value), "Frontend/Parser/formula_rewrite.k", 396, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 396, this);
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    const tTerm p1 = l_tTerm_1;
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    const integer pid1 = phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>(l_tTerm_1)->tTerm_1)->integer_1;
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    const tTerm p2 = (l_tProduct_list_1)->tTerm_1;
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    const integer pid2 = phylum_cast<const impl_tTerm_Node*>(phylum_cast<const impl_tTerm_Product*>((l_tProduct_list_1)->tTerm_1)->tTerm_1)->integer_1;
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    const tProduct_list l = (l_tProduct_list_1)->tProduct_list_1;
-#line 396 "Frontend/Parser/formula_rewrite.k"
-		    tProduct_list kc_result = ConstProduct_list(p2, ConstProduct_list(p1, l));
-
-#line  4113 "ast-system-rk.cc"
-		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",396,kc_result);
-		    return (const_cast<const impl_tProduct_list*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-		} else
-#line 403 "Frontend/Parser/formula_rewrite.k"
-		    if ((l_tTerm_1->prod_sel() == sel_Number) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1->value == 0), "Frontend/Parser/formula_rewrite.k", 403, this))) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 403, this);
-#line 403 "Frontend/Parser/formula_rewrite.k"
-		    const integer x = phylum_cast<const impl_tTerm_Number*>(l_tTerm_1)->integer_1;
-#line 403 "Frontend/Parser/formula_rewrite.k"
-		    const tProduct_list y = l_tProduct_list_1;
-#line 403 "Frontend/Parser/formula_rewrite.k"
-		    tProduct_list kc_result = y;
-
-#line  4127 "ast-system-rk.cc"
-		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",403,kc_result);
-		    return (const_cast<const impl_tProduct_list*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-		} else
-#line 393 "Frontend/Parser/formula_rewrite.k"
-		    if ((l_tTerm_1->prod_sel() == sel_ProductList)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 393, this);
-#line 393 "Frontend/Parser/formula_rewrite.k"
-		    const tProduct_list x = phylum_cast<const impl_tTerm_ProductList*>(l_tTerm_1)->tProduct_list_1;
-#line 393 "Frontend/Parser/formula_rewrite.k"
-		    const tProduct_list y = l_tProduct_list_1;
-#line 393 "Frontend/Parser/formula_rewrite.k"
-		    tProduct_list kc_result = concat(x, y);
-
-#line  4141 "ast-system-rk.cc"
-		    KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",393,kc_result);
-		    return (const_cast<const impl_tProduct_list*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
-
-		} else
-			goto kc_rewrite_default;
-	    }
-	    kc_rewrite_default:
-	    default:;
-	}
-	if ((l_tTerm_1 == tTerm_1) &&  (l_tProduct_list_1 == tProduct_list_1))
-	    return this;
-	else {
-	    impl_tProduct_list* kc_result= ConstProduct_list(l_tTerm_1, l_tProduct_list_1);
-	    kc_result->rewrite_members(this);
-	    return kc_result;
-	}   }
 }
 
 tBuechiAutomata impl_tBuechiAutomata_BuechiNull::rewrite(rview kc_current_view_base)
@@ -4186,27 +2736,27 @@ tBuechiRules impl_tBuechiRules_BuechiRules::rewrite(rview kc_current_view_base)
     switch(kc_current_view_base) {
 	case rbuechi_enum: {
 	    rbuechi_class& kc_current_view=static_cast<rbuechi_class&>(kc_current_view_base);
-#line 919 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tBuechiRules_1->prod_sel() == sel_EmptyBuechiRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 919, this);
-#line 919 "Frontend/Parser/formula_rewrite.k"
+#line 644 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tBuechiRules_1->prod_sel() == sel_EmptyBuechiRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 644, this);
+#line 644 "Frontend/Parser/formula_rewrite.k"
 		const tBuechiRules a = l_tBuechiRules_2;
-#line 919 "Frontend/Parser/formula_rewrite.k"
+#line 644 "Frontend/Parser/formula_rewrite.k"
 		tBuechiRules kc_result = a;
 
-#line  4197 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",919,kc_result);
+#line  2747 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",644,kc_result);
 		return (const_cast<const impl_tBuechiRules*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 918 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tBuechiRules_2->prod_sel() == sel_EmptyBuechiRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 918, this);
-#line 918 "Frontend/Parser/formula_rewrite.k"
+#line 643 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tBuechiRules_2->prod_sel() == sel_EmptyBuechiRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 643, this);
+#line 643 "Frontend/Parser/formula_rewrite.k"
 		const tBuechiRules a = l_tBuechiRules_1;
-#line 918 "Frontend/Parser/formula_rewrite.k"
+#line 643 "Frontend/Parser/formula_rewrite.k"
 		tBuechiRules kc_result = a;
 
-#line  4209 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",918,kc_result);
+#line  2759 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",643,kc_result);
 		return (const_cast<const impl_tBuechiRules*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
@@ -4250,45 +2800,45 @@ tBuechiRules impl_tBuechiRules_BuechiRule::rewrite(rview kc_current_view_base)
     switch(kc_current_view_base) {
 	case rbuechi_enum: {
 	    rbuechi_class& kc_current_view=static_cast<rbuechi_class&>(kc_current_view_base);
-#line 915 "Frontend/Parser/formula_rewrite.k"
-	    if ((l_tTransitionRules_1->prod_sel() == sel_TransitionRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 915, this);
-#line 915 "Frontend/Parser/formula_rewrite.k"
+#line 640 "Frontend/Parser/formula_rewrite.k"
+	    if ((l_tTransitionRules_1->prod_sel() == sel_TransitionRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 640, this);
+#line 640 "Frontend/Parser/formula_rewrite.k"
 		const integer from = l_integer_1;
-#line 915 "Frontend/Parser/formula_rewrite.k"
+#line 640 "Frontend/Parser/formula_rewrite.k"
 		const tTransitionRules lrules = phylum_cast<const impl_tTransitionRules_TransitionRules*>(l_tTransitionRules_1)->tTransitionRules_1;
-#line 915 "Frontend/Parser/formula_rewrite.k"
+#line 640 "Frontend/Parser/formula_rewrite.k"
 		const tTransitionRules rrules = phylum_cast<const impl_tTransitionRules_TransitionRules*>(l_tTransitionRules_1)->tTransitionRules_2;
-#line 915 "Frontend/Parser/formula_rewrite.k"
+#line 640 "Frontend/Parser/formula_rewrite.k"
 		tBuechiRules kc_result = BuechiRules(BuechiRule(from, lrules), BuechiRule(from, rrules));
 
-#line  4265 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",915,kc_result);
+#line  2815 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",640,kc_result);
 		return (const_cast<const impl_tBuechiRules*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 916 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTransitionRules_1->prod_sel() == sel_TransitionRule)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 916, this);
-#line 916 "Frontend/Parser/formula_rewrite.k"
+#line 641 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tTransitionRules_1->prod_sel() == sel_TransitionRule)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 641, this);
+#line 641 "Frontend/Parser/formula_rewrite.k"
 		const integer from = l_integer_1;
-#line 916 "Frontend/Parser/formula_rewrite.k"
+#line 641 "Frontend/Parser/formula_rewrite.k"
 		const tFormula formula = phylum_cast<const impl_tTransitionRules_TransitionRule*>(l_tTransitionRules_1)->tFormula_1;
-#line 916 "Frontend/Parser/formula_rewrite.k"
+#line 641 "Frontend/Parser/formula_rewrite.k"
 		const integer to = phylum_cast<const impl_tTransitionRules_TransitionRule*>(l_tTransitionRules_1)->integer_1;
-#line 916 "Frontend/Parser/formula_rewrite.k"
+#line 641 "Frontend/Parser/formula_rewrite.k"
 		tBuechiRules kc_result = ExpandedBuechiRule(from, formula, to);
 
-#line  4281 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",916,kc_result);
+#line  2831 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",641,kc_result);
 		return (const_cast<const impl_tBuechiRules*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else
-#line 917 "Frontend/Parser/formula_rewrite.k"
-		if ((l_tTransitionRules_1->prod_sel() == sel_EmptyTransitionRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 917, this);
-#line 917 "Frontend/Parser/formula_rewrite.k"
+#line 642 "Frontend/Parser/formula_rewrite.k"
+		if ((l_tTransitionRules_1->prod_sel() == sel_EmptyTransitionRules)) { KC_TRACE_REWRITE_MATCH(kc_current_view, "Frontend/Parser/formula_rewrite.k", 642, this);
+#line 642 "Frontend/Parser/formula_rewrite.k"
 		tBuechiRules kc_result = EmptyBuechiRules();
 
-#line  4291 "ast-system-rk.cc"
-		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",917,kc_result);
+#line  2841 "ast-system-rk.cc"
+		KC_TRACE_REWRITE_RESULT(kc_current_view,"Frontend/Parser/formula_rewrite.k",642,kc_result);
 		return (const_cast<const impl_tBuechiRules*>(kc_result) == this) ? this : kc_result->rewrite( kc_current_view_base );
 
 	    } else

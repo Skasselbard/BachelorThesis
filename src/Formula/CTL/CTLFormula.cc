@@ -37,20 +37,20 @@ void CTLFormula::setCachedResult(void *payload, CTLFormulaResult result)
     uint8_t cachedValue = *(reinterpret_cast<uint8_t *>(payload) + (index >> 3));
     if (result & 1)
     {
-        cachedValue |= (1 << index);
+        cachedValue |= (1 << (index&7));
     }
     else
     {
-        cachedValue &= ~(1 << index);
+        cachedValue &= ~(1 << (index&7));
     }
 
     if (result & 2)
     {
-        cachedValue |= (1 << (index + 1));
+        cachedValue |= (1 << ((index&7) + 1));
     }
     else
     {
-        cachedValue &= ~(1 << (index + 1));
+        cachedValue &= ~(1 << ((index&7) + 1));
     }
 
     *(reinterpret_cast<uint8_t *>(payload) + (index >> 3)) = cachedValue;

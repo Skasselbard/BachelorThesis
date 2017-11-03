@@ -62,6 +62,8 @@ public:
     // LCOV_EXCL_STOP
     static Task * buildTask() // NOT dummy
     {  
+
+
 	/* currently, there are three methods for deadlock checking:
            - a state space search (which has many configuration options)
            - a siphon/trap check (an incomplete structural method)
@@ -74,6 +76,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_off &&
            RT::args.siphontrap_arg==siphontrap_arg_off)
 	{	
+		RT::data["task"]["workflow"] = "search";
 		RT::rep->status("Planning: workflow for deadlock check: search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=off").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=off").str());
 		return DeadlockSearchTask::buildTask();
 	}
@@ -81,6 +84,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_off &&
            RT::args.siphontrap_arg==siphontrap_arg_alone)
 	{	
+		RT::data["task"]["workflow"] = "siphon";
 		RT::rep->status("Planning: workflow for deadlock check: siphon (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=off").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=alone").str());
 		return SiphonTrapTask::buildTask();
 	}
@@ -88,6 +92,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_off &&
            RT::args.siphontrap_arg==siphontrap_arg_seq)
 	{	
+		RT::data["task"]["workflow"] = "siphon;search";
 		RT::rep->status("Planning: workflow for deadlock check: siphon;search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=off").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=seq").str());
 		return SequentialTask::buildTask(SiphonTrapTask::buildTask(),DeadlockSearchTask::buildTask());
 	}
@@ -95,6 +100,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_off &&
            RT::args.siphontrap_arg==siphontrap_arg_par)
 	{	
+		RT::data["task"]["workflow"] = "siphon||search";
 		RT::rep->status("Planning: workflow for deadlock check: siphon||search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=off").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=par").str());
 		return ParallelTask::buildTask(SiphonTrapTask::buildTask(),DeadlockSearchTask::buildTask());
 	}
@@ -102,6 +108,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_alone &&
            RT::args.siphontrap_arg==siphontrap_arg_off)
 	{	
+		RT::data["task"]["workflow"] = "findpath";
 		RT::rep->status("Planning: workflow for deadlock check: findpath (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=alone").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=off").str());
 		return DeadlockFindpathTask::buildTask();
 	}
@@ -109,6 +116,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_seq &&
            RT::args.siphontrap_arg==siphontrap_arg_off)
 	{	
+		RT::data["task"]["workflow"] = "findpath;search";
 		RT::rep->status("Planning: workflow for deadlock check: findpath;search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=seq").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=off").str());
 		return SequentialTask::buildTask(DeadlockFindpathTask::buildTask(),DeadlockSearchTask::buildTask());
 	}
@@ -116,6 +124,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_par &&
            RT::args.siphontrap_arg==siphontrap_arg_off)
 	{	
+		RT::data["task"]["workflow"] = "findpath||search";
 		RT::rep->status("Planning: workflow for deadlock check: findpath||search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=par").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=off").str());
 		return ParallelTask::buildTask(DeadlockFindpathTask::buildTask(),DeadlockSearchTask::buildTask());
 	}
@@ -130,6 +139,7 @@ public:
                (RT::args.findpath_arg==findpath_arg_alone &&
                RT::args.siphontrap_arg==siphontrap_arg_par))
 	{	
+		RT::data["task"]["workflow"] = "findpath||siphon";
 		RT::rep->status("Planning: workflow for deadlock check: findpath||search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=alone|par").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=alone|par").str());
 		return ParallelTask::buildTask(DeadlockFindpathTask::buildTask(),SiphonTrapTask::buildTask());
 	}
@@ -137,6 +147,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_seq &&
            RT::args.siphontrap_arg==siphontrap_arg_alone)
 	{	
+		RT::data["task"]["workflow"] = "findpath;siphon";
 		RT::rep->status("Planning: workflow for deadlock check: findpath;siphon (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=seq").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=alone").str());
 		return SequentialTask::buildTask(DeadlockFindpathTask::buildTask(),SiphonTrapTask::buildTask());
 	}
@@ -144,6 +155,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_alone &&
            RT::args.siphontrap_arg==siphontrap_arg_seq)
 	{	
+		RT::data["task"]["workflow"] = "siphon;findpath";
 		RT::rep->status("Planning: workflow for deadlock check: siphon;findpath (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=alone").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=seq").str());
 		return SequentialTask::buildTask(SiphonTrapTask::buildTask(),DeadlockFindpathTask::buildTask());
 	}
@@ -151,6 +163,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_seq &&
            RT::args.siphontrap_arg==siphontrap_arg_seq)
 	{	
+		RT::data["task"]["workflow"] = "(findpath||siphon);search";
 		RT::rep->status("Planning: workflow for deadlock check: (siphon||findpath);search (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=seq").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=seq").str());
 		return SequentialTask::buildTask(ParallelTask::buildTask(SiphonTrapTask::buildTask(),DeadlockFindpathTask::buildTask()),DeadlockSearchTask::buildTask());
 	}
@@ -158,6 +171,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_seq &&
            RT::args.siphontrap_arg==siphontrap_arg_par)
 	{	
+		RT::data["task"]["workflow"] = "findpath;(siphon||search)";
 		RT::rep->status("Planning: workflow for deadlock check: findpath;(siphon||search) (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=seq").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=par").str());
 		return SequentialTask::buildTask(DeadlockFindpathTask::buildTask(),ParallelTask::buildTask(SiphonTrapTask::buildTask(),DeadlockSearchTask::buildTask()));
 	}
@@ -165,6 +179,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_par &&
            RT::args.siphontrap_arg==siphontrap_arg_seq)
 	{	
+		RT::data["task"]["workflow"] = "siphon;(findpath||search)";
 		RT::rep->status("Planning: workflow for deadlock check: siphon;(findpath||search) (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=par").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=seq").str());
 		return SequentialTask::buildTask(SiphonTrapTask::buildTask(),ParallelTask::buildTask(DeadlockFindpathTask::buildTask(),DeadlockSearchTask::buildTask()));
 	}
@@ -172,6 +187,7 @@ public:
 	if(RT::args.findpath_arg==findpath_arg_par &&
            RT::args.siphontrap_arg==siphontrap_arg_par)
 	{	
+		RT::data["task"]["workflow"] = "siphon||findpath||search";
 		RT::rep->status("Planning: workflow for deadlock check: siphon||findpath||search) (%s,%s)",RT::rep->markup(MARKUP_PARAMETER,"--findpath=par").str(),RT::rep->markup(MARKUP_PARAMETER,"--siphontrap=par").str());
 		return ParallelTask::buildTask(SiphonTrapTask::buildTask(),ParallelTask::buildTask(DeadlockFindpathTask::buildTask(),DeadlockSearchTask::buildTask()));
 	}

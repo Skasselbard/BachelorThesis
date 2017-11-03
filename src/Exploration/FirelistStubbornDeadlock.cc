@@ -25,6 +25,7 @@ enabled transitions.
 */
 
 #include <Core/Dimensions.h>
+#include <Core/Runtime.h>
 #include <Exploration/Firelist.h>
 #include <Exploration/FirelistStubbornDeadlock.h>
 #include <Net/Net.h>
@@ -75,14 +76,7 @@ void FirelistStubbornDeadlock::newStamp()
 
 arrayindex_t FirelistStubbornDeadlock::getFirelist(NetState &ns, arrayindex_t **result)
 {
-    arrayindex_t nextDfs = 1;
-    arrayindex_t stackpointer = 0;
-    arrayindex_t tarjanstackpointer = 0;
-    arrayindex_t dfsLastEnabled;
-    newStamp();
-
-    // 1. find enabled transition and initialize stacks with it
-
+    // STEP 1: take care of no transition enabled
     // This branch is here only for the case that exploration continues
     // after having found a deadlock. In current LoLA, it cannot happen
     // since check property will raise its flag before firelist is
@@ -95,6 +89,41 @@ arrayindex_t FirelistStubbornDeadlock::getFirelist(NetState &ns, arrayindex_t **
         return 0;
     }
     // LCOV_EXCL_STOP
+
+    // STEP 2: find 1st enabled transition according to priority list.
+    // The list ensures that transitions from small condlict clusters
+    // get priority over transitions in large conflict clusters.
+    // Relevant preprocessing has taken place in DeadlockTask::buildTask().
+   
+    int firstenabled;
+    for(firstenabled = 0; firstenabled < Net::Card[TR]; firstenabled++)
+    {
+	if(ns.Enabled[Transition::StubbornPriority[firstenabled]])
+	{
+		break;
+	}
+    }
+    //for (firstenabled = 0; !ns.Enabled[Transition::StubbornPriority[firstenabled]]; ++firstenabled);
+
+    // STEP 3: If start transition is alone in its conflict cluster, we
+    // can immediately return it as singleton stubborn set.
+ 
+    if(firstenabled < Transition::SingletonClusters)
+    {
+	* result = new arrayindex_t[1];
+	** result = Transition::StubbornPriority[firstenabled];
+	return 1;
+    }
+
+    // switch from index in priority list to transition name
+    firstenabled = Transition::StubbornPriority[firstenabled];
+
+    // initialize DFS for stubborn closure
+    arrayindex_t nextDfs = 1;
+    arrayindex_t stackpointer = 0;
+    arrayindex_t tarjanstackpointer = 0;
+    arrayindex_t dfsLastEnabled;
+    newStamp();
 
     // A deadlock preserving stubborn set is computed by depth first search
     // in a graph. Nodes are transitions.
@@ -109,10 +138,6 @@ arrayindex_t FirelistStubbornDeadlock::getFirelist(NetState &ns, arrayindex_t **
     // tansition).
 
     scapegoatNewRound();
-    // Find a transition that can serve as root
-    int firstenabled;
-    for (firstenabled = 0; !ns.Enabled[firstenabled]; ++firstenabled);
-    // Transition #firstenabled is now the root for search
 
     // For detecting SCC, we perform depth-first search
     // with the Tarjan extension

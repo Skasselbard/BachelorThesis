@@ -20,11 +20,6 @@
 
 StatePredicate *StatePredicate::top = NULL;
 
-StatePredicate *StatePredicate::copy()
-{
-    return copy(NULL);
-}
-
 bool StatePredicate::isOrNode() const
 {
     return false;

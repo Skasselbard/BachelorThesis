@@ -72,6 +72,12 @@ AC_ST_BASIC
 AC_ST_AUTOTEST
 AC_ST_VERBOSE
 
+AC_PROG_LIBTOOL  #necessary for libtool
+LT_INIT #necessary for libtool
+AC_SEARCH_LIBS([dlopen], [dl zrldsrl]) #necessary for libtool
+AC_SEARCH_LIBS([ftime], [compat])  #necessary for libtool
+AC_CHECK_LIB( [sched_get_priority_min])  #necessary for libtool
+
 # look for Kimwitu++
 AM_MISSING_PROG(KC, kc++)
 
@@ -172,7 +178,7 @@ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt))
 
 # write files
 AC_CONFIG_FILES([
-	Makefile src/Makefile utils/Makefile doc/Doxyfile doc/Doxydetails doc/Makefile
+	Makefile libs/lp_solve_5.5/Makefile src/Makefile utils/Makefile doc/Doxyfile doc/Doxydetails doc/Makefile
   tests/Makefile tests/package.m4])
 AC_CONFIG_FILES([tests/cover.sh], [chmod +x tests/cover.sh])
 AC_OUTPUT

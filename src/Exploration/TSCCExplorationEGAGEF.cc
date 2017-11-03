@@ -32,31 +32,35 @@
 #include <Net/Transition.h>
 
 bool TSCCExplorationEGAGEF::depth_first(SimpleProperty &property, NetState &ns,
-                                        Store<statenumber_t> &myStore, Firelist &myFirelist, __attribute__((__unused__))int threadNumber)
+                                      Store<statenumber_t> &myStore, Firelist &myFirelist, int)
 {
-    fprintf(stderr, "TsccexplorationEGAGEF gets used\n");
-
-    property.value = property.initProperty(ns);
 
     // add initial marking to store
     statenumber_t *payload;
     myStore.searchAndInsert(ns, &payload, 0);
 
+    //last dfs where property was true
+    arrayindex_t lasttrue = 0;
+
+    if (property.initProperty(ns))
+    {
+        lasttrue = 1;
+    }
+    
     // get initial firelist
     arrayindex_t *currentFirelist;
     arrayindex_t currentEntry = myFirelist.getFirelist(ns, &currentFirelist);
 
-
-    //last dfs where property was true
-    arrayindex_t lasttrue = 0;
-
     //initialise dfsnumber,lowlink and highest_lowlink
     statenumber_t currentDFSNumber = 0;
     statenumber_t highest_lowlink = 0;
-    statenumber_t currentLowlink = currentDFSNumber;
 
-    //set initial dfs to zero
+    //set initial dfs to one
     setDFS(payload, ++currentDFSNumber);
+    
+    statenumber_t currentLowlink = currentDFSNumber;
+    
+    new(dfsstack.push()) DFSStackEntry(currentFirelist, currentEntry, payload, currentLowlink);
 
     while (true)
     {
@@ -101,7 +105,7 @@ bool TSCCExplorationEGAGEF::depth_first(SimpleProperty &property, NetState &ns,
                 new(dfsstack.push()) DFSStackEntry(currentFirelist, currentEntry, newPayload, currentLowlink);
 
                 //check the given property and
-                //save lasttrue and lastfalse dfs number for the given property
+                //save lasttrue dfs number for the given property
                 if (property.checkProperty(ns, currentFirelist[currentEntry]))
                 {
                     lasttrue = currentDFSNumber;
@@ -117,39 +121,58 @@ bool TSCCExplorationEGAGEF::depth_first(SimpleProperty &property, NetState &ns,
         {
             //delete the finished firelist
             delete[] currentFirelist;
-            //if the stack is empty we are finished
-            if (dfsstack.StackPointer == 0)
-            {
-                return property.value;
-            }
 
             //getting v'
             DFSStackEntry &stackentry = dfsstack.top();
             currentEntry = stackentry.flIndex;
             currentFirelist = stackentry.fl;
             stackentry.fl = NULL;
+            
+            statenumber_t tmpLowlink = stackentry.lowlink;
 
             //check if this is the root of a tscc
             if (getDFS( (statenumber_t *) stackentry.payload) == stackentry.lowlink
                     && highest_lowlink < stackentry.lowlink)
             {
-                //valid for egagef :)
-                if ( lasttrue >= stackentry.lowlink )
+                //RT::rep->status("root of tscc detected, %u %u", stackentry.lowlink, 
+                //        getDFS((statenumber_t *) stackentry.payload));
+                //valid for agef :)
+                if (lasttrue >= stackentry.lowlink)
                 {
+                    //RT::rep->status("true");
                     //for the current tscc "add" one more true
                     //just for clarification of the code...
                     property.value = true;
-                    return true;
+                    return property.value;
+                }
+                else
+                {
+                    //RT::rep->status("false");
+                    //there is a tscc in which the property is not true
+                    //then we can exit going forward to find one path where it
+                    //is true
+                    property.value = false;
                 }
                 //update the highest lowlink to the current
                 highest_lowlink = stackentry.lowlink;
             }
+            //if the stack is empty we are finished
+            if (dfsstack.StackPointer == 1)
+            {
+                //set the property value
+                return false;
+            }
             // pop the top element on the stack
             dfsstack.pop();
+            if (dfsstack.top().lowlink > tmpLowlink)
+            {
+                dfsstack.top().lowlink = tmpLowlink;
+            }
             assert(currentEntry < Net::Card[TR]);
             //backfire and revert the enabledness
             Transition::backfire(ns, currentFirelist[currentEntry]);
             Transition::revertEnabled(ns, currentFirelist[currentEntry]);
+            
             //update the property
             property.updateProperty(ns, currentFirelist[currentEntry]);
         }

@@ -17,6 +17,7 @@ using namespace kc;
 #include <Formula/StatePredicate/DeadlockPredicate.h>
 #include <Formula/StatePredicate/FireablePredicate.h>
 #include <Net/Net.h>
+#include <Net/Transition.h>
 #include <string>
 
 extern std::string unparsed;
@@ -24,7 +25,7 @@ extern std::string unparsed;
 void myprinter(const char *s, kc::uview v);
 void stringprinter(const char *s, kc::uview v);
 
-#line  28 "ast-system-unpk.h"
+#line  29 "ast-system-unpk.h"
 /* end included stuff */
 
 
@@ -33,6 +34,8 @@ namespace kc {
 typedef enum {
     base_uview_enum,
     out_enum,
+    count_enum,
+    elem_enum,
     temporal_enum,
     internal_enum,
     buechi_enum,
@@ -40,10 +43,9 @@ typedef enum {
     ltl_enum,
     toplevelboolean_enum,
     compound_enum,
-    problemwriter_enum,
-    orsAndAndsAndLength_enum,
+    detectcompound_enum,
     hl_staticanalysis_enum,
-    countdeadlock_enum,
+    visible_enum,
     last_uview
 } uview_enum;
 
@@ -96,6 +98,14 @@ struct out_class: uview_class {
     out_class():uview_class(out_enum){}
 };
 extern out_class out;
+struct count_class: uview_class {
+    count_class():uview_class(count_enum){}
+};
+extern count_class count;
+struct elem_class: uview_class {
+    elem_class():uview_class(elem_enum){}
+};
+extern elem_class elem;
 struct temporal_class: uview_class {
     temporal_class():uview_class(temporal_enum){}
 };
@@ -124,22 +134,18 @@ struct compound_class: uview_class {
     compound_class():uview_class(compound_enum){}
 };
 extern compound_class compound;
-struct problemwriter_class: uview_class {
-    problemwriter_class():uview_class(problemwriter_enum){}
+struct detectcompound_class: uview_class {
+    detectcompound_class():uview_class(detectcompound_enum){}
 };
-extern problemwriter_class problemwriter;
-struct orsAndAndsAndLength_class: uview_class {
-    orsAndAndsAndLength_class():uview_class(orsAndAndsAndLength_enum){}
-};
-extern orsAndAndsAndLength_class orsAndAndsAndLength;
+extern detectcompound_class detectcompound;
 struct hl_staticanalysis_class: uview_class {
     hl_staticanalysis_class():uview_class(hl_staticanalysis_enum){}
 };
 extern hl_staticanalysis_class hl_staticanalysis;
-struct countdeadlock_class: uview_class {
-    countdeadlock_class():uview_class(countdeadlock_enum){}
+struct visible_class: uview_class {
+    visible_class():uview_class(visible_enum){}
 };
-extern countdeadlock_class countdeadlock;
+extern visible_class visible;
 
 void unparse(abstract_phylum kc_p, printer_functor kc_printer, uview kc_current_view);
 void unparse(void *kc_p, printer_functor kc_printer, uview kc_current_view);

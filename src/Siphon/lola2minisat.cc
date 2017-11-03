@@ -390,6 +390,7 @@ siphon_result_t lola2minisat()
 	{
 		SiphonDepth = 1;
 	}	
+	RT::data["task"]["siphon"]["depth"] = static_cast<int>(SiphonDepth);
 
 	// get minisat args and turn them into argc/argv
 
@@ -522,6 +523,8 @@ siphon_result_t run_minisat(int argc,char ** argv)
 //        gzclose(in);
 	create_whole(S);
 	RT::rep->status("STP: formula with %u variables and %u clauses shipped to Minisat",S.nVars(), S.nClauses());
+	RT::data["task"]["siphon"]["literals"] = S.nVars();
+	RT::data["task"]["siphon"]["clauses"] = S.nClauses();
 
         FILE* res = (argc >= 3) ? fopen(argv[2], "wb") : NULL;
 
@@ -595,6 +598,21 @@ if(ret != l_True)
 assert(ret == l_True);
 if(S.model[0] != l_False)
 {
+	// check whether we want to write witness to JSON
+
+	bool toJSON = false;
+   for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_siphon)
+        {
+		toJSON = true;
+		RT::data["result"]["siphon"] = JSON();
+		RT::data["result"]["trap"] = JSON();
+            break;
+
+        }
+    }
+
 	// variable UNMARKED is true
         // print witness siphon
         if (RT::args.siphonwitness_given)
@@ -607,6 +625,7 @@ if(S.model[0] != l_False)
 		if(S.model[VAR_P(i,0)] != l_False)
 		{
             		fprintf(o, "%s\n", Net::Name[PL][i]);
+		RT::data["result"]["siphon"]+= std::string(Net::Name[PL][i]);
 		}
 	    }
 	    fprintf(o,"\n");
@@ -615,6 +634,7 @@ if(S.model[0] != l_False)
 		if(S.model[VAR_P(i,SiphonDepth)] != l_False)
 		{
             		fprintf(o, "%s\n", Net::Name[PL][i]);
+		RT::data["result"]["trap"]+= std::string(Net::Name[PL][i]);
 		}
 	    }
         }

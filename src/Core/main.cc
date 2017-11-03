@@ -1,5 +1,4 @@
-/****************************************************************************
-  This file is part of LoLA.
+/**************************************************************************** This file is part of LoLA.
 
   LoLA is free software: you can redistribute it and/or modify it under the
   terms of the GNU Affero General Public License as published by the Free
@@ -36,6 +35,11 @@
 #include <Planning/Task.h>
 #include <Witness/Path.h>
 
+#include <Exploration/ComputePlacesBounds.h>  //test
+
+#ifdef RERS
+extern bool * rers_place;
+#endif
 /*!
 \brief symbol tables for the parsed net
 \ingroup g_globals
@@ -72,6 +76,7 @@ void * report_status(void* arg)
         if (c) // NULL = no abortion, !=NULL = the message describing
             // the reason for abortion
         {
+	    RT::data["exit"]["abort_message"] = std::string(c);
             RT::rep->status(RT::rep->markup(MARKUP_IMPORTANT, c).str());
             kill(getpid(), SIGUSR2);
         }
@@ -84,6 +89,12 @@ void * report_status(void* arg)
  */
 int main(int argc, char **argv)
 {
+#ifdef RERS
+	for(int i = 0; i < 10000000;i++)
+	{
+		rers_place[i] = false;
+	}
+#endif
     //=================
     // (1) set up LoLA
     //=================
@@ -97,7 +108,7 @@ int main(int argc, char **argv)
     //===================
 
     // file input
-
+    
     RT::rep->status("NET");
     RT::rep->indent(2);
 
@@ -170,7 +181,6 @@ int main(int argc, char **argv)
             RT::rep->message("too many files given - expecting at most one");
             RT::rep->abort(ERROR_COMMANDLINE);
         }
-        RT::data["net"]["filename"] = RT::currentInputFile->getFilename();
 
         // pass the opened file pointer to flex via FILE *yyin
         extern FILE *ptnetlola_in;
@@ -307,7 +317,7 @@ int main(int argc, char **argv)
     {
         if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_state)
         {
-            RT::data["state"] = JSON();
+            RT::data["result"]["state"] = JSON();
             const capacity_t *current = task->getMarking();
             if (current)
             {
@@ -315,11 +325,11 @@ int main(int argc, char **argv)
                 {
                     if (current[p] == OMEGA)
                     {
-                        RT::data["state"][Net::Name[PL][p]] = "oo";
+                        RT::data["result"]["state"][Net::Name[PL][p]] = "oo";
                     }
                     else if (current[p] > 0)
                     {
-                        RT::data["state"][Net::Name[PL][p]] = static_cast<int> (current[p]);
+                        RT::data["result"]["state"][Net::Name[PL][p]] = static_cast<int> (current[p]);
                     }
                 }
             }
@@ -362,11 +372,11 @@ int main(int argc, char **argv)
             const Path p = task->getWitnessPath();
             if (p.initialized)
             {
-                RT::data["path"] = p.json();
+                RT::data["result"]["path"] = p.json();
             }
             else
             {
-                RT::data["path"] = JSON();
+                RT::data["result"]["path"] = JSON();
             }
             break;
 
@@ -399,8 +409,8 @@ int main(int argc, char **argv)
     //================
     // (7) statistics
     //================
-
-
+	
+//	ComputePlacesBounds cpb = ComputePlacesBounds();  //test
     // print statistics
     if (RT::args.stats_flag)
     {

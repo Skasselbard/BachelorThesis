@@ -35,7 +35,7 @@ enabled transitions.
 \result number of elements in fire list
 */
 
-uint64_t * Firelist::usedAsScapegoat = NULL;
+arrayindex_t * Firelist::usedAsScapegoat = NULL;
 uint64_t Firelist::timestampScapegoat = 0;
 Firelist::Firelist()
 {

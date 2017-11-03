@@ -37,7 +37,12 @@
 FirelistStubbornComputeBound::FirelistStubbornComputeBound(StatePredicate *p) :
     predicate(p), dfsStack(new arrayindex_t[Net::Card[TR]]), onStack(new bool[Net::Card[TR]]()),
     dl(new FirelistStubbornDeadlock())
-{}
+{
+	for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+	{
+		onStack[i] = false;
+	}
+}
 
 FirelistStubbornComputeBound::~FirelistStubbornComputeBound()
 {
@@ -89,9 +94,6 @@ arrayindex_t FirelistStubbornComputeBound::getFirelist(NetState &ns, arrayindex_
             }
         }
     }
-        // if up set for deadlock AP is required but there is an enabled
-        // transition so far, this enabled transition serves as a valid
-        // up set
         arrayindex_t size = cardEnabled;
         * result = new arrayindex_t [cardEnabled ? cardEnabled : 1];
         for (arrayindex_t i = 0; i < stackpointer; ++i)

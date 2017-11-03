@@ -90,9 +90,11 @@ host_triplet = @host@
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_compile_flag.m4 \
-	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/st_autotest.m4 \
-	$(top_srcdir)/m4/st_basic.m4 $(top_srcdir)/m4/st_verbose.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/st_autotest.m4 $(top_srcdir)/m4/st_basic.m4 \
+	$(top_srcdir)/m4/st_verbose.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/version.texi \
@@ -202,6 +204,7 @@ ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOM4TE = @AUTOM4TE@
@@ -219,11 +222,15 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FGREP = @FGREP@
 GENGETOPT = @GENGETOPT@
 GREP = @GREP@
 HELP2MAN = @HELP2MAN@
@@ -236,17 +243,27 @@ KC = @KC@
 LCOV = @LCOV@
 LCOV_GENDESC = @LCOV_GENDESC@
 LCOV_GENHTML = @LCOV_GENHTML@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -272,8 +289,10 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -370,6 +389,12 @@ Doxyfile: $(top_builddir)/config.status $(srcdir)/Doxyfile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 Doxydetails: $(top_builddir)/config.status $(srcdir)/Doxydetails.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 .texi.info:
 	$(AM_V_MAKEINFO)restore=: && backupdir="$(am__leading_dot)am$$$$" && \
@@ -652,7 +677,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-aminfo clean-generic mostlyclean-am
+clean-am: clean-aminfo clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -796,7 +821,8 @@ maintainer-clean-am: distclean-am maintainer-clean-aminfo \
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-aminfo mostlyclean-generic mostlyclean-vti
+mostlyclean-am: mostlyclean-aminfo mostlyclean-generic \
+	mostlyclean-libtool mostlyclean-vti
 
 pdf: pdf-am
 
@@ -814,16 +840,17 @@ uninstall-man: uninstall-man1
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-aminfo clean-generic \
-	cscopelist-am ctags-am dist-info distclean distclean-generic \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-man1 install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-aminfo \
-	maintainer-clean-generic maintainer-clean-vti mostlyclean \
-	mostlyclean-aminfo mostlyclean-generic mostlyclean-vti pdf \
+	clean-libtool cscopelist-am ctags-am dist-info distclean \
+	distclean-generic distclean-libtool distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-man1 install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-aminfo maintainer-clean-generic \
+	maintainer-clean-vti mostlyclean mostlyclean-aminfo \
+	mostlyclean-generic mostlyclean-libtool mostlyclean-vti pdf \
 	pdf-am ps ps-am tags-am uninstall uninstall-am \
 	uninstall-dvi-am uninstall-html-am uninstall-info-am \
 	uninstall-man uninstall-man1 uninstall-pdf-am uninstall-ps-am

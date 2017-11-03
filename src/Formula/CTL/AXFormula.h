@@ -48,6 +48,9 @@ private:
     bool check(Store<void *> &s, NetState &ns, Firelist &firelist,
                std::vector<int> &witness);
 
+    bool checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+               std::vector<int> &witness);
+
     void DEBUG_print();
 
     void gatherPayloadInformation(arrayindex_t &numDFS, arrayindex_t &numCachedResults);
@@ -55,4 +58,5 @@ private:
 
     /// the inner formula phi for AX phi
     CTLFormula *phi;
+	  virtual void print();
 };

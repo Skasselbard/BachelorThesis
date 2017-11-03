@@ -30,6 +30,7 @@
 #include <Exploration/SearchStack.h>
 #include <Net/Transition.h>
 #include <Net/Net.h>
+#include <Net/Marking.h>
 
 AUFormula::AUFormula(CTLFormula *phi, CTLFormula *psi) : phi(phi), psi(psi)
 {
@@ -97,12 +98,12 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     }
     void *payload = *pInitialPayload;
 
-    //rep->status("init AU check at %x (payload: %lx)",ns.HashCurrent,payload);
+    //RT::rep->status("init AU check at %x (payload: %lx)",ns.HashCurrent,payload);
 
     CTLFormulaResult cachedResult = getCachedResult(payload);
     if (cachedResult & 2)  // value known
     {
-        //rep->status("AU cached %d at %x",cachedResult,ns.HashCurrent);
+        //RT::rep->status("AU cached %d at %x",cachedResult,ns.HashCurrent);
 
         return cachedResult & 1; // return result
     }
@@ -113,7 +114,7 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     {
         setCachedResult(payload, KNOWN_TRUE);
 
-        //rep->status("AU initial TRUE at %x",ns.HashCurrent);
+        //RT::rep->status("AU initial TRUE at %x",ns.HashCurrent);
 
         return true;
     }
@@ -124,7 +125,346 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     {
         setCachedResult(payload, KNOWN_FALSE);
 
-        //rep->status("AU initial FALSE at %x",ns.HashCurrent);
+        //RT::rep->status("AU initial FALSE at %x",ns.HashCurrent);
+
+        return false;
+    }
+
+    //RT::rep->status("starting AU check at %x (payload: %lx)",ns.HashCurrent,payload);
+
+    // dfs stack will contain all gray nodes
+    SearchStack<DFSStackEntry> dfsStack;
+
+    // tarjan stack will contain all _black_ nodes the SCC of which is not yet finished
+    // see doc/Tarjan for an explanation on how and why this works
+    SearchStack<void *> tarjanStack;
+
+    statenumber_t currentDFSNumber = 1; // starting with 1 to leave 0 for recognizing uninitialized values
+    statenumber_t currentLowlink;
+
+    // fetch firelist
+    arrayindex_t *currentFirelist;
+    arrayindex_t currentFirelistIndex = firelist.getFirelist(ns, &currentFirelist);
+    arrayindex_t firedAll; // highest dfs where all enabled transition were fired
+			   // since stubborn sets for CTL are singleton, we
+			   // approximate as: highest dfs where more than 				   // one transition has been fired.
+			   // This value is used for controlling the
+			   // ignorance problem in stubborn set method
+
+    if(currentFirelistIndex > 1)
+    {
+	firedAll = 1;
+    }
+    else
+    {
+        firedAll = 0;
+    }
+    // test if initial state is deadlock
+    if (!currentFirelistIndex)
+    {
+        setCachedResult(payload, KNOWN_FALSE);
+        delete[] currentFirelist;
+
+        return false;
+    }
+
+    // initialize dfs number, lowlink; mark state to be on tarjan stack
+    setDFS(payload, 1);
+    currentLowlink = 1;
+    setCachedResult(payload, KNOWN_FALSE);
+
+    bool revertEnabledNeeded = false;
+    bool backfireNeeded = true;
+
+    while (true)
+    {
+//Marking::DEBUG__printMarking(ns.Current);
+        if (currentFirelistIndex--)
+        {
+            Transition::fire(ns, currentFirelist[currentFirelistIndex]);
+            // don't update enabledness and atomics yet, since it'll maybe not be needed at all.
+
+            void **pNewPayload;
+            if (!s.searchAndInsert(ns, &pNewPayload, 0))
+            {
+                // all-zeros is starting state for all values
+                // memset is required to mimick a calloc on a void* in C++
+                *pNewPayload = ::operator new(payloadsize);
+                memset(*pNewPayload, 0, payloadsize);
+            }
+            void *newpayload = *pNewPayload;
+
+            //RT::rep->status("AU check fire %s to %x (payload: %lx)",Net::Name[TR][currentFirelist[currentFirelistIndex]],ns.HashCurrent,newpayload);
+
+            CTLFormulaResult newCachedResult = getCachedResult(newpayload);
+            if (newCachedResult == UNKNOWN)
+            {
+                // update enabledness and atomic propositions for current state (needed for further checking)
+                Transition::updateEnabled(ns, currentFirelist[currentFirelistIndex]);
+                updateAtomics(ns, currentFirelist[currentFirelistIndex]);
+
+                witness.clear();
+                if (psi->check(s, ns, firelist, witness))
+                {
+                    setCachedResult(newpayload, KNOWN_TRUE);
+                    // continue;
+
+                    //RT::rep->status("AU check backfire (psi) %s",Net::Name[TR][currentFirelist[currentFirelistIndex]]);
+
+                    Transition::backfire(ns, currentFirelist[currentFirelistIndex]);
+                    Transition::revertEnabled(ns, currentFirelist[currentFirelistIndex]);
+                    revertAtomics(ns, currentFirelist[currentFirelistIndex]);
+                    continue;
+                }
+
+                witness.clear();
+                if (!phi->check(s, ns, firelist, witness))
+                {
+                    setCachedResult(newpayload, KNOWN_FALSE);
+                    // we updated the enabledness, so it needs to be reverted
+                    revertEnabledNeeded = true;
+                    // break; set all nodes to false
+                    break;
+                }
+
+                // recursive descent
+                new (dfsStack.push()) DFSStackEntry(currentFirelist, currentFirelistIndex, payload, currentLowlink);
+
+                // get new firelist
+                payload = newpayload;
+                currentFirelistIndex = firelist.getFirelist(ns, &currentFirelist);
+
+                // test if new state is deadlock
+                if (!currentFirelistIndex)
+                {
+                    delete[] currentFirelist;
+                    backfireNeeded = false;
+                    break;
+                }
+
+                setDFS(newpayload, ++currentDFSNumber);
+                currentLowlink = currentDFSNumber;
+                setCachedResult(newpayload, KNOWN_FALSE);
+                if((currentFirelistIndex > 1) && (currentDFSNumber > firedAll))
+		{
+			firedAll = currentDFSNumber;
+		}
+                continue;
+            }
+            else if (newCachedResult == KNOWN_FALSE)
+            {
+                // break; set all nodes to false
+                break;
+            }
+// we removed the IN_PROGRESS case as we set nodes immediately to
+// KNOWN_FALSE as soon as we put them on the stack.
+            //else if (newCachedResult == IN_PROGRESS)
+            //{
+                //// update lowlink and continue
+                //statenumber_t newdfs = getDFS(newpayload);
+                //if (newdfs < currentLowlink)
+                //{
+                    //currentLowlink = newdfs;
+                //}
+
+                //////RT::rep->status("AU check backfire (IN_PROGRESS) %s",Net::Name[TR][currentFirelist[currentFirelistIndex]]);
+
+                //Transition::backfire(ns, currentFirelist[currentFirelistIndex]);
+                // enabledness and atomics weren't updated, so no revert needed
+                //continue;
+            //}
+            else     // KNOWN_TRUE
+            {
+                // continue;
+
+                //RT::rep->status("AU check backfire (KNOWN_TRUE) %s",Net::Name[TR][currentFirelist[currentFirelistIndex]]);
+
+                Transition::backfire(ns, currentFirelist[currentFirelistIndex]);
+                // enabledness and atomics weren't updated, so no revert needed
+                continue;
+            }
+        }
+        else     // if(currentFirelistIndex--)
+        {
+            // free memory for finished firelist
+
+            // check if SCC is finished
+            statenumber_t dfs = getDFS(payload);
+            if (dfs == currentLowlink)
+            {
+                //RT::rep->status("AU found SCC at %x",ns.HashCurrent);
+
+		// First test: do we have ignored transitions?
+		if(dfs > firedAll)
+		{
+			// we have ignored transitions.
+			// -->Extend firelist and continue
+			firedAll = dfs;
+			if(ns.CardEnabled > 1)
+			{
+				arrayindex_t alreadyFired = currentFirelist[0];
+				delete[] currentFirelist;
+				currentFirelist = new arrayindex_t[ns.CardEnabled-1];
+				currentFirelistIndex = 0;
+				for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+				{
+					if(ns.Enabled[i] && (i != alreadyFired))
+					{
+						currentFirelist[currentFirelistIndex++] = i;
+					}
+				}
+				continue;
+			}
+		}
+                delete[] currentFirelist;
+
+       while (tarjanStack.StackPointer && getDFS(tarjanStack.top()) >= dfs)
+                {
+                    setCachedResult(tarjanStack.top(), KNOWN_TRUE);
+                    tarjanStack.pop();
+                }
+                setCachedResult(payload, KNOWN_TRUE);
+
+            }
+            else
+            {
+                delete[] currentFirelist;
+                // SCC not yet finished, push self onto tarjan stack
+                assert(dfs > currentLowlink);
+                *tarjanStack.push() = payload;
+            }
+
+            // check if there are any states to backtrack to
+            if (dfsStack.StackPointer)
+            {
+                currentFirelist = dfsStack.top().fl;
+                currentFirelistIndex = dfsStack.top().flIndex;
+                payload = dfsStack.top().payload;
+                if (currentLowlink > dfsStack.top().lowlink) // propagate lowlink to parent
+                {
+                    currentLowlink = dfsStack.top().lowlink;
+                }
+                dfsStack.pop();
+
+                //RT::rep->status("AU check backfire (fl) %s",Net::Name[TR][currentFirelist[currentFirelistIndex]]);
+
+                Transition::backfire(ns, currentFirelist[currentFirelistIndex]);
+                Transition::revertEnabled(ns, currentFirelist[currentFirelistIndex]);
+                revertAtomics(ns, currentFirelist[currentFirelistIndex]);
+            }
+            else
+            {
+                assert(!tarjanStack.StackPointer); // tarjan stack empty
+                assert(dfs == currentLowlink); // first node is always start of SCC
+                assert(*pInitialPayload == payload); // returned to initial state
+
+                // no (negative) witness path found
+                witness.clear();
+
+                //RT::rep->status("AU proven TRUE at %x",ns.HashCurrent);
+
+                return true;
+            }
+        }
+    }
+    // revert transition that brought us to the counterexample state
+    if (backfireNeeded)
+    {
+        //RT::rep->status("AU check backfire (backfireNeeded) %s",Net::Name[TR][currentFirelist[currentFirelistIndex]]);
+
+        Transition::backfire(ns, currentFirelist[currentFirelistIndex]);
+
+        // add transition to witness path
+        witness.push_back(currentFirelist[currentFirelistIndex]);
+
+        if (revertEnabledNeeded)
+        {
+            Transition::revertEnabled(ns, currentFirelist[currentFirelistIndex]);
+            revertAtomics(ns, currentFirelist[currentFirelistIndex]);
+        }
+
+        // free memory for current firelist
+        delete[] currentFirelist;
+    }
+
+    // current state can reach counterexample state -> formula false
+    setCachedResult(payload, KNOWN_FALSE);
+
+    // all elements that are still on tarjan stack can reach this state -> formula false
+    while (tarjanStack.StackPointer)
+    {
+        setCachedResult(tarjanStack.top(), KNOWN_FALSE);
+        tarjanStack.pop();
+    }
+
+    // all elements that are still on dfs stack (and hence on tarjan stack)
+    // can reach this state -> formula false
+    // revert all the transitions to restore original NetState
+    while (dfsStack.StackPointer)
+    {
+        setCachedResult(dfsStack.top().payload, KNOWN_FALSE);
+
+        //RT::rep->status("AU check backfire (dfsStack) %s",Net::Name[TR][dfsStack.top().fl[dfsStack.top().flIndex]]);
+
+        Transition::backfire(ns, dfsStack.top().fl[dfsStack.top().flIndex]);
+        Transition::revertEnabled(ns, dfsStack.top().fl[dfsStack.top().flIndex]);
+        revertAtomics(ns, dfsStack.top().fl[dfsStack.top().flIndex]);
+
+        witness.push_back(dfsStack.top().fl[dfsStack.top().flIndex]);
+
+        // free memory for stacked firelist
+        delete[] dfsStack.top().fl;
+
+        dfsStack.pop();
+    }
+    // (negative) witness found
+
+    //RT::rep->status("AU proven FALSE at %x",ns.HashCurrent);
+
+    return false;
+}
+
+bool AUFormula::checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+                      std::vector<int> &witness)
+{
+    void **pInitialPayload;
+    if (!s.searchAndInsert(ns, &pInitialPayload, 0))
+    {
+        // all-zeros is starting state for all values
+        // memset is required to mimick a calloc on a void* in C++
+        *pInitialPayload = ::operator new(payloadsize);
+        memset(*pInitialPayload, 0, payloadsize);
+    }
+    void *payload = *pInitialPayload;
+
+    //RT::rep->status("init AU check at %x (payload: %lx)",ns.HashCurrent,payload);
+
+    CTLFormulaResult cachedResult = getCachedResult(payload);
+    if (cachedResult & 2)  // value known
+    {
+        //RT::rep->status("AU cached %d at %x",cachedResult,ns.HashCurrent);
+
+        return cachedResult & 1; // return result
+    }
+    assert(cachedResult != IN_PROGRESS); // impossible for first state
+
+    // psi -> A phi U psi
+    if (psi->checkfair(s, ns, firelist, witness))
+    {
+        setCachedResult(payload, KNOWN_TRUE);
+
+        //RT::rep->status("AU initial TRUE at %x",ns.HashCurrent);
+
+        return true;
+    }
+
+    witness.clear();
+    // !phi and !psi -> !E phi U psi
+    if (!phi->checkfair(s, ns, firelist, witness))
+    {
+        setCachedResult(payload, KNOWN_FALSE);
+
+        //RT::rep->status("AU initial FALSE at %x",ns.HashCurrent);
 
         return false;
     }
@@ -198,7 +538,20 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     // fetch firelist
     arrayindex_t *currentFirelist;
     arrayindex_t currentFirelistIndex = firelist.getFirelist(ns, &currentFirelist);
+    arrayindex_t firedAll; // highest dfs where all enabled transition were fired
+			   // since stubborn sets for CTL are singleton, we
+			   // approximate as: highest dfs where more than 				   // one transition has been fired.
+			   // This value is used for controlling the
+			   // ignorance problem in stubborn set method
 
+    if(currentFirelistIndex > 1)
+    {
+	firedAll = 1;
+    }
+    else
+    {
+        firedAll = 0;
+    }
     // test if initial state is deadlock
     if (!currentFirelistIndex)
     {
@@ -243,7 +596,7 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
                 updateAtomics(ns, currentFirelist[currentFirelistIndex]);
 
                 witness.clear();
-                if (psi->check(s, ns, firelist, witness))
+                if (psi->checkfair(s, ns, firelist, witness))
                 {
                     setCachedResult(newpayload, KNOWN_TRUE);
                     // continue;
@@ -257,7 +610,7 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
                 }
 
                 witness.clear();
-                if (!phi->check(s, ns, firelist, witness))
+                if (!phi->checkfair(s, ns, firelist, witness))
                 {
                     setCachedResult(newpayload, KNOWN_FALSE);
                     // we updated the enabledness, so it needs to be reverted
@@ -284,6 +637,10 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
                 setDFS(newpayload, ++currentDFSNumber);
                 currentLowlink = currentDFSNumber;
                 setCachedResult(newpayload, IN_PROGRESS);
+                if((currentFirelistIndex > 1) && (currentDFSNumber > firedAll))
+		{
+			firedAll = currentDFSNumber;
+		}
                 continue;
             }
             else if (newCachedResult == KNOWN_FALSE)
@@ -320,13 +677,36 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
         else     // if(currentFirelistIndex--)
         {
             // free memory for finished firelist
-            delete[] currentFirelist;
 
             // check if SCC is finished
             statenumber_t dfs = getDFS(payload);
             if (dfs == currentLowlink)
             {
                 //rep->status("AU found SCC at %x",ns.HashCurrent);
+
+		// First test: do we have ignored transitions?
+		if(dfs > firedAll)
+		{
+			// we have ignored transitions.
+			// -->Extend firelist and continue
+			firedAll = dfs;
+			if(ns.CardEnabled > 1)
+			{
+				arrayindex_t alreadyFired = currentFirelist[0];
+				delete[] currentFirelist;
+				currentFirelist = new arrayindex_t[ns.CardEnabled-1];
+				currentFirelistIndex = 0;
+				for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+				{
+					if(ns.Enabled[i] && (i != alreadyFired))
+					{
+						currentFirelist[currentFirelistIndex++] = i;
+					}
+				}
+				continue;
+			}
+		}
+                delete[] currentFirelist;
 
                 // SCC finished, test if fair witness can be found
                 fairness.card_forbidden_transitions = 0; // reset fairness data
@@ -349,6 +729,7 @@ bool AUFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
             }
             else
             {
+                delete[] currentFirelist;
                 // SCC not yet finished, push self onto tarjan stack
                 assert(dfs > currentLowlink);
                 *tarjanStack.push() = payload;
@@ -1276,4 +1657,13 @@ FormulaInfo *AUFormula::getInfo() const
 int AUFormula::countSubFormulas() const
 {
     return 1 + phi->countSubFormulas() + psi->countSubFormulas();
+}
+
+void AUFormula::print()
+{
+	std::cout << "AU ( ";
+	phi -> print();
+	std::cout << ", ";
+	psi->print();
+	std::cout << ")";
 }

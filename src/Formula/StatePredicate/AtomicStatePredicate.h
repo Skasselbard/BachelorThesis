@@ -26,6 +26,7 @@
 #pragma once
 
 #include <Formula/StatePredicate/StatePredicate.h>
+#include <Formula/StatePredicate/Term.h>
 
 /*!
 A state predicate is a formula that assigns a Boolean value to Marking::Current
@@ -39,6 +40,7 @@ protected:
 
 public:
     AtomicStatePredicate(arrayindex_t, arrayindex_t, int);
+    AtomicStatePredicate(Term *);
 
     virtual ~AtomicStatePredicate();
 
@@ -151,4 +153,9 @@ public:
     // copy function
     virtual StatePredicate *copy(StatePredicate *parent);
     virtual char * toString();
+    char * toCompString(); // string when used as compute bound problem
+    virtual void adjust(arrayindex_t,arrayindex_t);
+   void setVisible();
+    virtual AtomicBooleanPredicate * DNF();
+   virtual FormulaStatistics * count(FormulaStatistics *);
 };

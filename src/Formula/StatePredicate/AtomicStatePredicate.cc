@@ -26,12 +26,15 @@
 #include <config.h>
 #include <Core/Handlers.h>
 #include <Formula/StatePredicate/AtomicStatePredicate.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
 #include <Net/LinearAlgebra.h>
 #include <Net/Net.h>
+#include <Net/Transition.h>
 #include <Net/NetState.h>
 #include <Net/Marking.h>
 #include <CoverGraph/CoverGraph.h>
 #include <Formula/FormulaInfo.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 
 /*!
 \brief creates a state predicate with a formal sum of p places with positive
@@ -50,12 +53,155 @@ AtomicStatePredicate::AtomicStatePredicate(arrayindex_t p, arrayindex_t n, int k
     cardNeg(n), up(NULL), cardUp(0), threshold(k), sum(0), original(true)
 {
     parent = NULL;
+    magicnumber = MagicNumber::assign();
+    literals = 1;
+}
+
+AtomicStatePredicate::AtomicStatePredicate(Term * T) :
+    up(NULL), cardUp(0), threshold(0), sum(0), original(true)
+{
+    literals = 1;
+    int64_t * mult = new int64_t[Net::Card[PL]];
+    parent = NULL;
+    cardPos = 0;
+    cardNeg = 0;
+    for(arrayindex_t i = 0; i < Net::Card[PL];i++)
+    {
+	mult[i] = 0;
+    }
+    while(T)
+    {
+	if(T->place == Net::Card[PL])
+	{
+		// constant factor
+		if(T->mult == OMEGA)
+		{
+			if(threshold == -OMEGA)
+			{
+                    		RT::rep->message("%s: addition -oo + oo",
+              			RT::rep->markup(MARKUP_WARNING, "error").str());
+				RT::rep->abort(ERROR_SYNTAX);
+			}
+			threshold = OMEGA;
+		}
+		else if(T->mult == -OMEGA)
+		{
+			if(threshold == OMEGA)
+			{
+                    		RT::rep->message("%s: addition -oo + oo",
+              			RT::rep->markup(MARKUP_WARNING, "error").str());
+				RT::rep->abort(ERROR_SYNTAX);
+			}
+			threshold = -OMEGA;
+	
+		}
+		else if((threshold != OMEGA) && (threshold != -OMEGA))
+		{
+			threshold += T->mult;
+		}
+		// else: adding omega with nonomega -> no change
+	}
+	else
+	{
+		// real place
+		if(T->mult == OMEGA)
+		{
+			if(mult[T->place] == -OMEGA)
+			{
+                    		RT::rep->message("%s: addition -oo + oo",
+              			RT::rep->markup(MARKUP_WARNING, "error").str());
+				RT::rep->abort(ERROR_SYNTAX);
+			}
+			mult[T->place] = OMEGA;
+		}
+		else if(T->mult == -OMEGA)
+		{
+			if(mult[T->place] == OMEGA)
+			{
+                    		RT::rep->message("%s: addition -oo + oo",
+              			RT::rep->markup(MARKUP_WARNING, "error").str());
+				RT::rep->abort(ERROR_SYNTAX);
+			}		
+			mult[T->place] = OMEGA;
+		}
+		else if((mult[T->place] != OMEGA) && (mult[T->place] != -OMEGA))
+		{
+				mult[T->place] += T->mult;
+		}
+		// else: adding omega with nonomega -> no change
+	}
+	    Term * oldT = T;
+	    T = T -> next;
+	    oldT -> next = NULL;
+	    delete oldT;
+    }
+    cardPos = 0;
+    cardNeg = 0;
+    for(arrayindex_t i = 0; i < Net::Card[PL];i++)
+    {
+	if(mult[i] > 0)
+	{
+		cardPos++;
+  	}
+	else if(mult[i] < 0)
+	{
+		cardNeg++;
+	}
+    }
+    posPlaces = new arrayindex_t [cardPos];
+    posMult = new arrayindex_t [cardPos];
+    negPlaces = new arrayindex_t [cardNeg];
+    negMult = new arrayindex_t [cardNeg];
+    cardPos = 0;
+    cardNeg = 0;
+    for(arrayindex_t i = 0; i < Net::Card[PL];i++)
+    {
+	if(mult[i] > 0)
+	{
+		posPlaces[cardPos] = i;
+		posMult[cardPos++] = mult[i];
+  	}
+	else if(mult[i] < 0)
+	{
+		negPlaces[cardNeg] = i;
+		negMult[cardNeg++] = -mult[i];
+	}
+    }
+    threshold = - threshold; // threshould must be put to the other side
+			    // of the inequation
+    delete[] mult;
+
+    // assign magic number
+    if((cardPos == 0) && (threshold >= 0))
+    {
+	magicnumber = MAGIC_NUMBER_TRUE;
+    }
+    else if((cardNeg == 0) && (threshold < 0))
+    {
+	magicnumber = MAGIC_NUMBER_FALSE;
+    }
+    else if((cardPos == 1) && (cardNeg == 0) && (threshold == 0) && (posMult[0] == 1))
+    {
+	magicnumber = MAGIC_NUMBER_EMPTY(posPlaces[0]);  // p<1
+    }
+    else if((cardPos == 0) &&(cardNeg == 1) && (threshold == -1) && (negMult[0] == 1))
+    {
+	magicnumber = MAGIC_NUMBER_MARKED(negPlaces[0]); // p>0
+    }
+    else
+    {
+	magicnumber = MagicNumber::assign(); // any predicate
+    } 
 }
 
 AtomicStatePredicate::AtomicStatePredicate() :
     posPlaces(NULL), negPlaces(NULL), posMult(NULL), negMult(NULL), cardPos(0),
     cardNeg(0), up(NULL), cardUp(0), threshold(0), sum(0), original(true)
-{}
+{
+	magicnumber = MAGIC_NUMBER_TRUE; // 0 <= 0
+        literals = 1;
+}
+
 
 AtomicStatePredicate::~AtomicStatePredicate()
 {
@@ -63,10 +209,10 @@ AtomicStatePredicate::~AtomicStatePredicate()
     {
         return;
     }
-    delete[] posPlaces;
-    delete[] negPlaces;
-    delete[] posMult;
-    delete[] negMult;
+    free( posPlaces);
+    free( negPlaces);
+    free( posMult);
+    free( negMult);
     free(up);
 }
 
@@ -80,6 +226,14 @@ void AtomicStatePredicate::addPos(arrayindex_t i, arrayindex_t p, capacity_t m)
     assert(i < cardPos);
     posPlaces[i] = p;
     posMult[i] = m;
+    if((cardPos == 1) && (cardNeg == 0) && (threshold == 0) && (posMult[0] == 1))
+    {
+	magicnumber = MAGIC_NUMBER_EMPTY(posPlaces[0]);  // p<1
+    }
+    else
+    {
+	magicnumber = MagicNumber::assign(); // any predicate
+    } 
 }
 
 /*!
@@ -92,9 +246,17 @@ void AtomicStatePredicate::addNeg(arrayindex_t i, arrayindex_t p, capacity_t m)
     assert(i < cardNeg);
     negPlaces[i] = p;
     negMult[i] = m;
+    if((cardPos == 0) &&(cardNeg == 1) && (threshold == -1) && (negMult[0] == 1))
+    {
+	magicnumber = MAGIC_NUMBER_MARKED(negPlaces[0]); // p>0
+    }
+    else
+    {
+	magicnumber = MagicNumber::assign(); // any predicate
+    } 
 }
 
-arrayindex_t AtomicStatePredicate::getUpSet(arrayindex_t *stack, bool *onstack, bool *) const
+arrayindex_t AtomicStatePredicate::getUpSet(arrayindex_t *stack, bool *onstack, bool * needEnabled) const
 {
     assert(onstack);
     arrayindex_t stackpointer = 0;
@@ -107,11 +269,13 @@ arrayindex_t AtomicStatePredicate::getUpSet(arrayindex_t *stack, bool *onstack, 
             stack[stackpointer++] = element;
         }
     }
+    * needEnabled = false;
     return stackpointer;
 }
 
-arrayindex_t AtomicStatePredicate::getDownSet(arrayindex_t *stack, bool *onstack, bool *) const
+arrayindex_t AtomicStatePredicate::getDownSet(arrayindex_t *stack, bool *onstack, bool * needEnabled) const
 {
+    * needEnabled = false;
     assert(onstack);
     arrayindex_t stackpointer = 0;
     for (arrayindex_t i = 0; i < cardDown; i++)
@@ -326,6 +490,7 @@ bool AtomicStatePredicate::DEBUG__consistency(NetState &ns)
 StatePredicate *AtomicStatePredicate::copy(StatePredicate *parent)
 {
     AtomicStatePredicate *af = new AtomicStatePredicate(0, 0, 0);
+    af->magicnumber = magicnumber;
     af->value = value;
     af->position = position;
     af->parent = parent;
@@ -352,16 +517,20 @@ const
 
 StatePredicate *AtomicStatePredicate::negate()
 {
-    AtomicStatePredicate *af = new AtomicStatePredicate(cardNeg, cardPos, - threshold - 1);
-    for (arrayindex_t i = 0; i < cardPos; i++)
-    {
-        af->addNeg(i, posPlaces[i], posMult[i]);
-    }
-    for (arrayindex_t i = 0; i < cardNeg; i++)
-    {
-        af->addPos(i, negPlaces[i], negMult[i]);
-    }
-    return af;
+    arrayindex_t tmp;
+    arrayindex_t * tmpp;
+    tmp = cardPos;
+    cardPos = cardNeg;
+    cardNeg = tmp;
+    tmpp = posPlaces;
+    posPlaces = negPlaces;
+    negPlaces = tmpp;
+    tmpp = posMult;
+    posMult = negMult;
+    negMult = tmpp;
+    threshold = - threshold - 1;
+    magicnumber = -magicnumber;
+    return this;
 }
 
 FormulaInfo *AtomicStatePredicate::getInfo() const
@@ -427,98 +596,222 @@ void AtomicStatePredicate::reduceFactors()
     }
 }
 
-char * AtomicStatePredicate::toString()
+char * addNumber(char * text, int64_t num)
 {
-	int size = 1;
-	char * result = (char *) malloc(sizeof(char));
-	result[0] = '\0';
-
-	// positive terms
-	if(cardPos == 0)
+	char * result = text;
+	result = (char *) realloc(result,strlen(result) + 32);
+	if(num == OMEGA)
 	{
-		size +=2;
-		// Use a tmp pointer to avoid memleakOnRealloc
-		char * resultTmp = (char *) realloc(result, size * sizeof(char));
-		if (resultTmp == NULL)
-		{
-			// Could not realloc - free and exit
-			free(result);
-			RT::rep->status("realloc failed");
-                        RT::rep->abort(ERROR_MEMORY);
-		}
-		result = resultTmp;
-		sprintf(result+strlen(result),"0 ");
+		sprintf(result+strlen(result),"oo");
 	}
-	for(int i = 0; i < cardPos; i++)
+	else if(num == FINITE)
 	{
-		size +=16 + strlen(Net::Name[PL][posPlaces[i]]);
-		// Use a tmp pointer to avoid memleakOnRealloc
-		char * resultTmp = (char *) realloc(result, size * sizeof(char));
-		if (resultTmp == NULL)
-		{
-			// Could not realloc - free and exit
-			free(result);
-			RT::rep->status("realloc failed");
-                        RT::rep->abort(ERROR_MEMORY);
-		}
-		result = resultTmp;
-		if(i!=0)
-		{
-			sprintf(result+strlen(result)," + ");
-		}
-		sprintf(result + strlen(result), "%d * %s", posMult[i],Net::Name[PL][posPlaces[i]]);
-	}
-	
-	// negative terms
-	for(int i = 0; i < cardNeg; i++)
-	{
-		size +=16 + strlen(Net::Name[PL][negPlaces[i]]);
-		// Use a tmp pointer to avoid memleakOnRealloc
-		char * resultTmp = (char *) realloc(result, size * sizeof(char));
-		if (resultTmp == NULL)
-		{
-			// Could not realloc - free and exit
-			free(result);
-			RT::rep->status("realloc failed");
-                        RT::rep->abort(ERROR_MEMORY);
-		}
-		result = resultTmp;
-		sprintf(result+strlen(result)," - ");
-		sprintf(result + strlen(result), "%d * %s", negMult[i],Net::Name[PL][negPlaces[i]]);
-	}
-	// constant
-	if(threshold >= 0)
-	{
-		size += 14;
-		// Use a tmp pointer to avoid memleakOnRealloc
-		char * resultTmp = (char *) realloc(result, size * sizeof(char));
-		if (resultTmp == NULL)
-		{
-			// Could not realloc - free and exit
-			free(result);
-			RT::rep->status("realloc failed");
-                        RT::rep->abort(ERROR_MEMORY);
-		}
-		result = resultTmp;
-		sprintf(result + strlen(result), " <= %d", threshold);
+		sprintf(result+strlen(result)," FINITE ");
 	}
 	else
 	{
-		size += 19;
-		// Use a tmp pointer to avoid memleakOnRealloc
-		char * resultTmp = (char *) realloc(result, size * sizeof(char));
-		if (resultTmp == NULL)
-		{
-			// Could not realloc - free and exit
-			free(result);
-			RT::rep->status("realloc failed");
-                        RT::rep->abort(ERROR_MEMORY);
-		}
-		result = resultTmp;
-		sprintf(result + strlen(result), " <= 0 - %d", -threshold);
+		sprintf(result+strlen(result),"%lld",num);
 	}
+	return result;
+}
+
+char * addText(char * text, const char * ttext)
+{
+	char * result = text;
+	result = (char *) realloc(result,strlen(result) + strlen(ttext) + 1);
+	sprintf(result+strlen(result),"%s",ttext);
+	return result;
+}
+
+char * addSummand(char * text, arrayindex_t p, arrayindex_t mult)
+{
+	char * result = text;
+	const char * place = Net::Name[PL][p];
+	result = (char *) realloc(result,strlen(result) + strlen(place) + 50);
+	if(mult != 1)
+	{
+		sprintf(result+strlen(result)," %d * ",mult);
+	}
+	sprintf(result+strlen(result),"%s",place);
+	return result;
+}
+
+char * AtomicStatePredicate::toString()
+{
+	char * result = (char *) malloc(sizeof(char));
+	result[0] = '\0';
+	result = addText(result,"(");
+
+
+	// build string left of <=
+	// - all positive terms
+	// - -threshold (if negative)
+	// - 0 if none of these
+
+	if(cardPos == 0)
+	{
+		if(threshold >= 0)
+		{
+			result = addText(result,"0");
+		}
+		else
+		{
+			result = addNumber(result,-threshold);
+		}
+		
+	}
+	else
+	{
+		result = addSummand(result,posPlaces[0],posMult[0]);
+		for(arrayindex_t i = 1; i < cardPos;i++)
+		{
+			result = addText(result," + ");
+			result = addSummand(result,posPlaces[i],posMult[i]);
+		}
+		if(threshold < 0)
+		{
+			result = addText(result," + ");
+			result = addNumber(result,-threshold);
+		}
+	}
+	result = addText(result," <= ");
+
+	// build string  right of <=
+	// - all negative terms
+	// - threshold (if positive)
+	// - 0 if none of these
+
+	if(cardNeg == 0)
+	{
+		if(threshold <= 0)
+		{
+			result = addText(result,"0");
+		}
+		else
+		{
+			result = addNumber(result,threshold);
+		}
+		
+	}
+	else
+	{
+		result = addSummand(result,negPlaces[0],negMult[0]);
+		for(arrayindex_t i = 1; i < cardNeg;i++)
+		{
+			result = addText(result," + ");
+			result = addSummand(result,negPlaces[i],negMult[i]);
+		}
+		if(threshold > 0)
+		{
+			result = addText(result," + ");
+			result = addNumber(result,threshold);
+		}
+	}
+	result = addText(result,")");
 	return result;
 	
 }
 
+char * AtomicStatePredicate::toCompString()
+{
+	char * result = (char *) malloc(sizeof(char));
+	result[0] = '\0';
+	if(cardPos == 0)
+	{
+		result = addText(result,"0");
+	}
+	else	
+	{
+		result = addSummand(result,posPlaces[0],posMult[0]);	
+	}
+	for(arrayindex_t i = 1; i < cardPos;i++)
+	{
+		result = addText(result," + ");
+		result = addSummand(result,posPlaces[i],posMult[i]);	
+	}
+	for(arrayindex_t i = 0; i < cardNeg;i++)
+	{
+		result = addText(result," - ");
+		result = addSummand(result,negPlaces[i],negMult[i]);	
+	}
+	return result;
+}
+void AtomicStatePredicate::adjust(arrayindex_t old, arrayindex_t nw)
+{
+	for(arrayindex_t i = 0; i < cardPos; i++)
+	{
+		if(posPlaces[i] == old) posPlaces[i] = nw;
+	}
+	for(arrayindex_t i = 0; i < cardNeg; i++)
+	{
+		if(negPlaces[i] == old) negPlaces[i] = nw;
+	}
+}
 
+void AtomicStatePredicate::setVisible()
+{
+	for(arrayindex_t i = 0; i < cardPos; i++)
+	{
+		arrayindex_t p = posPlaces[i];
+		for(arrayindex_t j = 0; j < Net::CardArcs[PL][PRE][p];j++)
+		{
+			Transition::Visible[Net::Arc[PL][PRE][p][j]] = true;
+		}
+		for(arrayindex_t j = 0; j < Net::CardArcs[PL][POST][p];j++)
+		{
+			Transition::Visible[Net::Arc[PL][POST][p][j]] = true;
+		}
+	}
+	for(arrayindex_t i = 0; i < cardNeg; i++)
+	{
+		arrayindex_t p = negPlaces[i];
+		for(arrayindex_t j = 0; j < Net::CardArcs[PL][PRE][p];j++)
+		{
+			Transition::Visible[Net::Arc[PL][PRE][p][j]] = true;
+		}
+		for(arrayindex_t j = 0; j < Net::CardArcs[PL][POST][p];j++)
+		{
+			Transition::Visible[Net::Arc[PL][POST][p][j]] = true;
+		}
+	}
+}
+
+AtomicBooleanPredicate * AtomicStatePredicate::DNF()
+{
+	// result is singleton conjunction
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	result -> addSub(this); // call DNF on a copy of orginal formula,
+				// otherwise parent link breaks!!!!!!!!!
+	result -> magicnumber = magicnumber; // result is eq to this!
+	return result;
+}
+
+FormulaStatistics * AtomicStatePredicate::count(FormulaStatistics * fs)
+{
+	if(magicnumber == MAGIC_NUMBER_TRUE)
+	{
+		fs -> taut++;
+		return fs;
+	}
+	if(magicnumber == MAGIC_NUMBER_FALSE)
+	{
+		fs -> cont++;
+		return fs;
+	}
+	fs->comp++;
+	fs-> place_references += cardPos;
+	fs-> place_references += cardNeg;
+	for(arrayindex_t i = 0; i < cardPos;i++)
+	{
+		if(fs->mentioned_place[posPlaces[i]]) continue;
+		fs->mentioned_place[posPlaces[i]] = true;
+		fs->visible_places++;
+	}
+	for(arrayindex_t i = 0; i < cardNeg;i++)
+	{
+		if(fs->mentioned_place[negPlaces[i]]) continue;
+		fs->mentioned_place[negPlaces[i]] = true;
+		fs->visible_places++;
+	}
+	return fs;
+}

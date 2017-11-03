@@ -26,13 +26,17 @@
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/TruePredicate.h>
 #include <Formula/StatePredicate/FalsePredicate.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
 #include <Formula/FormulaInfo.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 
 
 TruePredicate::TruePredicate()
 {
+    literals = 0;
     value = true;
     unknown = false;
+    magicnumber = MAGIC_NUMBER_TRUE;
 }
 
 /*!
@@ -48,8 +52,9 @@ predicate true without firing one of the transitions.
 //  true predicate occurs only in initial sat problems since it is eleiminated by rewriting ffrom all other formulas. Hence, certain methods are never called
 
 // LCOV_EXCL_START
-arrayindex_t TruePredicate::getUpSet(arrayindex_t *, bool *, bool *) const
+arrayindex_t TruePredicate::getUpSet(arrayindex_t *, bool *, bool * needEnabled) const
 {
+    * needEnabled = false;
     return 0;
 }
 
@@ -90,11 +95,12 @@ arrayindex_t TruePredicate::collectDeadlock(DeadlockPredicate **)
 /*!
 \param parent  the parent predicate for the new, copied, object
 */
-StatePredicate *TruePredicate::copy(StatePredicate *parent)
+ StatePredicate *TruePredicate::copy(StatePredicate *parent)
 {
     TruePredicate *p = new TruePredicate();
     p->parent = parent;
     p->position = position;
+    p->magicnumber = magicnumber;
     return p;
 }
 
@@ -136,4 +142,19 @@ char * TruePredicate::toString()
 	char * result = (char *) malloc(5 * sizeof(char));
 	sprintf(result,"TRUE");
 	return result;
+}
+
+class BooleanAtomicPredicate;
+
+AtomicBooleanPredicate * TruePredicate::DNF()
+{
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true); // empty conjunction
+	result -> magicnumber = magicnumber;
+	return result;
+}
+
+FormulaStatistics * TruePredicate::count(FormulaStatistics * fs)
+{
+	fs -> taut++;
+	return fs;
 }

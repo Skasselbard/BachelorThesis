@@ -49,6 +49,7 @@
 #include <Exploration/FirelistStubbornStatePredicate.h>
 #include <Exploration/DFSExploration.h>
 #include <Exploration/ParallelExploration.h>
+#include <InputOutput/JSON.h>
 
 // copied from lola2/src/InputOutput/JSON.cc: ... //
 #include <sstream>
@@ -103,10 +104,12 @@ LeafTask::~LeafTask()
 
 ternary_t LeafTask::getResult()
 {
+     ternary_t result;
     // 1. launch child process
 
     // 1a. prepare a channel between child and parent
 
+    
     int mypipe[2];
     if (pipe(mypipe))
     {
@@ -126,30 +129,27 @@ ternary_t LeafTask::getResult()
     }
     if (process_id > (pid_t) 0)
     {
-        RT::compoundNumber++;
         // code for parent process
+        RT::compoundNumber++;
         // 2p. parent process waits for result and returns
 
         resultstring = "unknown";
         RT::childpid = process_id;
         close(mypipe[1]); // we do not want to send information to child
-        char childmessage[128];
+        char childmessage[1024];
         childmessage[0] ='\0';
-        read(mypipe[0], childmessage, 128);
+        read(mypipe[0], childmessage, 1024);
         int64_t rrr;
         switch (childmessage[0])
         {
             case 't': resultstring = "yes";
-                RT::interim_result += " " + resultstring;
-                RT::childpid = 0;
-                return TERNARY_TRUE;
+                      result = TERNARY_TRUE;
+		      break;
             case 'f': resultstring = "no";
-                RT::childpid = 0;
-                RT::interim_result += " " + resultstring;
-                return TERNARY_FALSE;
-            case 'u': RT::interim_result += " " + resultstring;
-                RT::childpid = 0;
-                return TERNARY_UNKNOWN;
+                      result = TERNARY_FALSE;
+		      break;
+            case 'u': result = TERNARY_UNKNOWN;
+		      break;
             case 'n': sscanf(childmessage + 1, "%lld", &rrr);
                 resultstring =
 #ifdef __cplusplus11
@@ -158,21 +158,46 @@ ternary_t LeafTask::getResult()
                         int_to_string(rrr);
 #endif
 
-                RT::interim_result += " " + resultstring;
-                RT::childpid = 0;
-                return TERNARY_TRUE;
+                	result = TERNARY_TRUE;
+			break;
             default: RT::rep->status("Child process aborted or communication problem between parent and child process");
                 resultstring = "unknown";
-                RT::interim_result += " " + resultstring;
-                RT::childpid = 0;
-                return TERNARY_UNKNOWN;
+                result = TERNARY_UNKNOWN;
         }
+	RT::interim_result += " " + resultstring;
+	
+	// get child's json
+	JSON childjson;
+	std::stringstream jsontext;
+	arrayindex_t i = 0;
+	while(childmessage[i++] != '\n'){};
+	for(; i < 1024; i++)
+	{
+		if(childmessage[i] == '\0') break;
+		jsontext << childmessage[i];
+	}
+	while(i >= 1024)
+	{
+		read(mypipe[0], childmessage, 1024);
+		for(i = 0; i < 1024; i++)
+		{
+			if(childmessage[i] == '\0') break;
+			jsontext << childmessage[i];
+		}
+	
+	}
+	jsontext >> childjson;
+	RT::data["child"] += childjson;
+	RT::childpid = 0;
+	return result;
     }
     // code for child process
+    RT::data = JSON();
 
 
     close(mypipe[0]); // we do not expect info from parent;
     TheFormula = formula; // switch to subproblem
+    RT::data["task"]["compoundnumber"] = static_cast<int>(RT::compoundNumber);
 
     // child not responsible for announcing prelimiary results
     RT::interim_result = "";
@@ -197,7 +222,9 @@ ternary_t LeafTask::getResult()
             
             RT::rep->status("subprocess %i will run for %d seconds at most (%s)",
                     RT::compoundNumber, RT::localTimeLimitDynamic, RT::rep->markup(MARKUP_PARAMETER, 
-                    "--localtimelimit=0").str());
+                    "--localtimelimit=%i", RT::args.localtimelimit_arg).str());
+		RT::data["call"]["dynamic_timelimit"] = true;
+		RT::data["call"]["localtimelimit"] = static_cast<int>(RT::localTimeLimitDynamic);
         }
         else
         {
@@ -205,6 +232,8 @@ ternary_t LeafTask::getResult()
             RT::rep->status("subprocess %i will run for %d seconds at most (%s)",
                     RT::compoundNumber, RT::args.localtimelimit_arg, RT::rep->markup(MARKUP_PARAMETER, 
                     "--localtimelimit").str());
+		RT::data["call"]["dynamic_timelimit"] = false;
+		RT::data["call"]["localtimelimit"] = static_cast<int>(RT::args.localtimelimit_arg);
         }
         // create localtimelimit thread
         const int ret = pthread_create(&local_reporter_thread, NULL, 
@@ -235,102 +264,130 @@ ternary_t LeafTask::getResult()
     // 3c. child process turns subformula into task
     RT::rep->status("SUBTASK");
     RT::rep->indent(2);
+
+    // Phase 1: remove syntactic sugar
+    TheFormula = TheFormula->rewrite(kc::goodbye_doublearrows);
+    TheFormula = TheFormula->rewrite(kc::goodbye_singlearrows);
+    TheFormula = TheFormula->rewrite(kc::goodbye_xor);
+
+    // Phase 3: Apply logical tautologies.
+    TheFormula = TheFormula->rewrite(kc::tautology);
+    // Phase 3a: Remove empty path quantifiers (containsTemporal is set in kc::temporal)
+    TheFormula->unparse(myprinter, kc::temporal);
+    TheFormula = TheFormula->rewrite(kc::emptyquantifiers);
+
+    // 4a: detect formula type
+    TheFormula->unparse(myprinter, kc::temporal);
     switch (TheFormula->type)
     {
         case FORMULA_BOOLEAN:
             RT::rep->status("checking a Boolean combination of formulas");
-            RT::data["analysis"]["formula"]["type"] = "deadlock";
+            RT::data["task"]["type"] = "boolean";
             subTask = BooleanTask::buildTask();
             break;
         case FORMULA_BOUND:
             RT::rep->status("computing bound of an expression");
-            RT::data["analysis"]["formula"]["type"] = "bound";
+            RT::data["task"]["type"] = "bound";
             subTask = ComputeBoundTask::buildTask();
             break;
         case FORMULA_DEADLOCK:
             RT::rep->status("checking reachability of deadlocks");
-            RT::data["analysis"]["formula"]["type"] = "deadlock";
+            RT::data["task"]["type"] = "deadlock";
             subTask = DeadlockTask::buildTask();
             break;
         case FORMULA_NODEADLOCK:
             RT::rep->status("checking absence of deadlocks");
-            RT::data["analysis"]["formula"]["type"] = "nodeadlock";
+            RT::data["task"]["type"] = "nodeadlock";
             subTask = NoDeadlockTask::buildTask();
             break;
         case FORMULA_REACHABLE:
             RT::rep->status("checking reachability");
-            RT::data["analysis"]["formula"]["type"] = "reachability";
+            RT::data["task"]["type"] = "reachability";
             subTask = ReachabilityTask::buildTask();
             break;
         case FORMULA_INVARIANT:
             RT::rep->status("checking invariance");
-            RT::data["analysis"]["formula"]["type"] = "invariance";
+            RT::data["task"]["type"] = "invariance";
             subTask = InvariantTask::buildTask();
             break;
         case FORMULA_LIVENESS:
             RT::rep->status("checking liveness");
-            RT::data["analysis"]["formula"]["type"] = "liveness";
+            RT::data["task"]["type"] = "liveness";
             //result = AGEFTask::buildTask(); 
             RT::rep->status("liveness not yet implemented, converting to CTL...");
             subTask = CTLTask::buildTask();
             break;
         case FORMULA_EGAGEF:
             RT::rep->status("checking possible liveness");
-            RT::data["analysis"]["formula"]["type"] = "possible_liveness";
+            RT::data["task"]["type"] = "possible_liveness";
             //result = EFAGEFTask::buildTask(); 
             RT::rep->status("possible liveness not yet implemented, converting to CTL...");
             subTask = CTLTask::buildTask();
             break;
         case FORMULA_EFAG:
             RT::rep->status("checking possible invariance");
-            RT::data["analysis"]["formula"]["type"] = "possible_invariance";
+            RT::data["task"]["type"] = "possible_invariance";
             //result = EFAGTask::buildTask(); 
             RT::rep->status("possible invariance not yet implemented, converting to CTL...");
             subTask = CTLTask::buildTask();
             break;
         case FORMULA_AGEFAG:
             RT::rep->status("checking globally possible invariance");
-            RT::data["analysis"]["formula"]["type"] = "globally_possible_invariance";
+            RT::data["task"]["type"] = "globally_possible_invariance";
             //result = AGEFAGTask::buildTask(); 
             RT::rep->status("lobally possible invariance not yet implemented, converting to CTL...");
             subTask = CTLTask::buildTask();
             break;
         case FORMULA_FAIRNESS:
             RT::rep->status("checking fairness");
-            RT::data["analysis"]["formula"]["type"] = "fairness";
+            RT::data["task"]["type"] = "fairness";
             RT::rep->status("fairness not yet implemented, converting to LTL...");
             subTask = LTLTask::buildTask();
             break;
         case FORMULA_STABILIZATION:
             RT::rep->status("checking stabilization");
-            RT::data["analysis"]["formula"]["type"] = "stabilization";
+            RT::data["task"]["type"] = "stabilization";
             RT::rep->status("stabilization not yet implemented, converting to LTL...");
             subTask = LTLTask::buildTask();
             break;
         case FORMULA_EVENTUALLY:
             RT::rep->status("checking eventual occurrence");
-            RT::data["analysis"]["formula"]["type"] = "eventual occurrence";
+            RT::data["task"]["type"] = "eventual occurrence";
             RT::rep->status("eventual occurrence not yet implemented, converting to LTL...");
             subTask = LTLTask::buildTask();
             break;
         case FORMULA_INITIAL:
             RT::rep->status("checking initial satisfaction");
-            RT::data["analysis"]["formula"]["type"] = "initial satisfaction";
+            RT::data["task"]["type"] = "initial satisfaction";
             subTask = InitialTask::buildTask();
+            break;
+        case FORMULA_BOTH:
+	    if(RT::args.preference_arg == preference_arg_ctl)
+            {
+		    RT::rep->status("checking CTL");
+		    RT::data["task"]["type"] = "CTL";
+		    subTask = CTLTask::buildTask();
+            }
+	    else
+ 	    {
+		    RT::rep->status("checking LTL");
+		    RT::data["task"]["type"] = "LTL";
+		    subTask = LTLTask::buildTask();
+ 	    }
             break;
         case FORMULA_LTL:
             RT::rep->status("checking LTL");
-            RT::data["analysis"]["formula"]["type"] = "LTL";
+            RT::data["task"]["type"] = "LTL";
             subTask = LTLTask::buildTask();
             break;
         case FORMULA_CTL:
             RT::rep->status("checking CTL");
-            RT::data["analysis"]["formula"]["type"] = "CTL";
+            RT::data["task"]["type"] = "CTL";
             subTask = CTLTask::buildTask();
             break;
         default:
             RT::rep->status("checking CTL*");
-            RT::data["analysis"]["formula"]["type"] = "CTL*";
+            RT::data["task"]["type"] = "CTL*";
             RT::rep->message("check not yet implemented");
             subTask = NULL;
     }
@@ -352,13 +409,13 @@ ternary_t LeafTask::getResult()
         RT::rep->indent(-2);
         RT::rep->status("RUNNING");
         RT::rep->indent(2);
+	
         bresult = subTask->getResult(); // run the check
     }
     else
     {
         bresult = TERNARY_UNKNOWN;
     }
-
     // 5c. child process transmits result and exits
 
     RT::rep->indent(-2);
@@ -415,10 +472,103 @@ ternary_t LeafTask::getResult()
     }
 
     subTask -> getStatistics();
+    for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_state)
+        {
+            RT::data["result"]["state"] = JSON();
+            const capacity_t *current = subTask->getMarking();
+            if (current)
+            {
+                for (arrayindex_t p = 0; p < Net::Card[PL]; ++p)
+                {
+                    if (current[p] == OMEGA)
+                    {
+                        RT::data["result"]["state"][Net::Name[PL][p]] = "oo";
+                    }
+                    else if (current[p] > 0)
+                    {
+                        RT::data["result"]["state"][Net::Name[PL][p]] = static_cast<int> (current[p]);
+                    }
+                }
+            }
+            break;
+        }
+    }
+    if (RT::args.state_given)
+    {
+        RT::rep->status("print witness state (%s)",
+                RT::rep->markup(MARKUP_PARAMETER, "--state").str());
+        Output o("witness state", RT::args.state_arg);
+
+        const capacity_t *current = subTask->getMarking();
+        if (current)
+        {
+            for (arrayindex_t p = 0; p < Net::Card[PL]; ++p)
+            {
+                if (current[p] == OMEGA)
+                {
+                    fprintf(o, "%s : oo\n", Net::Name[PL][p]);
+                }
+                else if (current[p] > 0)
+                {
+                    fprintf(o, "%s : %d\n", Net::Name[PL][p], current[p]);
+                }
+            }
+        }
+        else
+        {
+            RT::rep->status("no witness state generated");
+            fprintf(o, "NOSTATE\n");
+        }
+    }
+    for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_path)
+        {
+            const Path p = subTask->getWitnessPath();
+            if (p.initialized)
+            {
+                RT::data["result"]["path"] = p.json();
+            }
+            else
+            {
+                RT::data["result"]["path"] = JSON();
+            }
+            break;
+
+        }
+    }
+    // print witness path
+    if (RT::args.path_given)
+    {
+        const Path p = subTask->getWitnessPath();
+        if (p.initialized)
+        {
+            if (RT::args.pathshape_arg == pathshape_arg_linear)
+            {
+                RT::rep->status("print witness path (%s)",
+                        RT::rep->markup(MARKUP_PARAMETER, "--path").str());
+                Output o("witness path", RT::args.path_arg);
+                p.print(o);
+            }
+            else
+            {
+                RT::rep->status("print distributed run (%s)",
+                        RT::rep->markup(MARKUP_PARAMETER, "--pathshape").str());
+                Output o("distributed run", RT::args.path_arg);
+                p.printRun(o);
+            }
+        }
+    }
+
+
+
+
 
     RT::rep->indent(-2);
     // create message to parent
-    char message[128];
+    char message[1024];
     if (formula->type != FORMULA_BOUND)
     {
         switch (bresult)
@@ -442,7 +592,25 @@ ternary_t LeafTask::getResult()
         message[0] = 'n';
         sprintf(message + 1, "%lld", reinterpret_cast<ComputeBoundTask*> (subTask)->resultvalue);
     }
-    write(mypipe[1], message, strlen(message) + 1);
+    // transmit json
+    std::stringstream ttt;
+    ttt << RT::data << std::endl;
+    std::string jsontext = ttt.str();
+    arrayindex_t i = strlen(message);
+    message[i++] = '\n';
+    arrayindex_t j;
+    for(j = 0; j < jsontext.size();j++)
+    {
+	message[i++] = jsontext[j];
+	if(i >= 1024)
+	{
+	    write(mypipe[1], message, 1024);
+	    i = 0;
+	}
+    }
+    message[i] = '\0';
+    write(mypipe[1], message, strlen(message)+1);
+    
     pthread_cancel(reporter); // stop reporter thread
     RT::rep->status("========================================");
     _exit(0);

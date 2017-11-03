@@ -39,6 +39,7 @@ public:
 
     /// run the actual verification algorithm
     ternary_t getResult() {
+	taskname = D->taskname;
 	ternary_t result = D -> getResult(); // run the AGEF task
 	switch(result)   // toggle result
 	{
@@ -54,9 +55,33 @@ public:
     void interpreteResult(ternary_t result) {
 	switch(result)
 	{
-	case TERNARY_TRUE: RT::rep->status("The predicate is possibly invariant"); return;
-	case TERNARY_FALSE: RT::rep->status("The predicate is not possibly invariant"); return;
-	case TERNARY_UNKNOWN: RT::rep->status("The predicate may or may not be possibly invariant"); return;
+	case TERNARY_TRUE: RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
+
+RT::rep->status("produced by: %s", taskname);
+RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
+ RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The predicate is cwpossibly invariant.").str());
+
+
+return;
+	case TERNARY_FALSE:  RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
+RT::rep->status("produced by: %s", taskname);
+RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
+RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
+                                                  "The predicate is not possibly invariant.").str());
+
+
+return;
+	case TERNARY_UNKNOWN: RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
+
+RT::rep->status("produced by: %s", taskname);
+RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
+ RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
+                                                  "The predicate may or may not be possibly invariant.").str());
+
+return;
 	default: assert(false);
 	}
    }

@@ -48,6 +48,11 @@ bool AtomicFormula::check(Store<void *> &, NetState &, Firelist &, std::vector<i
     return inner->getPredicate()->value;
 }
 
+bool AtomicFormula::checkfair(Store<void *> &, NetState &, Firelist &, std::vector<int> &)
+{
+    return inner->getPredicate()->value;
+}
+
 // LCOV_EXCL_START
 void AtomicFormula::DEBUG_print()
 {
@@ -70,4 +75,9 @@ FormulaInfo *AtomicFormula::getInfo() const
 int AtomicFormula::countSubFormulas() const
 {
     return (inner->getPredicate())->countSubFormulas();
+}
+
+void AtomicFormula::print()
+{
+	std::cout << inner -> getPredicate() -> toString();
 }

@@ -271,7 +271,7 @@ bool StatePredicateProperty::updateProperty(NetState &ns, arrayindex_t t)
 
 SimpleProperty *StatePredicateProperty::copy()
 {
-    StatePredicateProperty *spp = new StatePredicateProperty(predicate->copy());
+    StatePredicateProperty *spp = new StatePredicateProperty(predicate->copy(NULL));
     spp->stack = stack;
     spp->value = value;
     return spp;

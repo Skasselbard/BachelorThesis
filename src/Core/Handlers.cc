@@ -51,9 +51,16 @@ void Handlers::signalTerminationHandler(int signum)
                      RT::rep->markup(MARKUP_WARNING, strsignal(signum)).str());
 
     // add signal name to JSON output
-    RT::data["call"]["signal"] = strsignal(signum);
+    RT::data["exit"]["signal"] = strsignal(signum);
+    
+    // second kill sara if running
+    if (RT::saraPID > 0)
+    {
+        kill(RT::saraPID,SIGKILL);
+    }
 
-    exit(EXIT_TERMINATION);
+     Handlers::exitHandler();
+    _exit(EXIT_TERMINATION);
 }
 
 
@@ -69,7 +76,7 @@ void Handlers::newHandler()
 {
     RT::rep->message("memory allocation failed");
 
-    RT::data["call"]["error"] = "memory allocation failed";
+    RT::data["exit"]["error"] = "memory allocation failed";
 
     exit(EXIT_TERMINATION);
 }
@@ -89,17 +96,26 @@ Handlers::signalTerminationHandler().
 */
 void *Handlers::remoteTerminationHandler(void *)
 {
+    RT::data["exit"]["remotetermination"] = false;
     Socket listener_socket(RT::args.inputport_arg);
     char *sender = listener_socket.waitFor(RT::args.remoteTermination_arg);
     assert(sender);
+    RT::data["exit"]["remotetermination"] = true;
     RT::rep->message("received %s packet (%s) from %s - shutting down",
                      RT::rep->markup(MARKUP_BAD, "KILL").str(),
                      RT::rep->markup(MARKUP_IMPORTANT, RT::args.remoteTermination_arg).str(),
                      RT::rep->markup(MARKUP_FILE, sender).str());
     delete[] sender;
+    
+    // second kill sara if running
+    if (RT::saraPID > 0)
+    {
+        kill(RT::saraPID,SIGKILL);
+    }
 
     // abort LoLA by sending SIGUSR1 signal
-    kill(getpid(), SIGUSR1);
+    Handlers::exitHandler();
+    _exit(EXIT_TERMINATION);
     return NULL;
 }
 
@@ -123,13 +139,13 @@ void Handlers::statistics()
     int res = fscanf(ps, "%20u", &memory);
     assert(res != EOF);
     pclose(ps);
-    RT::rep->message("memory consumption: %u KB", memory);
-    RT::data["stats"]["memory"] = static_cast<int>(memory);
+    if(RT::rep) RT::rep->message("memory consumption: %u KB", memory);
+    RT::data["exit"]["memory"] = static_cast<int>(memory);
 
     time_t now;
     time(&now);
-    RT::rep->message("time consumption: %.0lf seconds", difftime(now, start_time));
-    RT::data["stats"]["time"] = difftime(now, start_time);
+    if(RT::rep) RT::rep->message("time consumption: %.0lf seconds", difftime(now, start_time));
+    RT::data["exit"]["runtime"] = difftime(now, start_time);
 }
 
 
@@ -154,8 +170,10 @@ void Handlers::exitHandler()
     // report preliminary result
     if(RT::interim_result.length() > 0)
     {
-	RT::rep->status("preliminary result: %s",RT::interim_result.c_str());
+	RT::rep->status("\npreliminary result: %s",RT::interim_result.c_str());
+        RT::data["result"]["interim_value"] = std::string(RT::interim_result);
     }
+    Handlers::statistics();
     if (RT::args.json_given)
     {
         RT::rep->status("print data as JSON (%s)",
@@ -163,8 +181,6 @@ void Handlers::exitHandler()
 
         const std::string jsonstring = RT::data.toString();
 
-        // manually add the size of the JSON file to the output
-        RT::data["files"]["JSON"]["size"] = static_cast<int>(jsonstring.size() / 1024);
 
         Output o("JSON", RT::args.json_arg);
         fprintf(o, "%s\n", jsonstring.c_str());
@@ -172,6 +188,7 @@ void Handlers::exitHandler()
 
     // process call data
     RT::callHome();
+    
 
     // kill child if any
     if(RT::childpid > 0)
@@ -182,7 +199,7 @@ void Handlers::exitHandler()
     // kill sara if running
     if (RT::saraPID > 0)
     {
-        kill(RT::saraPID,SIGUSR1);
+        kill(RT::saraPID,SIGKILL);
     }
 
     // quick exit to avoid lengthy destructor calls
@@ -192,9 +209,9 @@ void Handlers::exitHandler()
     cmdline_parser_free(&RT::args);
 
     // tidy up
-    Net::deleteNodes();
-    Place::deletePlaces();
-    Transition::deleteTransitions();
+    //Net::deleteNodes();
+    //Place::deletePlaces();
+    //Transition::deleteTransitions();
     Marking::deleteMarkings();
 
     // should be the very last call

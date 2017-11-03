@@ -57,7 +57,6 @@ public:
     /// returns the number of subformulas
     int countSubFormulas() const;
 
-private:
     /// updates the value of the predicate from true to false
     void updateTF(arrayindex_t) {}   // LCOV_EXCL_LINE
 
@@ -69,7 +68,6 @@ private:
     /// direct read access for the deletion algorithm
     arrayindex_t getSubs(const StatePredicate *const **subs) const;
 
-public:
     bool sign; // true = property is "deadlock", false = property is "no deadlock"
 
     /// counts atomic subformulas
@@ -94,6 +92,10 @@ public:
     arrayindex_t collectFireable(FireablePredicate **);
 
     // copy function
-    StatePredicate *copy(StatePredicate *parent);
+    virtual StatePredicate *copy(StatePredicate *parent);
     virtual char * toString();
+    virtual void adjust(arrayindex_t,arrayindex_t) {}
+	void setVisible();
+    virtual AtomicBooleanPredicate * DNF();
+   virtual FormulaStatistics * count(FormulaStatistics *);
 };

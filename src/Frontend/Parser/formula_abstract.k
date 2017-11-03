@@ -18,6 +18,8 @@
 %{ KC_TYPES_HEADER
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/StatePredicate.h>
+#include <Formula/FormulaStatistics.h>
+#include <Formula/StatePredicate/Term.h>
 #include <Formula/LTL/BuechiAutomata.h>
 #include <Formula/LTL/BuechiFromLTL.h>
 #include <Formula/CTL/CTLFormula.h>
@@ -27,6 +29,7 @@
 #include <Planning/Task.h>
 
 // required, because the abstract grammar does not allow pointer types
+typedef FormulaStatistics * FS_p;
 typedef Task* Task_p;
 typedef StatePredicate* StatePredicate_p;
 typedef BuechiAutomata* BuechiAutomata_p;
@@ -34,7 +37,9 @@ typedef CTLFormula* CTLFormula_p;
 typedef tl_Node* LTLTree_p;
 typedef char* char_p;
 typedef enum{UNDEF,BOOL,NUMB}checkName;
+typedef enum{AT_TRUE,AT_FALSE,AT_AND,AT_OR,AT_COMP,AT_DL,AT_FIR,AT_TEMP} tShape;
 typedef void ** voidstar;
+typedef Term * TermP;
 typedef kc::type type_t;
 
 // don't use hash sets, since they are deprecated and unordered sets are not yet supported by Kimwitu++
@@ -43,9 +48,10 @@ typedef kc::type type_t;
 
 tFormula:
   StatePredicateFormula(tStatePredicate)
-  | ComputeBound(tAtomicProposition)
+  | CompBound()
   | Compound(tFormula tFormula)
 {
+    FS_p fs;
     formula_t type = FORMULA_MODELCHECKING;
     StatePredicate_p formula = NULL;
     CTLFormula_p ctl_formula = NULL;
@@ -53,17 +59,10 @@ tFormula:
     bool cannotcompute = false;
     /// A task attached to this
     Task_p task = NULL;
-    int containsDeadlock = 0;
-    /// contains the length of a DNF formula
     double length = 0;
-    /// contains the number of OR in a DNF formula
-    double number_of_or_dnf = 0;
-    /// contains the number of OR in a formula
-    double number_of_or = 0;
-    /// contains the number of AND in a formula
-    double number_of_and = 0;
     /// Are all AtomicPropositions from type FIREABLE?
     bool only_fireable = true;
+    bool containsNext = false;
 }
 ;
 
@@ -95,6 +94,9 @@ tStatePredicate:
 | ConjunctionList(tConjunction_list)                // created in phase 4 for simpleproperties
 | DisjunctionList(tDisjunction_list)                // created in phase 4 for simpleproperties
 {
+    FS_p fs;
+    tShape shape = AT_TEMP; // 
+    StatePredicate_p formula = NULL;
     /// whether the formula contains a temporal operator
     bool containsTemporal = false;
     /// whether the formula is a valid CTL path formula
@@ -109,70 +111,54 @@ tStatePredicate:
     Task_p task = NULL;
     int priority = 0;
     formula_t type = FORMULA_MODELCHECKING;
-    int containsDeadlock = 0;
 
-    /// contains the length of a DNF formula
-    double length = 0; 
-    /// contains the number of OR in a DNF formula
-    double number_of_or_dnf = 0;
-    /// contains the number of OR in a formula
-    double number_of_or = 0;
-     /// contains the number of AND in a formula
-    double number_of_and = 0;
     /// Are all AtomicPropositions from type FIREABLE?
     bool only_fireable = true;
+    /// does the formula contain X / EX / AX operator?
+    bool containsNext = false;
 }
 ;
 
 tConjunction_list:
   list tStatePredicate
 {
-	int containsDeadlock = 0;
+        FS_p fs;
+        bool containsNext = false;
 }
 ;
 
 tDisjunction_list:
   list tStatePredicate
 {
-	int containsDeadlock = 0;
+        FS_p fs;
+        bool containsNext = false;
 }
 ;
 
 tAtomicProposition:
-  EqualsAtomicProposition(tTerm tTerm)                // removed in phase 2
-| NotEqualsAtomicProposition(tTerm tTerm)             // removed in phase 2
-| GreaterAtomicProposition(tTerm tTerm)               
-| GreaterEqualAtomicProposition(tTerm tTerm)          // removed in phase 2
-| LessAtomicProposition(tTerm tTerm)                  // removed in phase 2
-| LessEqualAtomicProposition(tTerm tTerm)
+  Elementary()
+| NNegation(tAtomicProposition)
 | True()
 | False()
 | NoDeadlock()					      // only introduced through
-				                      // elemination of negation in phase 3
+				                      //// elemination of negation in phase 3
 | Deadlock()
-| Initial()                                           // removed in phase 1
-| Fireable(integer)                                   
-| Unfireable(integer) 
 {
+        FS_p fs;
     /// Are all AtomicPropositions from type FIREABLE?
+    tShape shape = AT_TEMP;
+    StatePredicate_p  pred = NULL;
     bool only_fireable = true;
-	int containsDeadlock = 0;
+        bool containsNext = false;
 }
 ;
 
 tTerm:
-  Node(integer)
-| Number(integer)
-| Sum(tTerm tTerm)                                    // removed in phase 2 (is integrated in ProductList)
-| Difference(tTerm tTerm)                             // removed in phase 2 (is integrated in ProductList) 
-| Product(integer tTerm)
-| ProductList(tProduct_list)                          // created in phase 2
+  Complex()  // term where actual constituents are stored in ttt;
+{
+		TermP ttt = NULL;
+}
 ;
-
-tProduct_list:
-  list tTerm   // in fact only Product()
-;
-
 
 tBuechiAutomata:
   BuechiAutomaton(tBuechiRules tAcceptingSet)

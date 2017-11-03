@@ -27,6 +27,7 @@
 #include <Exploration/Firelist.h>
 #include <Formula/CTL/EXFormula.h>
 #include <Net/Transition.h>
+#include <Core/Runtime.h>
 
 /*!
 \param phi  the inner formula for EX phi
@@ -101,6 +102,47 @@ bool EXFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     return false;
 }
 
+bool EXFormula::checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+                      std::vector<int> &witness)
+{
+    // get a list of transitions to fire
+    arrayindex_t *fl;
+    arrayindex_t cardfl = firelist.getFirelist(ns, &fl);
+
+    // fire each transition and check whether a successor state satisfies phi
+    while (cardfl--)
+    {
+        // fire the transition and evaluate the our formula's state
+        const arrayindex_t currentTransition = fl[cardfl];
+        Transition::fire(ns, currentTransition);
+        Transition::updateEnabled(ns, currentTransition);
+        updateAtomics(ns, currentTransition);
+
+        // store the value of the phi
+        const bool result = phi->checkfair(s, ns, firelist, witness);
+
+        // restore the state before firing
+        Transition::backfire(ns, currentTransition);
+        Transition::revertEnabled(ns, currentTransition);
+        revertAtomics(ns, currentTransition);
+
+        if (result)
+        {
+            // the successor state satisfies phi: EX phi = true - add the
+            // current transition to the witness and return
+            witness.push_back(currentTransition);
+            return true;
+        }
+
+        // the successor state does not satisfies phi: continue - we have not
+        // yet found a witness for EX phi
+        witness.clear();
+    }
+
+    // no successor state satisfies phi: EX phi = false
+    return false;
+}
+
 // LCOV_EXCL_START
 void EXFormula::DEBUG_print()
 {
@@ -133,4 +175,10 @@ FormulaInfo *EXFormula::getInfo() const
 int EXFormula::countSubFormulas() const
 {
     return 1 + phi->countSubFormulas();
+}
+
+void EXFormula::print()
+{
+	std::cout << "EX ";
+	phi -> print();
 }

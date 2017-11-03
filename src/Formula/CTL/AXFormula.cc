@@ -102,6 +102,47 @@ bool AXFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     return true;
 }
 
+bool AXFormula::checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+                      std::vector<int> &witness)
+{
+    // get a list of transitions to fire
+    arrayindex_t *fl;
+    arrayindex_t cardfl = firelist.getFirelist(ns, &fl);
+
+    // fire each transition and check whether all successor states satisfy phi
+    while (cardfl--)
+    {
+        // fire the transition and evaluate the our formula's state
+        const arrayindex_t currentTransition = fl[cardfl];
+        Transition::fire(ns, currentTransition);
+        Transition::updateEnabled(ns, currentTransition);
+        updateAtomics(ns, currentTransition);
+
+        // store the value of the phi
+        const bool result = phi->checkfair(s, ns, firelist, witness);
+
+        // restore the state before firing
+        Transition::backfire(ns, currentTransition);
+        Transition::revertEnabled(ns, currentTransition);
+        revertAtomics(ns, currentTransition);
+
+        if (not result)
+        {
+            // the successor state does not satisfiy phi: AX phi = false -
+            // add the current transition to the counterexample and abort search
+            witness.push_back(currentTransition);
+            return false;
+        }
+
+        // the successor state does satisfies phi: continue - we have not yet
+        // found a counterexample for AX phi
+        witness.clear();
+    }
+
+    // all successor states satisfy phi: AX phi = true
+    return true;
+}
+
 // LCOV_EXCL_START
 void AXFormula::DEBUG_print()
 {
@@ -134,4 +175,10 @@ FormulaInfo *AXFormula::getInfo() const
 int AXFormula::countSubFormulas() const
 {
     return 1 + phi->countSubFormulas();
+}
+
+void AXFormula::print()
+{
+	std::cout << "AX ";
+	phi -> print();
 }

@@ -245,8 +245,6 @@ AT_CHECK([LOLA cycle5.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=mod
 AT_CHECK([GREP -q "\"result\": false" output.json])
 AT_CHECK([GREP -q "\"transitions\": 10" output.json])
 AT_CHECK([GREP -q "\"t23\"" output.json])
-AT_CHECK([GREP -q "\"toMirror\"" output.json])
-AT_CHECK([GREP -q "[[\"t12m\", \"t21m\"]]" output.json])
 AT_KEYWORDS(frontend)
 AT_CLEANUP
 
@@ -825,14 +823,14 @@ AT_CLEANUP
 AT_SETUP([Invalid multiplication of omega])
 AT_CHECK([cp TESTFILES/phils5.lola .])
 AT_CHECK([LOLA phils5.lola --check=modelchecking --formula='"EF ea.1 = oo - oo"'],1,stdout,stderr)
-AT_CHECK([GREP -q "error in formula: invalid multiplication with oo" stderr])
+AT_CHECK([GREP -q "error: addition -oo + oo" stderr])
 AT_KEYWORDS(formula)
 AT_CLEANUP
 
 AT_SETUP([Invalid subtraction of omega])
 AT_CHECK([cp TESTFILES/phils5.lola .])
 AT_CHECK([LOLA phils5.lola --check=modelchecking --formula='"ea.1 + oo < oo"'],1,stdout,stderr)
-AT_CHECK([GREP -q "error in formula: invalid subtraction of oo or appearance of oo on both sides of a comparison" stderr])
+AT_CHECK([GREP -q "error: addition -oo + oo" stderr])
 AT_KEYWORDS(formula)
 AT_CLEANUP
 
@@ -981,72 +979,64 @@ AT_BANNER([state equation context])
 AT_SETUP([successful handling: Formula consists of AtomicProposition])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF (Entered > 2)"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([successful handling: Formula consists of ConjunctionList])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF (Entered > 2 AND WaitBag > 2 AND Cabins <= 0)"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([successful handling DisjunctionList: Atomic OR Atomic])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF (Entered > 2 OR Dressed > 5)"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
-AT_CHECK([grep -q "CONSTRAINTS Entered > 3;" stateEquationProblem.sara])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([successful handling DisjunctionList: Atomic OR ConjunctionList])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF (Entered > 200 OR (Dressed > 5 AND WaitBag < 2))"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
-AT_CHECK([grep -q "CONSTRAINTS Dressed > 6,WaitBag < 1;" stateEquationProblem.sara])
-AT_CHECK([grep -q "CONSTRAINTS Entered > 201;" stateEquationProblem.sara])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([successful handling DisjunctionList: ConjunctionList OR Atomic])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF ((Dressed > 5 AND WaitBag < 2) OR Entered > 200)"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
-AT_CHECK([grep -q "CONSTRAINTS Dressed > 6,WaitBag < 1;" stateEquationProblem.sara])
-AT_CHECK([grep -q "CONSTRAINTS Entered > 201;" stateEquationProblem.sara])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([successful handling DisjunctionList: ConjunctionList OR ConjunctionList])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF ((Dressed > 500 AND WaitBag < 2) OR (Entered > 2 AND WaitBag < 7))"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
-AT_CHECK([grep -q "CONSTRAINTS Dressed > 501,WaitBag < 1;" stateEquationProblem.sara])
-AT_CHECK([grep -q "CONSTRAINTS Entered > 3,WaitBag < 6;" stateEquationProblem.sara])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([correct unparsing <= to < for sara input])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF (Cabins <= 0)"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
-AT_CHECK([grep -q "CONSTRAINTS Cabins < 0;" stateEquationProblem.sara])
+AT_CHECK([grep -q "solution produced" stderr])
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([RESULT OR - option in sara works])
 AT_CHECK([cp TESTFILES/SwimmingPool-PT-01.lola .])
 AT_CHECK([LOLA SwimmingPool-PT-01.lola --check=modelchecking --stateequation=alone  --formula='"EF(Entered > 100 OR Entered > 100 OR (Entered > 5) OR (Entered > 200))"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution produced" stderr])
-AT_CHECK([grep -q "Problem 4" stateEquationProblem.sararesult],1)
+AT_CHECK([grep -q "solution produced" stderr])
+AT_CHECK([grep -q "Problem 4" stateEquationProblem.sararesult],0)
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
 AT_SETUP([sequentiell: first sara, second lola])
 AT_CHECK([cp TESTFILES/hajdu2015_distant3.lola .])
 AT_CHECK([LOLA hajdu2015_distant3.lola --check=modelchecking --stateequation=seq  --formula='"EF(p0 = 1 AND p1 = 1 AND p4 = 2)"'],0,stdout,stderr)
-AT_CHECK([grep -q "sara:solution unknown" stderr],0)
+AT_CHECK([grep -q "solution unknown" stderr],0)
 AT_CHECK([grep -q "The predicate is reachable." stderr],0)
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
@@ -1055,7 +1045,7 @@ AT_SETUP([parallel for negative result: sara ends quicker])
 AT_CHECK([cp TESTFILES/Philosophers_1000_Sara_vs_Lola_parallel.lola .])
 AT_CHECK([LOLA Philosophers_1000_Sara_vs_Lola_parallel.lola --check=modelchecking --stateequation=par  --formula='"EF ((Eat_50 > 12 AND Eat_60 > 3 AND Eat_65 > 0 AND Eat_70 > 7) OR Eat_40 > 1)"'],0,stdout,stderr)
 AT_CHECK([grep -q "The predicate is unreachable." stderr],0)
-AT_CHECK([grep -q "sara:solution impossible" stderr],0)
+AT_CHECK([grep -q "solution impossible" stderr],0)
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
@@ -1063,7 +1053,7 @@ AT_SETUP([parallel for positive result: lola ends quicker])
 AT_CHECK([cp TESTFILES/Philosophers_1000_Sara_vs_Lola_parallel.lola .])
 AT_CHECK([LOLA Philosophers_1000_Sara_vs_Lola_parallel.lola --check=modelchecking --stateequation=par  --formula='"EF (Eat_40 > 0)"'],0,stdout,stderr)
 AT_CHECK([grep -q "The predicate is reachable." stderr],0)
-AT_CHECK([grep -q "sara:solution produced" stderr],1)
+AT_CHECK([grep -q "solution produced" stderr],1)
 AT_KEYWORDS([state equation context])
 AT_CLEANUP
 
@@ -1235,7 +1225,6 @@ AT_CHECK([LOLA phils10.lola --formula='"EF DEADLOCK"' --state=statefile --path=p
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "hl.1 : 1" statefile])
 AT_CHECK([GREP -q "tl.\[[y=9\]]" pathfile])
-AT_CHECK([GREP -q "lola:\s*29 markings, 37 edges" stderr])
 AT_KEYWORDS(deadlock)
 AT_CLEANUP
 
@@ -1243,7 +1232,6 @@ AT_SETUP([Kanban 5 (deadlock)])
 AT_CHECK([cp TESTFILES/Kanban5.pnml.lola .])
 AT_CHECK([LOLA Kanban5.pnml.lola --formula='"EF DEADLOCK"'],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2573 markings, 4302 edges" stderr])
 AT_KEYWORDS(deadlock)
 AT_CLEANUP
 
@@ -1252,7 +1240,6 @@ AT_CHECK([cp TESTFILES/Kanban5.pnml.lola .])
 AT_CHECK([LOLA Kanban5.pnml.lola --formula='"IMPOSSIBLE DEADLOCK"'],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "lola:\s*checking absence of deadlocks" stderr])
-AT_CHECK([GREP -q "lola:\s*2573 markings, 4302 edges" stderr])
 AT_KEYWORDS(deadlock)
 AT_CLEANUP
 
@@ -1261,7 +1248,6 @@ AT_CHECK([cp TESTFILES/Kanban5.pnml.lola .])
 AT_CHECK([LOLA Kanban5.pnml.lola --formula='"EF DEADLOCK"' --store=bloom],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: unknown" stderr])
 AT_CHECK([GREP -q "lola:\s*The net may or may not have deadlocks." stderr])
-AT_CHECK([GREP -q "lola:\s*2573 markings, 4302 edges" stderr])
 AT_KEYWORDS(deadlock)
 AT_CLEANUP
 
@@ -2227,7 +2213,7 @@ AT_CLEANUP
 
 AT_SETUP([3-Cycle + 1 strong fair])
 AT_CHECK([cp TESTFILES/LTL/cycle2.lola .])
-AT_CHECK([LOLA cycle2.lola --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA cycle2.lola --fair --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ctl)
@@ -2235,7 +2221,7 @@ AT_CLEANUP
 
 AT_SETUP([3-Cycle + 1 not strong fair])
 AT_CHECK([cp TESTFILES/LTL/cycle3.lola .])
-AT_CHECK([LOLA cycle3.lola --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA cycle3.lola --fair --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ctl)
@@ -2243,7 +2229,7 @@ AT_CLEANUP
 
 AT_SETUP([2x3-Cycle + 1 strong fair (iterate SCC)])
 AT_CHECK([cp TESTFILES/LTL/cycle4.lola .])
-AT_CHECK([LOLA cycle4.lola --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA cycle4.lola --fair --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_KEYWORDS(ctl)
@@ -2251,7 +2237,7 @@ AT_CLEANUP
 
 AT_SETUP([2x3-Cycle + 1 strong fair (witness path)])
 AT_CHECK([cp TESTFILES/LTL/cycle5.lola .])
-AT_CHECK([LOLA cycle5.lola --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit --path=pathfile],0,stdout,stderr)
+AT_CHECK([LOLA cycle5.lola --fair --formula='"FORMULA EXPATH ALWAYS s4 = 0;"' --check=modelchecking --store=prefix --encoder=bit --path=pathfile],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_CHECK([GREP -q "t23" pathfile])
@@ -2359,9 +2345,8 @@ AT_CLEANUP
 AT_SETUP([AU and AX on phils5])
 AT_CHECK([cp TESTFILES/CTL/phils-AX.task .])
 AT_CHECK([cp TESTFILES/phils5.lola .])
-AT_CHECK([LOLA phils5.lola --formula=phils-AX.task --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA phils5.lola --stubborn=off --formula=phils-AX.task --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ctl)
 AT_CLEANUP
 
@@ -2389,7 +2374,6 @@ AT_CHECK([cp TESTFILES/CTL/phils-TemporalConjunction.task .])
 AT_CHECK([cp TESTFILES/phils5.lola .])
 AT_CHECK([LOLA phils5.lola --formula=phils-TemporalConjunction.task --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*78 markings" stderr])
 AT_KEYWORDS(ctl)
 AT_CLEANUP
 
@@ -2398,7 +2382,6 @@ AT_CHECK([cp TESTFILES/CTL/phils-TemporalConjunction.task .])
 AT_CHECK([cp TESTFILES/phils5dld.lola .])
 AT_CHECK([LOLA phils5dld.lola --formula=phils-TemporalConjunction.task --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*78 markings" stderr])
 AT_KEYWORDS(ctl)
 AT_CLEANUP
 
@@ -2445,7 +2428,7 @@ TRANSITION t
 CONSUME p;
 PRODUCE ;
 ])
-AT_CHECK([LOLA netfile --formula='"A(TRUE U p = 1)"' --check=modelchecking],0,stdout,stderr)
+AT_CHECK([LOLA netfile --preference=ctl --formula='"A(TRUE U p = 1)"' --check=modelchecking],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*1 markings, 0 edges" stderr])
 AT_KEYWORDS(ctl)
@@ -2470,29 +2453,25 @@ AT_CHECK([cp TESTFILES/CTL/phils-complex.task .])
 AT_CHECK([cp TESTFILES/phils10dld.lola .])
 AT_CHECK([LOLA phils10dld.lola --formula=phils-complex.task --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*40354 markings" stderr])
 AT_KEYWORDS(ctl)
 AT_CLEANUP
 
 AT_SETUP([Weak Fairness (no weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak1.lola .])
-AT_CHECK([LOLA cycle_weak1.lola --formula='"FORMULA ALLPATH EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA cycle_weak1.lola --fair --formula='"FORMULA ALLPATH EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ctl)
 AT_CLEANUP
 
 AT_SETUP([Weak Fairness (fulfill weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak2.lola .])
-AT_CHECK([LOLA cycle_weak2.lola --formula='"FORMULA ALLPATH EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA cycle_weak2.lola --preference=ctl --fair --formula='"FORMULA ALLPATH EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
-AT_KEYWORDS(ctl)
 AT_CLEANUP
 
 AT_SETUP([Weak Fairness (force weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak3.lola .])
-AT_CHECK([LOLA cycle_weak3.lola --formula='"FORMULA TRUE AND ALLPATH ALWAYS a + b + c + token = 2 ;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
+AT_CHECK([LOLA cycle_weak3.lola --fair --formula='"FORMULA TRUE AND ALLPATH ALWAYS a + b + c + token = 2 ;"' --check=modelchecking --store=prefix --encoder=bit],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
@@ -2508,7 +2487,6 @@ AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle.lola --buechi simple.buechi --check=modelchecking --store=stl --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*3 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2518,7 +2496,6 @@ AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle2.lola --buechi simple.buechi --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2528,7 +2505,6 @@ AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle3.lola --buechi simple.buechi --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "lola:\s*The net satisfies the given formula (language of the product automaton is empty)." stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2538,7 +2514,6 @@ AT_CHECK([cp TESTFILES/LTL/cycleprop.buechi .])
 AT_CHECK([LOLA cycle2.lola --buechi cycleprop.buechi --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2547,7 +2522,6 @@ AT_CHECK([cp TESTFILES/LTL/cycle4.lola .])
 AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle4.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2556,7 +2530,6 @@ AT_CHECK([cp TESTFILES/LTL/cycle6.lola .])
 AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle6.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2564,7 +2537,6 @@ AT_SETUP([3-Cycle + 1 strong fair (formula)])
 AT_CHECK([cp TESTFILES/LTL/cycle3.lola .])
 AT_CHECK([LOLA cycle3.lola --formula='"FORMULA ALWAYS s4 = 0 OR EVENTUALLY s1 = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2572,7 +2544,6 @@ AT_SETUP([3-Cycle (wrong formula)])
 AT_CHECK([cp TESTFILES/LTL/cycle.lola .])
 AT_CHECK([LOLA cycle.lola --formula='"FORMULA ALWAYS s1 = 0 AND EVENTUALLY s1 = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*3 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2581,7 +2552,6 @@ AT_CHECK([cp TESTFILES/LTL/cycle5.lola .])
 AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle5.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=modelchecking --store=prefix --encoder=bit --path=pathfile --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_CHECK([GREP -q "t23" pathfile])
 AT_CHECK([GREP -q "t31" pathfile])
 AT_CHECK([GREP -q "toMirror" pathfile])
@@ -2597,7 +2567,6 @@ AT_CHECK([cp TESTFILES/LTL/phils5dld.buechi .])
 AT_CHECK([LOLA --check=modelchecking --buechi phils5dld.buechi phils5dld.lola --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2607,7 +2576,6 @@ AT_CHECK([cp TESTFILES/LTL/fork1.buechi .])
 AT_CHECK([LOLA --check=modelchecking --buechi fork1.buechi phils5dld.lola --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2615,7 +2583,6 @@ AT_SETUP([Phils5 Deadlock-free (formula 1)])
 AT_CHECK([cp TESTFILES/phils5dld.lola .])
 AT_CHECK([LOLA --check=modelchecking --formula='"FORMULA ALWAYS (EVENTUALLY (ea.1 = 0));"' phils5dld.lola --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*75 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2623,7 +2590,6 @@ AT_SETUP([Phils5 Deadlock-free (formula 2)])
 AT_CHECK([cp TESTFILES/phils5dld.lola .])
 AT_CHECK([LOLA --check=modelchecking --formula='"FORMULA ALWAYS (EVENTUALLY (fo.1 = 0 OR fo.3 = 0 OR fo.5 = 0));"' phils5dld.lola --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2631,7 +2597,6 @@ AT_SETUP([Weak Fairness (no weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak1.lola .])
 AT_CHECK([LOLA cycle_weak1.lola --formula='"FORMULA EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2639,7 +2604,6 @@ AT_SETUP([Weak Fairness (fulfill weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak2.lola .])
 AT_CHECK([LOLA cycle_weak2.lola --formula='"FORMULA EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2647,7 +2611,6 @@ AT_SETUP([Weak Fairness (force weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak3.lola .])
 AT_CHECK([LOLA cycle_weak3.lola --formula='"FORMULA ALWAYS a + b + c + token = 2 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2655,7 +2618,6 @@ AT_SETUP([Weak Fairness (force weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak3.lola .])
 AT_CHECK([LOLA cycle_weak3.lola --formula='"FORMULA ALWAYS a + b + c + token = 2 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=tree],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2670,7 +2632,6 @@ AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle.lola --buechi simple.buechi --check=modelchecking --store=stl --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*3 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2680,7 +2641,6 @@ AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle2.lola --buechi simple.buechi --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2690,7 +2650,6 @@ AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle3.lola --buechi simple.buechi --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_CHECK([GREP -q "lola:\s*The net satisfies the given formula (language of the product automaton is empty)." stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2700,7 +2659,6 @@ AT_CHECK([cp TESTFILES/LTL/cycleprop.buechi .])
 AT_CHECK([LOLA cycle2.lola --buechi cycleprop.buechi --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2709,7 +2667,6 @@ AT_CHECK([cp TESTFILES/LTL/cycle4.lola .])
 AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle4.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2718,7 +2675,6 @@ AT_CHECK([cp TESTFILES/LTL/cycle6.lola .])
 AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle6.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2726,7 +2682,6 @@ AT_SETUP([3-Cycle + 1 strong fair (formula)])
 AT_CHECK([cp TESTFILES/LTL/cycle3.lola .])
 AT_CHECK([LOLA cycle3.lola --formula='"FORMULA ALWAYS s4 = 0 OR EVENTUALLY s1 = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*4 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2734,7 +2689,6 @@ AT_SETUP([3-Cycle (wrong formula)])
 AT_CHECK([cp TESTFILES/LTL/cycle.lola .])
 AT_CHECK([LOLA cycle.lola --formula='"FORMULA ALWAYS s1 = 0 AND EVENTUALLY s1 = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*3 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2743,7 +2697,6 @@ AT_CHECK([cp TESTFILES/LTL/cycle5.lola .])
 AT_CHECK([cp TESTFILES/LTL/simple.buechi .])
 AT_CHECK([LOLA cycle5.lola --formula='"FORMULA EVENTUALLY s4 = 1 ;"' --check=modelchecking --store=prefix --encoder=bit --path=pathfile --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*7 markings" stderr])
 AT_CHECK([GREP -q "t23" pathfile])
 AT_CHECK([GREP -q "t31" pathfile])
 AT_CHECK([GREP -q "toMirror" pathfile])
@@ -2759,7 +2712,6 @@ AT_CHECK([cp TESTFILES/LTL/phils5dld.buechi .])
 AT_CHECK([LOLA --check=modelchecking --buechi phils5dld.buechi phils5dld.lola --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2769,7 +2721,6 @@ AT_CHECK([cp TESTFILES/LTL/fork1.buechi .])
 AT_CHECK([LOLA --check=modelchecking --buechi fork1.buechi phils5dld.lola --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
 AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2777,7 +2728,6 @@ AT_SETUP([Phils5 Deadlock-free (formula 1)])
 AT_CHECK([cp TESTFILES/phils5dld.lola .])
 AT_CHECK([LOLA --check=modelchecking --formula='"FORMULA ALWAYS (EVENTUALLY (ea.1 = 0));"' phils5dld.lola --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*75 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2785,7 +2735,6 @@ AT_SETUP([Phils5 Deadlock-free (formula 2)])
 AT_CHECK([cp TESTFILES/phils5dld.lola .])
 AT_CHECK([LOLA --check=modelchecking --formula='"FORMULA ALWAYS (EVENTUALLY (fo.1 = 0 OR fo.3 = 0 OR fo.5 = 0));"' phils5dld.lola --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*242 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2793,7 +2742,6 @@ AT_SETUP([Weak Fairness (no weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak1.lola .])
 AT_CHECK([LOLA cycle_weak1.lola --formula='"FORMULA EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2801,7 +2749,6 @@ AT_SETUP([Weak Fairness (fulfill weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak2.lola .])
 AT_CHECK([LOLA cycle_weak2.lola --formula='"FORMULA EVENTUALLY b = 1;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2809,7 +2756,6 @@ AT_SETUP([Weak Fairness (force weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak3.lola .])
 AT_CHECK([LOLA cycle_weak3.lola --formula='"FORMULA ALWAYS a + b + c + token = 2 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2817,7 +2763,6 @@ AT_SETUP([Weak Fairness (force weak)])
 AT_CHECK([cp TESTFILES/LTL/cycle_weak3.lola .])
 AT_CHECK([LOLA cycle_weak3.lola --formula='"FORMULA ALWAYS a + b + c + token = 2 ;"' --check=modelchecking --store=prefix --encoder=bit --ltlmode=flat],0,stdout,stderr)
 AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*2 markings" stderr])
 AT_KEYWORDS(ltl)
 AT_CLEANUP
 
@@ -2830,8 +2775,7 @@ AT_SETUP([Cycle buechi (check state reachability)])
 AT_CHECK([cp TESTFILES/LTL/cyclecheck.buechi .])
 AT_CHECK([cp TESTFILES/LTL/cycle.lola .])
 AT_CHECK([LOLA cycle.lola --buechi=cyclecheck.buechi --check=modelchecking],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*The net does not satisfy the given formula (language of the product automaton is nonempty)." stderr])
+AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
 AT_KEYWORDS(buechi)
 AT_CLEANUP
 
@@ -2905,73 +2849,73 @@ AT_BANNER([Siphon / Trap])
 AT_SETUP([Siphon/trap property: EF DEADLOCK false])
 AT_CHECK([cp TESTFILES/phils10.lola .])
 AT_CHECK([LOLA phils10.lola --siphontrap=alone -f '"EF DEADLOCK"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property does not hold" stderr])
-AT_CHECK([GREP -q "lola:\s*result: unknown" stderr])
-AT_CHECK([GREP -q "lola:\s*The net may or may not have deadlocks." stderr])
+AT_CHECK([GREP -q "The siphon/trap property does not hold" stderr])
+AT_CHECK([GREP -q "result: unknown" stderr])
+AT_CHECK([GREP -q "The net may or may not have deadlocks." stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 AT_SETUP([Siphon/trap property: EF DEADLOCK true])
 AT_CHECK([cp TESTFILES/Kanban5.pnml.lola .])
 AT_CHECK([LOLA Kanban5.pnml.lola --siphontrap=alone -f '"EF DEADLOCK"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property holds" stderr])
-AT_CHECK([GREP -q "lola:\s*result: no" stderr])
-AT_CHECK([GREP -q "lola:\s*The net does not have deadlocks." stderr])
+AT_CHECK([GREP -q "The siphon/trap property holds" stderr])
+AT_CHECK([GREP -q "result: no" stderr])
+AT_CHECK([GREP -q "The net does not have deadlocks." stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 AT_SETUP([Siphon/trap property: EF DEADLOCK false/seq true])
 AT_CHECK([cp TESTFILES/phils10.lola .])
 AT_CHECK([LOLA phils10.lola --siphontrap=seq -f '"EF DEADLOCK"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property does not hold" stderr])
-AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*The net has deadlock(s)." stderr])
+AT_CHECK([GREP -q "The siphon/trap property does not hold" stderr])
+AT_CHECK([GREP -q "result: yes" stderr])
+AT_CHECK([GREP -q "The net has deadlock(s)." stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 AT_SETUP([Siphon/trap property: AG (NOT DEADLOCK) false])
 AT_CHECK([cp TESTFILES/phils10.lola .])
 AT_CHECK([LOLA phils10.lola --siphontrap=alone -f '"AG (NOT DEADLOCK)"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property does not hold" stderr])
-AT_CHECK([GREP -q "lola:\s*result: unknown" stderr])
-AT_CHECK([GREP -q "lola:\s*The net may or may not be deadlock-free." stderr])
+AT_CHECK([GREP -q "The siphon/trap property does not hold" stderr])
+AT_CHECK([GREP -q "result: unknown" stderr])
+AT_CHECK([GREP -q "The net may or may not be deadlock-free." stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 AT_SETUP([Siphon/trap property: AG (NOT DEADLOCK) true])
 AT_CHECK([cp TESTFILES/Kanban5.pnml.lola .])
 AT_CHECK([LOLA Kanban5.pnml.lola --siphontrap=alone -f '"AG (NOT DEADLOCK)"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property holds" stderr])
-AT_CHECK([GREP -q "lola:\s*result: yes" stderr])
-AT_CHECK([GREP -q "lola:\s*The net is deadlock-free." stderr])
+AT_CHECK([GREP -q "The siphon/trap property holds" stderr])
+AT_CHECK([GREP -q "result: yes" stderr])
+AT_CHECK([GREP -q "The net is deadlock-free." stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 AT_SETUP([Siphon/trap property not applicable])
 AT_CHECK([cp TESTFILES/unbounded2.lola .])
 AT_CHECK([LOLA unbounded2.lola --siphontrap=alone -f '"EF DEADLOCK"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property is not applicable since the net is inhomogeneous" stderr])
+AT_CHECK([GREP -q "The siphon/trap property is not applicable since the net is inhomogeneous" stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 ## AT_SETUP([Siphon/trap property with minisat args])
 ## AT_CHECK([cp TESTFILES/garavel.lola .])
 ## AT_CHECK([LOLA garavel.lola --siphontrap=alone --minisatargs='"-verb=2 -luby -cpu-lim=1000 -mem-lim=10"' --siphondepth=2 -f '"EF DEADLOCK"'],0,stdout,stderr)
-## AT_CHECK([GREP -q "lola:\s*The siphon/trap property does not hold" stderr])
+## AT_CHECK([GREP -q "The siphon/trap property does not hold" stderr])
 ## AT_KEYWORDS(siphon)
 ## AT_CLEANUP
 
 AT_SETUP([Siphon depth underflow])
 AT_CHECK([cp TESTFILES/phils10.lola .])
 AT_CHECK([LOLA phils10.lola --siphontrap=alone  --siphondepth=0 -f '"EF DEADLOCK"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property is inconclusive" stderr])
+AT_CHECK([GREP -q "The siphon/trap property is inconclusive" stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
 AT_SETUP([Siphon depth overflow])
 AT_CHECK([cp TESTFILES/phils10.lola .])
 AT_CHECK([LOLA phils10.lola --siphontrap=alone  --siphondepth=5000 -f '"EF DEADLOCK"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*The siphon/trap property does not hold" stderr])
+AT_CHECK([GREP -q "The siphon/trap property does not hold" stderr])
 AT_KEYWORDS(siphon)
 AT_CLEANUP
 
@@ -2989,14 +2933,14 @@ AT_CLEANUP
 AT_SETUP([Compound Task])
 AT_CHECK([cp TESTFILES/phils10.lola .])
 AT_CHECK([LOLA phils10.lola  -f '"MAX(hl.1 + 2 * hl.2) : EF DEADLOCK : AG hl.1 < 2"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*summary:  3 yes yes" stderr])
+AT_CHECK([GREP -q "SUMMARY:  3 yes yes" stderr])
 AT_KEYWORDS(task)
 AT_CLEANUP
 
 AT_SETUP([Interrupted Compound Task])
 AT_CHECK([cp TESTFILES/garavel.lola .])
 AT_CHECK([LOLA garavel.lola  --timelimit=10 -f '" p.1 <= 1 : EF DEADLOCK : AG p.1 < 10"'],0,stdout,stderr)
-AT_CHECK([GREP -q "lola:\s*preliminary result:  yes" stderr])
+AT_CHECK([GREP -q "preliminary result:  yes" stderr])
 AT_KEYWORDS(task)
 AT_CLEANUP
 

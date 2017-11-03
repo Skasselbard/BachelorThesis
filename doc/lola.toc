@@ -1,0 +1,157 @@
+@numchapentry{About LoLA}{1}{About LoLA}{1}
+@numsecentry{Introduction}{1.1}{}{1}
+@numsubsecentry{Objective}{1.1.1}{}{1}
+@numsubsecentry{Input}{1.1.2}{}{1}
+@numsubsecentry{Property}{1.1.3}{}{1}
+@numsubsecentry{State Space Exploration}{1.1.4}{}{1}
+@numsubsecentry{Structural Exploration}{1.1.5}{}{2}
+@numsubsecentry{Memory}{1.1.6}{}{2}
+@numsubsecentry{User interaction}{1.1.7}{}{2}
+@numsubsecentry{Output}{1.1.8}{}{2}
+@numsubsecentry{More information}{1.1.9}{}{2}
+@numsecentry{Success stories}{1.2}{}{3}
+@numsubsecentry{Verification of a @acronym {GALS} wrapper}{1.2.1}{}{3}
+@numsubsecentry{Validation of a Petri net semantics for @acronym {WS-BPEL}}{1.2.2}{}{3}
+@numsubsecentry{Verification of @acronym {WS-BPEL} choreographies}{1.2.3}{}{3}
+@numsubsecentry{Garavel's Challenge in the Petri Net mailing list}{1.2.4}{}{4}
+@numsubsecentry{Exploring biochemical networks}{1.2.5}{}{4}
+@numsubsecentry{Soundness of business process models}{1.2.6}{}{4}
+@numsubsecentry{Semantic web service composition}{1.2.7}{}{5}
+@numsubsecentry{LoLA as a ``sparring partner''}{1.2.8}{}{5}
+@numsubsecentry{The Model Checking Contest at the @acronym {PETRI NETS} conferences}{1.2.9}{}{5}
+@numchapentry{Bootstrapping LoLA}{2}{Bootstrapping LoLA}{6}
+@numsecentry{Setting up LoLA}{2.1}{}{6}
+@numsubsecentry{Download}{2.1.1}{}{6}
+@numsubsecentry{Setup and installation}{2.1.2}{}{6}
+@numsubsecentry{Using OS X}{2.1.3}{}{7}
+@numsecentry{Troubleshooting}{2.2}{}{7}
+@numsecentry{First steps}{2.3}{}{7}
+@numchapentry{Petri Net File Format}{3}{Petri Net File Format}{9}
+@numsecentry{Informal description}{3.1}{}{9}
+@numsecentry{@acronym {EBNF} grammar}{3.2}{}{9}
+@numsecentry{Regular expressions for terminal symbols}{3.3}{}{10}
+@numsecentry{Compatibility}{3.4}{}{10}
+@numchapentry{Modes of operation}{4}{Modes of operation}{11}
+@numsecentry{Check nothing (@samp {--check=none})}{4.1}{}{11}
+@numsecentry{Compute the state space (@samp {--check=full})}{4.2}{}{11}
+@numsecentry{Verify a property in temporal logic (@samp {--check=modelchecking}, default)}{4.3}{}{11}
+@numchapentry{Properties}{5}{Properties}{13}
+@numsecentry{@acronym {CTL}* formulae}{5.1}{}{13}
+@numsecentry{Bound properties}{5.2}{}{15}
+@numsecentry{Syntax for properties}{5.3}{}{15}
+@numsubsecentry{Constituents of a @acronym {CTL*} formulae}{5.3.1}{}{15}
+@numsubsecentry{@acronym {EBNF} grammar for properties}{5.3.2}{}{16}
+@numsubsecentry{Regular expressions for terminal symbols}{5.3.3}{}{16}
+@numsecentry{Compatibility}{5.4}{}{16}
+@numsecentry{Implicitly supported properties}{5.5}{}{17}
+@numsubsecentry{Reachability}{5.5.1}{}{17}
+@numsubsecentry{Invariance}{5.5.2}{}{17}
+@numsubsecentry{Deadlocks}{5.5.3}{}{18}
+@numsubsecentry{@i {k}-boundedness of a place}{5.5.4}{}{18}
+@numsubsecentry{@i {k}-boundedness of the whole net}{5.5.5}{}{18}
+@numsubsecentry{Boundedness of a place}{5.5.6}{}{19}
+@numsubsecentry{Boundedness of the whole net}{5.5.7}{}{19}
+@numsubsecentry{Dead transition}{5.5.8}{}{19}
+@numsubsecentry{Quasi-liveness}{5.5.9}{}{19}
+@numsubsecentry{Liveness of a transition}{5.5.10}{}{20}
+@numsubsecentry{Liveness of the net}{5.5.11}{}{20}
+@numsubsecentry{Liveness of a state predicate}{5.5.12}{}{20}
+@numsubsecentry{Reversibility}{5.5.13}{}{20}
+@numsubsecentry{Causal precedence of a transition}{5.5.14}{}{21}
+@numsubsecentry{Relaxed Soundness of a workflow net}{5.5.15}{}{21}
+@numsubsecentry{Soundness of a workflow net}{5.5.16}{}{21}
+@numsecentry{Unsupported properties}{5.6}{}{21}
+@numsecentry{General recommendations}{5.7}{}{21}
+@numchapentry{Search strategies}{6}{Search strategies}{23}
+@numsecentry{Available values}{6.1}{}{23}
+@numsubsecentry{Depth first search (@samp {--search=depth}, default)}{6.1.1}{}{23}
+@numsubsecentry{Sweep-line method (@samp {--search=sweep})}{6.1.2}{}{23}
+@numsubsecentry{Coverability graph (@samp {--search=cover})}{6.1.3}{}{24}
+@numsecentry{Setting resource limits}{6.2}{}{24}
+@numsecentry{Best practice}{6.3}{}{24}
+@numchapentry{Reduction techniques}{7}{Reduction techniques}{26}
+@numsecentry{Partial order reduction: the stubborn set method}{7.1}{}{26}
+@numsubsecentry{The method}{7.1.1}{}{26}
+@numsubsecentry{Unique features in LoLA}{7.1.2}{}{26}
+@numsubsecentry{Options}{7.1.3}{}{26}
+@numsubsecentry{Best practice}{7.1.4}{}{27}
+@numsecentry{The symmetry method}{7.2}{}{27}
+@numsubsecentry{The method}{7.2.1}{}{27}
+@numsubsecentry{Unique features in LoLA}{7.2.2}{}{27}
+@numsubsecentry{Options}{7.2.3}{}{27}
+@numsubsecentry{Best Practice}{7.2.4}{}{28}
+@numsecentry{Cycle reduction}{7.3}{}{28}
+@numsubsecentry{The method}{7.3.1}{}{28}
+@numsubsecentry{Unique features in LoLA}{7.3.2}{}{28}
+@numsubsecentry{Options}{7.3.3}{}{28}
+@numchapentry{Nonstandard Verification Techniques}{8}{Nonstandard Verification Techniques}{29}
+@numsecentry{Memoryless search (@samp {--findpath=ORDER})}{8.1}{}{29}
+@numsecentry{The state equation (@samp {--stateequation=ORDER})}{8.2}{}{29}
+@numsecentry{The siphon/trap property (@samp {--siphontrap=ORDER})}{8.3}{}{30}
+@numchapentry{Storage concepts}{9}{Storage concepts}{32}
+@numsecentry{Encoding}{9.1}{}{32}
+@numsubsecentry{Compression by capacities}{9.1.1}{}{32}
+@numsubsecentry{Variable length encoding}{9.1.2}{}{32}
+@numsubsecentry{Compression by place invariants}{9.1.3}{}{33}
+@numsubsecentry{Meaning of the values}{9.1.4}{}{33}
+@numsecentry{Store}{9.2}{}{34}
+@numsubsecentry{Prefix tree (@samp {--store=prefix}, default)}{9.2.1}{}{34}
+@numsubsecentry{Bloom filter (@samp {--store=bloom})}{9.2.2}{}{34}
+@numsubsecentry{@acronym {STL} store(@samp {--store=stl})}{9.2.3}{}{35}
+@numsubsecentry{Comparison store(@samp {--store=comp})}{9.2.4}{}{35}
+@numsecentry{Useful combinations of encoder and store}{9.3}{}{35}
+@numchapentry{Output formats}{10}{Output formats}{37}
+@numsecentry{Markings}{10.1}{}{37}
+@numsecentry{Paths}{10.2}{}{37}
+@numsecentry{JavaScript Object Notations (@acronym {JSON})}{10.3}{}{38}
+@numsubsecentry{Example}{10.3.1}{}{41}
+@numchapentry{Error messages}{11}{Error messages}{43}
+@numsecentry{Syntax errors [#01]}{11.1}{}{43}
+@numsecentry{Command line errors [#02]}{11.2}{}{43}
+@numsecentry{File input/output errors [#03]}{11.3}{}{44}
+@numsecentry{Thread error [#04]}{11.4}{}{44}
+@numchapentry{Integration guide}{12}{Integration guide}{45}
+@numchapentry{Utilities}{13}{Utilities}{46}
+@numsecentry{Remote reporting (@command {listener})}{13.1}{}{46}
+@numsecentry{Remote termination (@command {killer})}{13.2}{}{46}
+@numsecentry{Translating PNML to LoLA}{13.3}{}{47}
+@numsecentry{Translating XML property files to LoLA}{13.4}{}{47}
+@numchapentry{Examples}{14}{Examples}{48}
+@numsecentry{Reader/writer mutual exclusion (@file {data})}{14.1}{}{48}
+@numsubsecentry{Overview}{14.1.1}{}{48}
+@numsubsecentry{Write mutual exclusion}{14.1.2}{}{48}
+@numsubsecentry{The complete state space as benchmark}{14.1.3}{}{51}
+@numsubsecentry{Read/write mutual exclusion}{14.1.4}{}{51}
+@numsecentry{Simple mutex algorithm (@file {mutex})}{14.2}{}{52}
+@numsubsecentry{Overview}{14.2.1}{}{52}
+@numsubsecentry{Mutual exclusion (safety property)}{14.2.2}{}{52}
+@numsubsecentry{Mutual exclusion (liveness property)}{14.2.3}{}{53}
+@numsecentry{High-end multiprocessor architecture (@file {vasy})}{14.3}{}{54}
+@numsubsecentry{Overview}{14.3.1}{}{54}
+@numsubsecentry{Quasi-liveness}{14.3.2}{}{54}
+@numchapentry{Difference to Previous Releases}{15}{Difference to Previous Releases}{56}
+@numsecentry{From LoLA 1 to LoLA 2}{15.1}{}{56}
+@numsubsecentry{General workflow}{15.1.1}{}{56}
+@numsubsecentry{Net input}{15.1.2}{}{56}
+@numsubsecentry{Property specification}{15.1.3}{}{56}
+@numsubsecentry{Supported properties}{15.1.4}{}{56}
+@numsubsecentry{Atomic propositions}{15.1.5}{}{56}
+@numsubsecentry{Reduction Techniques}{15.1.6}{}{56}
+@numsubsecentry{Computed information}{15.1.7}{}{56}
+@numsubsecentry{Progress messages}{15.1.8}{}{57}
+@numsubsecentry{Multicore Support}{15.1.9}{}{57}
+@numsubsecentry{Internal Architecture}{15.1.10}{}{57}
+@numsubsecentry{Code Quality}{15.1.11}{}{57}
+@numsecentry{From LoLA 2.0 to LoLA 2.1}{15.2}{}{57}
+@numsubsecentry{List of formulas}{15.2.1}{}{57}
+@numsubsecentry{Boolean combinations}{15.2.2}{}{57}
+@numsubsecentry{Portfolio approach}{15.2.3}{}{57}
+@numsubsecentry{Partial order reduction for LTL and CTL model checking}{15.2.4}{}{57}
+@numsubsecentry{New stubborn set approach for reachability and deadlock}{15.2.5}{}{57}
+@numsubsecentry{Bound properties}{15.2.6}{}{58}
+@numsubsecentry{Efficiency improvements}{15.2.7}{}{58}
+@numsubsecentry{Scalability issues}{15.2.8}{}{58}
+@numsubsecentry{JSON output}{15.2.9}{}{58}
+@numsubsecentry{AG/EF properties}{15.2.10}{}{58}
+@numsecentry{Did you know?}{15.3}{}{58}
+@unnchapentry{Index}{10001}{Index}{60}

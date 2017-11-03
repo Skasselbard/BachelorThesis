@@ -27,12 +27,6 @@ typedef enum {
     goodbye_doublearrows_enum,
     goodbye_singlearrows_enum,
     goodbye_xor_enum,
-    goodbye_fireable_enum,
-    goodbye_unfireable_enum,
-    goodbye_initial_enum,
-    sides_enum,
-    productlists_enum,
-    leq_enum,
     tautology_enum,
     emptyquantifiers_enum,
     singletemporal_enum,
@@ -40,8 +34,6 @@ typedef enum {
     booleanlists_enum,
     ctloperators_enum,
     rbuechi_enum,
-    dnf_enum,
-    simpletautology_enum,
     last_rview
 } rview_enum;
 
@@ -86,30 +78,6 @@ struct goodbye_xor_class: rview_class {
     goodbye_xor_class():rview_class(goodbye_xor_enum){}
 };
 extern goodbye_xor_class goodbye_xor;
-struct goodbye_fireable_class: rview_class {
-    goodbye_fireable_class():rview_class(goodbye_fireable_enum){}
-};
-extern goodbye_fireable_class goodbye_fireable;
-struct goodbye_unfireable_class: rview_class {
-    goodbye_unfireable_class():rview_class(goodbye_unfireable_enum){}
-};
-extern goodbye_unfireable_class goodbye_unfireable;
-struct goodbye_initial_class: rview_class {
-    goodbye_initial_class():rview_class(goodbye_initial_enum){}
-};
-extern goodbye_initial_class goodbye_initial;
-struct sides_class: rview_class {
-    sides_class():rview_class(sides_enum){}
-};
-extern sides_class sides;
-struct productlists_class: rview_class {
-    productlists_class():rview_class(productlists_enum){}
-};
-extern productlists_class productlists;
-struct leq_class: rview_class {
-    leq_class():rview_class(leq_enum){}
-};
-extern leq_class leq;
 struct tautology_class: rview_class {
     tautology_class():rview_class(tautology_enum){}
 };
@@ -138,14 +106,6 @@ struct rbuechi_class: rview_class {
     rbuechi_class():rview_class(rbuechi_enum){}
 };
 extern rbuechi_class rbuechi;
-struct dnf_class: rview_class {
-    dnf_class():rview_class(dnf_enum){}
-};
-extern dnf_class dnf;
-struct simpletautology_class: rview_class {
-    simpletautology_class():rview_class(simpletautology_enum){}
-};
-extern simpletautology_class simpletautology;
 
 } // namespace kc
 #endif // KC_REWRITE_HEADER

@@ -47,6 +47,9 @@ private:
     bool check(Store<void *> &s, NetState &ns, Firelist &firelist,
                std::vector<int> &witness);
 
+    bool checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+               std::vector<int> &witness);
+
     void DEBUG_print();
 
     void gatherPayloadInformation(arrayindex_t &numDFS, arrayindex_t &numCachedResults);
@@ -56,4 +59,5 @@ private:
     CTLFormula *phi;
     /// the second inner formula for E(phi U psi)
     CTLFormula *psi;
+    virtual void print();
 };

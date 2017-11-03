@@ -1,19 +1,19 @@
-/* A Bison parser, made by GNU Bison 2.7.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison implementation for Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
-   
+
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -26,7 +26,7 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.7"
+#define YYBISON_VERSION "3.0.4"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -63,15 +63,15 @@
 #define yyparse         ptbuechi_parse
 #define yylex           ptbuechi_lex
 #define yyerror         ptbuechi_error
-#define yylval          ptbuechi_lval
-#define yychar          ptbuechi_char
 #define yydebug         ptbuechi_debug
 #define yynerrs         ptbuechi_nerrs
+
+#define yylval          ptbuechi_lval
+#define yychar          ptbuechi_char
 #define yylloc          ptbuechi_lloc
 
 /* Copy the first part of user declarations.  */
-/* Line 371 of yacc.c  */
-#line 28 "Frontend/Parser/ParserBuechi.yy"
+#line 28 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:339  */
 
 #include <config.h>
 #include <Frontend/SymbolTable/PlaceSymbol.h>
@@ -81,6 +81,15 @@
 #include <Frontend/Parser/error.h>
 #include <Frontend/Parser/ast-system-k.h>       // for kc namespace
 #include <Frontend/Parser/ast-system-yystype.h> // for YYSTYPE
+#include <Formula/StatePredicate/DeadlockPredicate.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
+#include <Formula/StatePredicate/FireablePredicate.h>
+#include <Formula/StatePredicate/TruePredicate.h>
+#include <Formula/StatePredicate/FalsePredicate.h>
+#include <Formula/StatePredicate/MagicNumber.h>
+#include <Net/Place.h>
+#include <Net/Marking.h>
+
 
 #include <limits.h>
 #include <libgen.h>
@@ -91,29 +100,27 @@
 
 extern ParserPTNet* symbolTables;
 extern SymbolTable* buechiStateTable;
-/* Line 371 of yacc.c  */
-#line 113 "Frontend/Parser/ParserBuechi.yy"
+tShape ooppShape(tShape s);
+#line 120 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:339  */
 
 // parser essentials
 extern int ptbuechi_lex();
 void ptbuechi_error(char const*);
 
 int currentNextIndex = 0;
-/* Line 371 of yacc.c  */
-#line 121 "Frontend/Parser/ParserBuechi.yy"
+#line 128 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:339  */
 
 /* globals */
 tBuechiAutomata TheBuechi;
 uint32_t currentState;
 
-/* Line 371 of yacc.c  */
-#line 111 "Frontend/Parser/ParserBuechi.cc"
+#line 118 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:339  */
 
-# ifndef YY_NULL
+# ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
-#   define YY_NULL nullptr
+#   define YY_NULLPTR nullptr
 #  else
-#   define YY_NULL 0
+#   define YY_NULLPTR 0
 #  endif
 # endif
 
@@ -129,7 +136,7 @@ uint32_t currentState;
    by #include "y.tab.h".  */
 #ifndef YY_PTBUECHI_FRONTEND_PARSER_PARSERBUECHI_HH_INCLUDED
 # define YY_PTBUECHI_FRONTEND_PARSER_PARSERBUECHI_HH_INCLUDED
-/* Enabling traces.  */
+/* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
@@ -137,54 +144,45 @@ uint32_t currentState;
 extern int ptbuechi_debug;
 #endif
 
-/* Tokens.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     END = 0,
-     IDENTIFIER = 258,
-     NUMBER = 259,
-     _accept_ = 260,
-     _buechi_ = 261,
-     _braceleft_ = 262,
-     _braceright_ = 263,
-     _comma_ = 264,
-     _then_ = 265,
-     _colon_ = 266,
-     _INITIAL_ = 267,
-     _AND_ = 268,
-     _NOT_ = 269,
-     _OR_ = 270,
-     _XOR_ = 271,
-     _iff_ = 272,
-     _notequal_ = 273,
-     _implies_ = 274,
-     _equals_ = 275,
-     _plus_ = 276,
-     _minus_ = 277,
-     _times_ = 278,
-     _leftparenthesis_ = 279,
-     _rightparenthesis_ = 280,
-     _greaterthan_ = 281,
-     _lessthan_ = 282,
-     _greaterorequal_ = 283,
-     _lessorequal_ = 284,
-     _semicolon_ = 285,
-     _TRUE_ = 286,
-     _FALSE_ = 287,
-     _FIREABLE_ = 288,
-     _NEXTSTATE_ = 289,
-     _EVENTUALLY_ = 290,
-     _ALWAYS_ = 291,
-     _UNTIL_ = 292,
-     _EXPATH_ = 293,
-     _ALLPATH_ = 294,
-     _IMPOSSIBLE_ = 295,
-     _INVARIANT_ = 296,
-     _REACHABLE_ = 297
-   };
+  enum yytokentype
+  {
+    END = 0,
+    IDENTIFIER = 258,
+    NUMBER = 259,
+    _accept_ = 260,
+    _buechi_ = 261,
+    _braceleft_ = 262,
+    _braceright_ = 263,
+    _comma_ = 264,
+    _then_ = 265,
+    _colon_ = 266,
+    _INITIAL_ = 267,
+    _DEADLOCK_ = 268,
+    _AND_ = 269,
+    _NOT_ = 270,
+    _OR_ = 271,
+    _XOR_ = 272,
+    _iff_ = 273,
+    _notequal_ = 274,
+    _implies_ = 275,
+    _equals_ = 276,
+    _plus_ = 277,
+    _minus_ = 278,
+    _times_ = 279,
+    _leftparenthesis_ = 280,
+    _rightparenthesis_ = 281,
+    _greaterthan_ = 282,
+    _lessthan_ = 283,
+    _greaterorequal_ = 284,
+    _lessorequal_ = 285,
+    _semicolon_ = 286,
+    _TRUE_ = 287,
+    _FALSE_ = 288,
+    _FIREABLE_ = 289
+  };
 #endif
 /* Tokens.  */
 #define END 0
@@ -198,80 +196,55 @@ extern int ptbuechi_debug;
 #define _then_ 265
 #define _colon_ 266
 #define _INITIAL_ 267
-#define _AND_ 268
-#define _NOT_ 269
-#define _OR_ 270
-#define _XOR_ 271
-#define _iff_ 272
-#define _notequal_ 273
-#define _implies_ 274
-#define _equals_ 275
-#define _plus_ 276
-#define _minus_ 277
-#define _times_ 278
-#define _leftparenthesis_ 279
-#define _rightparenthesis_ 280
-#define _greaterthan_ 281
-#define _lessthan_ 282
-#define _greaterorequal_ 283
-#define _lessorequal_ 284
-#define _semicolon_ 285
-#define _TRUE_ 286
-#define _FALSE_ 287
-#define _FIREABLE_ 288
-#define _NEXTSTATE_ 289
-#define _EVENTUALLY_ 290
-#define _ALWAYS_ 291
-#define _UNTIL_ 292
-#define _EXPATH_ 293
-#define _ALLPATH_ 294
-#define _IMPOSSIBLE_ 295
-#define _INVARIANT_ 296
-#define _REACHABLE_ 297
+#define _DEADLOCK_ 268
+#define _AND_ 269
+#define _NOT_ 270
+#define _OR_ 271
+#define _XOR_ 272
+#define _iff_ 273
+#define _notequal_ 274
+#define _implies_ 275
+#define _equals_ 276
+#define _plus_ 277
+#define _minus_ 278
+#define _times_ 279
+#define _leftparenthesis_ 280
+#define _rightparenthesis_ 281
+#define _greaterthan_ 282
+#define _lessthan_ 283
+#define _greaterorequal_ 284
+#define _lessorequal_ 285
+#define _semicolon_ 286
+#define _TRUE_ 287
+#define _FALSE_ 288
+#define _FIREABLE_ 289
 
+/* Value type.  */
 
-
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
-# define YYSTYPE_IS_DECLARED 1
-#endif
-
+/* Location type.  */
 #if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
-typedef struct YYLTYPE
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
 {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
-} YYLTYPE;
-# define yyltype YYLTYPE /* obsolescent; will be withdrawn */
+};
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
 
+
 extern YYSTYPE ptbuechi_lval;
 extern YYLTYPE ptbuechi_lloc;
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int ptbuechi_parse (void *YYPARSE_PARAM);
-#else
-int ptbuechi_parse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
 int ptbuechi_parse (void);
-#else
-int ptbuechi_parse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
 
 #endif /* !YY_PTBUECHI_FRONTEND_PARSER_PARSERBUECHI_HH_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
-/* Line 390 of yacc.c  */
-#line 275 "Frontend/Parser/ParserBuechi.cc"
+#line 248 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -285,11 +258,8 @@ typedef unsigned char yytype_uint8;
 
 #ifdef YYTYPE_INT8
 typedef YYTYPE_INT8 yytype_int8;
-#elif (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-typedef signed char yytype_int8;
 #else
-typedef short int yytype_int8;
+typedef signed char yytype_int8;
 #endif
 
 #ifdef YYTYPE_UINT16
@@ -309,8 +279,7 @@ typedef short int yytype_int16;
 #  define YYSIZE_T __SIZE_TYPE__
 # elif defined size_t
 #  define YYSIZE_T size_t
-# elif ! defined YYSIZE_T && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+# elif ! defined YYSIZE_T
 #  include <stddef.h> /* INFRINGES ON USER NAME SPACE */
 #  define YYSIZE_T size_t
 # else
@@ -332,6 +301,33 @@ typedef short int yytype_int16;
 # endif
 #endif
 
+#ifndef YY_ATTRIBUTE
+# if (defined __GNUC__                                               \
+      && (2 < __GNUC__ || (__GNUC__ == 2 && 96 <= __GNUC_MINOR__)))  \
+     || defined __SUNPRO_C && 0x5110 <= __SUNPRO_C
+#  define YY_ATTRIBUTE(Spec) __attribute__(Spec)
+# else
+#  define YY_ATTRIBUTE(Spec) /* empty */
+# endif
+#endif
+
+#ifndef YY_ATTRIBUTE_PURE
+# define YY_ATTRIBUTE_PURE   YY_ATTRIBUTE ((__pure__))
+#endif
+
+#ifndef YY_ATTRIBUTE_UNUSED
+# define YY_ATTRIBUTE_UNUSED YY_ATTRIBUTE ((__unused__))
+#endif
+
+#if !defined _Noreturn \
+     && (!defined __STDC_VERSION__ || __STDC_VERSION__ < 201112)
+# if defined _MSC_VER && 1200 <= _MSC_VER
+#  define _Noreturn __declspec (noreturn)
+# else
+#  define _Noreturn YY_ATTRIBUTE ((__noreturn__))
+# endif
+#endif
+
 /* Suppress unused-variable warnings by "using" E.  */
 #if ! defined lint || defined __GNUC__
 # define YYUSE(E) ((void) (E))
@@ -339,23 +335,25 @@ typedef short int yytype_int16;
 # define YYUSE(E) /* empty */
 #endif
 
-/* Identity function, used to suppress warnings about constant conditions.  */
-#ifndef lint
-# define YYID(N) (N)
+#if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
+/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
+    _Pragma ("GCC diagnostic push") \
+    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")\
+    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
+    _Pragma ("GCC diagnostic pop")
 #else
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-static int
-YYID (int yyi)
-#else
-static int
-YYID (yyi)
-    int yyi;
+# define YY_INITIAL_VALUE(Value) Value
 #endif
-{
-  return yyi;
-}
+#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END
 #endif
+#ifndef YY_INITIAL_VALUE
+# define YY_INITIAL_VALUE(Value) /* Nothing. */
+#endif
+
 
 #if ! defined yyoverflow || YYERROR_VERBOSE
 
@@ -374,8 +372,7 @@ YYID (yyi)
 #    define alloca _alloca
 #   else
 #    define YYSTACK_ALLOC alloca
-#    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+#    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS
 #     include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
       /* Use EXIT_SUCCESS as a witness for stdlib.h.  */
 #     ifndef EXIT_SUCCESS
@@ -387,8 +384,8 @@ YYID (yyi)
 # endif
 
 # ifdef YYSTACK_ALLOC
-   /* Pacify GCC's `empty if-body' warning.  */
-#  define YYSTACK_FREE(Ptr) do { /* empty */; } while (YYID (0))
+   /* Pacify GCC's 'empty if-body' warning.  */
+#  define YYSTACK_FREE(Ptr) do { /* empty */; } while (0)
 #  ifndef YYSTACK_ALLOC_MAXIMUM
     /* The OS might guarantee only one guard page at the bottom of the stack,
        and a page size can be as small as 4096 bytes.  So we cannot safely
@@ -404,7 +401,7 @@ YYID (yyi)
 #  endif
 #  if (defined __cplusplus && ! defined EXIT_SUCCESS \
        && ! ((defined YYMALLOC || defined malloc) \
-	     && (defined YYFREE || defined free)))
+             && (defined YYFREE || defined free)))
 #   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
 #   ifndef EXIT_SUCCESS
 #    define EXIT_SUCCESS 0
@@ -412,15 +409,13 @@ YYID (yyi)
 #  endif
 #  ifndef YYMALLOC
 #   define YYMALLOC malloc
-#   if ! defined malloc && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+#   if ! defined malloc && ! defined EXIT_SUCCESS
 void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 #  ifndef YYFREE
 #   define YYFREE free
-#   if ! defined free && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+#   if ! defined free && ! defined EXIT_SUCCESS
 void free (void *); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
@@ -430,8 +425,8 @@ void free (void *); /* INFRINGES ON USER NAME SPACE */
 
 #if (! defined yyoverflow \
      && (! defined __cplusplus \
-	 || (defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL \
-	     && defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
+         || (defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL \
+             && defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
@@ -457,16 +452,16 @@ union yyalloc
    elements in the stack, and YYPTR gives the new location of the
    stack.  Advance YYPTR to a properly aligned location for the next
    stack.  */
-# define YYSTACK_RELOCATE(Stack_alloc, Stack)				\
-    do									\
-      {									\
-	YYSIZE_T yynewbytes;						\
-	YYCOPY (&yyptr->Stack_alloc, Stack, yysize);			\
-	Stack = &yyptr->Stack_alloc;					\
-	yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAXIMUM; \
-	yyptr += yynewbytes / sizeof (*yyptr);				\
-      }									\
-    while (YYID (0))
+# define YYSTACK_RELOCATE(Stack_alloc, Stack)                           \
+    do                                                                  \
+      {                                                                 \
+        YYSIZE_T yynewbytes;                                            \
+        YYCOPY (&yyptr->Stack_alloc, Stack, yysize);                    \
+        Stack = &yyptr->Stack_alloc;                                    \
+        yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAXIMUM; \
+        yyptr += yynewbytes / sizeof (*yyptr);                          \
+      }                                                                 \
+    while (0)
 
 #endif
 
@@ -485,7 +480,7 @@ union yyalloc
           for (yyi = 0; yyi < (Count); yyi++)   \
             (Dst)[yyi] = (Src)[yyi];            \
         }                                       \
-      while (YYID (0))
+      while (0)
 #  endif
 # endif
 #endif /* !YYCOPY_NEEDED */
@@ -493,25 +488,27 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  4
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   90
+#define YYLAST   91
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  43
+#define YYNTOKENS  35
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  10
+#define YYNNTS  11
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  36
-/* YYNRULES -- Number of states.  */
-#define YYNSTATES  74
+#define YYNRULES  38
+/* YYNSTATES -- Number of states.  */
+#define YYNSTATES  76
 
-/* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
+/* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
+   by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   297
+#define YYMAXUTOK   289
 
-#define YYTRANSLATE(YYX)						\
+#define YYTRANSLATE(YYX)                                                \
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
 
-/* YYTRANSLATE[YYLEX] -- Bison symbol number corresponding to YYLEX.  */
+/* YYTRANSLATE[TOKEN-NUM] -- Symbol number corresponding to TOKEN-NUM
+   as returned by yylex, without out-of-bounds checking.  */
 static const yytype_uint8 yytranslate[] =
 {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -542,46 +539,17 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
-      35,    36,    37,    38,    39,    40,    41,    42
+      25,    26,    27,    28,    29,    30,    31,    32,    33,    34
 };
 
 #if YYDEBUG
-/* YYPRHS[YYN] -- Index of the first RHS symbol of rule number YYN in
-   YYRHS.  */
-static const yytype_uint8 yyprhs[] =
-{
-       0,     0,     3,    13,    14,    16,    20,    21,    26,    27,
-      32,    33,    35,    39,    43,    45,    48,    52,    56,    60,
-      64,    68,    72,    76,    80,    84,    88,    92,    94,    96,
-     101,   103,   107,   109,   111,   115,   119
-};
-
-/* YYRHS -- A `-1'-separated list of the rules' RHS.  */
-static const yytype_int8 yyrhs[] =
-{
-      44,     0,    -1,     6,     7,    45,     8,     5,     7,    49,
-       8,    30,    -1,    -1,    46,    -1,    46,     9,    45,    -1,
-      -1,     3,    47,    11,    48,    -1,    -1,    50,    10,     3,
-      48,    -1,    -1,     3,    -1,     3,     9,    49,    -1,    24,
-      50,    25,    -1,    51,    -1,    14,    50,    -1,    50,    13,
-      50,    -1,    50,    15,    50,    -1,    50,    16,    50,    -1,
-      50,    19,    50,    -1,    50,    17,    50,    -1,    52,    20,
-      52,    -1,    52,    18,    52,    -1,    52,    26,    52,    -1,
-      52,    28,    52,    -1,    52,    27,    52,    -1,    52,    29,
-      52,    -1,    31,    -1,    32,    -1,    33,    24,     3,    25,
-      -1,    12,    -1,    24,    52,    25,    -1,     3,    -1,     4,
-      -1,    52,    21,    52,    -1,    52,    22,    52,    -1,     4,
-      23,    52,    -1
-};
-
-/* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
+  /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   130,   130,   137,   138,   140,   146,   145,   164,   165,
-     179,   180,   189,   201,   203,   205,   207,   209,   211,   213,
-     215,   220,   222,   224,   226,   228,   230,   232,   234,   236,
-     245,   250,   252,   261,   263,   265,   267
+       0,   137,   137,   144,   145,   147,   153,   152,   171,   172,
+     186,   187,   196,   208,   210,   226,   257,   307,   358,   543,
+     599,   783,   796,   810,   824,   833,   846,   855,   862,   869,
+     881,   912,   922,   924,   936,   943,   948,   954,   962
 };
 #endif
 
@@ -594,7 +562,7 @@ static const char *const yytname[] =
   "\"number\"", "\"keyword accept\"", "\"keyword buechi\"",
   "\"opening brace\"", "\"closing brace\"", "\"comma\"",
   "\"transition =>\"", "\"colon\"", "\"keyword INITIAL\"",
-  "\"Boolean conjuction\"", "\"Boolean negation\"",
+  "\"keyword DEADLOCK\"", "\"Boolean conjuction\"", "\"Boolean negation\"",
   "\"Boolean disjunction\"", "\"Boolean exclusive disjunction\"",
   "\"Boolean iff\"", "\"not-equals sign\"", "\"Boolean implication\"",
   "\"equals sign\"", "\"plus sign\"", "\"minus sign\"",
@@ -602,163 +570,150 @@ static const char *const yytname[] =
   "\"closing parenthesis\"", "\"greater-than sign\"", "\"less-than sign\"",
   "\"greater-than-or-equal sign\"", "\"less-than-or-equal sign\"",
   "\"semicolon\"", "\"Boolean TRUE\"", "\"Boolean FALSE\"",
-  "\"keyword FIREABLE\"", "_NEXTSTATE_", "_EVENTUALLY_", "_ALWAYS_",
-  "_UNTIL_", "_EXPATH_", "_ALLPATH_", "_IMPOSSIBLE_", "_INVARIANT_",
-  "_REACHABLE_", "$accept", "buechiAutomata", "buechiRules", "buechiRule",
-  "$@1", "transitionRules", "acceptingsets", "statepredicate",
-  "atomic_proposition", "term", YY_NULL
+  "\"keyword FIREABLE\"", "$accept", "buechiAutomata", "buechiRules",
+  "buechiRule", "$@1", "transitionRules", "acceptingsets",
+  "statepredicate", "atomic_proposition", "term", "identifier", YY_NULLPTR
 };
 #endif
 
 # ifdef YYPRINT
-/* YYTOKNUM[YYLEX-NUM] -- Internal token number corresponding to
-   token YYLEX-NUM.  */
+/* YYTOKNUM[NUM] -- (External) token number corresponding to the
+   (internal) symbol number NUM (which must be that of a token).  */
 static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
      275,   276,   277,   278,   279,   280,   281,   282,   283,   284,
-     285,   286,   287,   288,   289,   290,   291,   292,   293,   294,
-     295,   296,   297
+     285,   286,   287,   288,   289
 };
 # endif
 
-/* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
-static const yytype_uint8 yyr1[] =
+#define YYPACT_NINF -22
+
+#define yypact_value_is_default(Yystate) \
+  (!!((Yystate) == (-22)))
+
+#define YYTABLE_NINF -1
+
+#define yytable_value_is_error(Yytable_value) \
+  0
+
+  /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
+     STATE-NUM.  */
+static const yytype_int8 yypact[] =
 {
-       0,    43,    44,    45,    45,    45,    47,    46,    48,    48,
-      49,    49,    49,    50,    50,    50,    50,    50,    50,    50,
-      50,    51,    51,    51,    51,    51,    51,    51,    51,    51,
-      51,    52,    52,    52,    52,    52,    52
+      -3,     7,    18,    27,   -22,   -22,    12,    23,    31,    36,
+      27,     4,    42,   -22,   -22,    19,   -22,   -22,     4,     4,
+     -22,   -22,    20,   -22,    71,   -22,    50,   -22,    55,     8,
+     -22,    30,    38,    59,    60,     4,     4,     4,     4,     4,
+       8,     8,     8,     8,     8,     8,     8,     8,    61,    66,
+       8,   -22,   -22,   -22,    49,     4,   -14,    -5,    -5,   -22,
+      58,    17,    17,   -22,   -22,    17,    17,    17,    17,    55,
+      51,   -21,   -22,   -22,   -22,   -22
 };
 
-/* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
+  /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
+     Performed when YYTABLE does not specify something else to do.  Zero
+     means the default is an error.  */
+static const yytype_uint8 yydefact[] =
+{
+       0,     0,     0,     3,     1,     6,     0,     4,     0,     0,
+       3,     8,     0,     5,    38,    34,    30,    31,     0,     0,
+      27,    28,     0,     7,     0,    14,     0,    33,    10,     0,
+      15,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,    11,     0,
+       0,    37,    13,    32,     0,     8,    16,    17,    18,    20,
+      19,    22,    21,    35,    36,    23,    25,    24,    26,    10,
+       0,     0,    29,     9,    12,     2
+};
+
+  /* YYPGOTO[NTERM-NUM].  */
+static const yytype_int8 yypgoto[] =
+{
+     -22,   -22,    73,   -22,   -22,    29,    21,    16,   -22,   -19,
+      53
+};
+
+  /* YYDEFGOTO[NTERM-NUM].  */
+static const yytype_int8 yydefgoto[] =
+{
+      -1,     2,     6,     7,     8,    23,    49,    24,    25,    26,
+      27
+};
+
+  /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
+     positive, shift that token.  If negative, reduce the rule whose
+     number is the opposite.  If YYTABLE_NINF, syntax error.  */
+static const yytype_uint8 yytable[] =
+{
+      32,    42,    43,     1,    38,    53,    39,    14,    15,    35,
+      51,    14,    15,    38,     3,    39,    16,    17,     4,    18,
+       9,    61,    62,    63,    64,    65,    66,    67,    68,    19,
+       5,    71,    10,    50,    30,    31,    20,    21,    22,    42,
+      43,    12,    11,    29,    35,    33,    36,    37,    38,    28,
+      39,    56,    57,    58,    59,    60,    52,    40,    48,    41,
+      42,    43,    14,    55,    53,    44,    45,    46,    47,    40,
+      69,    41,    42,    43,    70,    72,    38,    44,    45,    46,
+      47,    34,    75,    13,    73,    35,    54,    36,    37,    38,
+      74,    39
+};
+
+static const yytype_uint8 yycheck[] =
+{
+      19,    22,    23,     6,    18,    26,    20,     3,     4,    14,
+      29,     3,     4,    18,     7,    20,    12,    13,     0,    15,
+       8,    40,    41,    42,    43,    44,    45,    46,    47,    25,
+       3,    50,     9,    25,    18,    19,    32,    33,    34,    22,
+      23,     5,    11,    24,    14,    25,    16,    17,    18,     7,
+      20,    35,    36,    37,    38,    39,    26,    19,     3,    21,
+      22,    23,     3,     3,    26,    27,    28,    29,    30,    19,
+       9,    21,    22,    23,     8,    26,    18,    27,    28,    29,
+      30,    10,    31,    10,    55,    14,    33,    16,    17,    18,
+      69,    20
+};
+
+  /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
+     symbol of state STATE-NUM.  */
+static const yytype_uint8 yystos[] =
+{
+       0,     6,    36,     7,     0,     3,    37,    38,    39,     8,
+       9,    11,     5,    37,     3,     4,    12,    13,    15,    25,
+      32,    33,    34,    40,    42,    43,    44,    45,     7,    24,
+      42,    42,    44,    25,    10,    14,    16,    17,    18,    20,
+      19,    21,    22,    23,    27,    28,    29,    30,     3,    41,
+      25,    44,    26,    26,    45,     3,    42,    42,    42,    42,
+      42,    44,    44,    44,    44,    44,    44,    44,    44,     9,
+       8,    44,    26,    40,    41,    31
+};
+
+  /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
+static const yytype_uint8 yyr1[] =
+{
+       0,    35,    36,    37,    37,    37,    39,    38,    40,    40,
+      41,    41,    41,    42,    42,    42,    42,    42,    42,    42,
+      42,    43,    43,    43,    43,    43,    43,    43,    43,    43,
+      43,    43,    44,    44,    44,    44,    44,    44,    45
+};
+
+  /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     9,     0,     1,     3,     0,     4,     0,     4,
        0,     1,     3,     3,     1,     2,     3,     3,     3,     3,
        3,     3,     3,     3,     3,     3,     3,     1,     1,     4,
-       1,     3,     1,     1,     3,     3,     3
+       1,     1,     3,     1,     1,     3,     3,     3,     1
 };
 
-/* YYDEFACT[STATE-NAME] -- Default reduction number in state STATE-NUM.
-   Performed when YYTABLE doesn't specify something else to do.  Zero
-   means the default is an error.  */
-static const yytype_uint8 yydefact[] =
-{
-       0,     0,     0,     3,     1,     6,     0,     4,     0,     0,
-       3,     8,     0,     5,    32,    33,    30,     0,     0,    27,
-      28,     0,     7,     0,    14,     0,    10,     0,    15,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,    11,     0,     0,    36,
-      13,    31,     0,     8,    16,    17,    18,    20,    19,    22,
-      21,    34,    35,    23,    25,    24,    26,    10,     0,     0,
-      29,     9,    12,     2
-};
 
-/* YYDEFGOTO[NTERM-NUM].  */
-static const yytype_int8 yydefgoto[] =
-{
-      -1,     2,     6,     7,     8,    22,    47,    23,    24,    25
-};
+#define yyerrok         (yyerrstatus = 0)
+#define yyclearin       (yychar = YYEMPTY)
+#define YYEMPTY         (-2)
+#define YYEOF           0
 
-/* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
-   STATE-NUM.  */
-#define YYPACT_NINF -21
-static const yytype_int8 yypact[] =
-{
-      -3,     5,    29,    31,   -21,   -21,    30,    33,    35,    34,
-      31,     4,    52,   -21,   -21,    17,   -21,     4,     4,   -21,
-     -21,    43,   -21,    68,   -21,    48,    57,     7,   -21,    28,
-      36,    69,    70,     4,     4,     4,     4,     4,     7,     7,
-       7,     7,     7,     7,     7,     7,    46,    63,     7,   -21,
-     -21,   -21,    54,     4,   -13,     0,     0,   -21,    65,    -7,
-      -7,   -21,   -21,    -7,    -7,    -7,    -7,    57,    50,   -20,
-     -21,   -21,   -21,   -21
-};
+#define YYACCEPT        goto yyacceptlab
+#define YYABORT         goto yyabortlab
+#define YYERROR         goto yyerrorlab
 
-/* YYPGOTO[NTERM-NUM].  */
-static const yytype_int8 yypgoto[] =
-{
-     -21,   -21,    76,   -21,   -21,    37,    21,    15,   -21,   -18
-};
-
-/* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
-   positive, shift that token.  If negative, reduce the rule which
-   number is the opposite.  If YYTABLE_NINF, syntax error.  */
-#define YYTABLE_NINF -1
-static const yytype_uint8 yytable[] =
-{
-      30,    40,    41,     1,    36,    51,    37,    14,    15,    49,
-      14,    15,     3,    33,    40,    41,    16,    36,    17,    37,
-      59,    60,    61,    62,    63,    64,    65,    66,    18,     4,
-      69,    48,    28,    29,     5,    19,    20,    21,     9,    12,
-      27,    33,    10,    34,    35,    36,    11,    37,    54,    55,
-      56,    57,    58,    50,    38,    67,    39,    40,    41,    26,
-      46,    51,    42,    43,    44,    45,    38,    31,    39,    40,
-      41,    68,    52,    53,    42,    43,    44,    45,    32,    70,
-      73,    33,    36,    34,    35,    36,    13,    37,    72,     0,
-      71
-};
-
-#define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-21)))
-
-#define yytable_value_is_error(Yytable_value) \
-  YYID (0)
-
-static const yytype_int8 yycheck[] =
-{
-      18,    21,    22,     6,    17,    25,    19,     3,     4,    27,
-       3,     4,     7,    13,    21,    22,    12,    17,    14,    19,
-      38,    39,    40,    41,    42,    43,    44,    45,    24,     0,
-      48,    24,    17,    18,     3,    31,    32,    33,     8,     5,
-      23,    13,     9,    15,    16,    17,    11,    19,    33,    34,
-      35,    36,    37,    25,    18,     9,    20,    21,    22,     7,
-       3,    25,    26,    27,    28,    29,    18,    24,    20,    21,
-      22,     8,     3,     3,    26,    27,    28,    29,    10,    25,
-      30,    13,    17,    15,    16,    17,    10,    19,    67,    -1,
-      53
-};
-
-/* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
-   symbol of state STATE-NUM.  */
-static const yytype_uint8 yystos[] =
-{
-       0,     6,    44,     7,     0,     3,    45,    46,    47,     8,
-       9,    11,     5,    45,     3,     4,    12,    14,    24,    31,
-      32,    33,    48,    50,    51,    52,     7,    23,    50,    50,
-      52,    24,    10,    13,    15,    16,    17,    19,    18,    20,
-      21,    22,    26,    27,    28,    29,     3,    49,    24,    52,
-      25,    25,     3,     3,    50,    50,    50,    50,    50,    52,
-      52,    52,    52,    52,    52,    52,    52,     9,     8,    52,
-      25,    48,    49,    30
-};
-
-#define yyerrok		(yyerrstatus = 0)
-#define yyclearin	(yychar = YYEMPTY)
-#define YYEMPTY		(-2)
-#define YYEOF		0
-
-#define YYACCEPT	goto yyacceptlab
-#define YYABORT		goto yyabortlab
-#define YYERROR		goto yyerrorlab
-
-
-/* Like YYERROR except do call yyerror.  This remains here temporarily
-   to ease the transition to the new meaning of YYERROR, for GCC.
-   Once GCC version 2 has supplanted version 1, this can go.  However,
-   YYFAIL appears to be in use.  Nevertheless, it is formally deprecated
-   in Bison 2.4.2's NEWS entry, where a plan to phase it out is
-   discussed.  */
-
-#define YYFAIL		goto yyerrlab
-#if defined YYFAIL
-  /* This is here to suppress warnings from the GCC cpp's
-     -Wunused-macros.  Normally we don't worry about that warning, but
-     some users do, and we want to make it easy for users to remove
-     YYFAIL uses, which will produce warnings from Bison 2.5.  */
-#endif
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
@@ -775,13 +730,13 @@ do                                                              \
   else                                                          \
     {                                                           \
       yyerror (YY_("syntax error: cannot back up")); \
-      YYERROR;							\
-    }								\
-while (YYID (0))
+      YYERROR;                                                  \
+    }                                                           \
+while (0)
 
 /* Error token number */
-#define YYTERROR	1
-#define YYERRCODE	256
+#define YYTERROR        1
+#define YYERRCODE       256
 
 
 /* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
@@ -791,7 +746,7 @@ while (YYID (0))
 #ifndef YYLLOC_DEFAULT
 # define YYLLOC_DEFAULT(Current, Rhs, N)                                \
     do                                                                  \
-      if (YYID (N))                                                     \
+      if (N)                                                            \
         {                                                               \
           (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;        \
           (Current).first_column = YYRHSLOC (Rhs, 1).first_column;      \
@@ -805,10 +760,25 @@ while (YYID (0))
           (Current).first_column = (Current).last_column =              \
             YYRHSLOC (Rhs, 0).last_column;                              \
         }                                                               \
-    while (YYID (0))
+    while (0)
 #endif
 
 #define YYRHSLOC(Rhs, K) ((Rhs)[K])
+
+
+/* Enable debugging if requested.  */
+#if YYDEBUG
+
+# ifndef YYFPRINTF
+#  include <stdio.h> /* INFRINGES ON USER NAME SPACE */
+#  define YYFPRINTF fprintf
+# endif
+
+# define YYDPRINTF(Args)                        \
+do {                                            \
+  if (yydebug)                                  \
+    YYFPRINTF Args;                             \
+} while (0)
 
 
 /* YY_LOCATION_PRINT -- Print the location on the stream.
@@ -820,36 +790,28 @@ while (YYID (0))
 
 /* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
 
-__attribute__((__unused__))
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+YY_ATTRIBUTE_UNUSED
 static unsigned
 yy_location_print_ (FILE *yyo, YYLTYPE const * const yylocp)
-#else
-static unsigned
-yy_location_print_ (yyo, yylocp)
-    FILE *yyo;
-    YYLTYPE const * const yylocp;
-#endif
 {
   unsigned res = 0;
   int end_col = 0 != yylocp->last_column ? yylocp->last_column - 1 : 0;
   if (0 <= yylocp->first_line)
     {
-      res += fprintf (yyo, "%d", yylocp->first_line);
+      res += YYFPRINTF (yyo, "%d", yylocp->first_line);
       if (0 <= yylocp->first_column)
-        res += fprintf (yyo, ".%d", yylocp->first_column);
+        res += YYFPRINTF (yyo, ".%d", yylocp->first_column);
     }
   if (0 <= yylocp->last_line)
     {
       if (yylocp->first_line < yylocp->last_line)
         {
-          res += fprintf (yyo, "-%d", yylocp->last_line);
+          res += YYFPRINTF (yyo, "-%d", yylocp->last_line);
           if (0 <= end_col)
-            res += fprintf (yyo, ".%d", end_col);
+            res += YYFPRINTF (yyo, ".%d", end_col);
         }
       else if (0 <= end_col && yylocp->first_column < end_col)
-        res += fprintf (yyo, "-%d", end_col);
+        res += YYFPRINTF (yyo, "-%d", end_col);
     }
   return res;
  }
@@ -863,73 +825,35 @@ yy_location_print_ (yyo, yylocp)
 #endif
 
 
-/* YYLEX -- calling `yylex' with the right arguments.  */
-#ifdef YYLEX_PARAM
-# define YYLEX yylex (YYLEX_PARAM)
-#else
-# define YYLEX yylex ()
-#endif
-
-/* Enable debugging if requested.  */
-#if YYDEBUG
-
-# ifndef YYFPRINTF
-#  include <stdio.h> /* INFRINGES ON USER NAME SPACE */
-#  define YYFPRINTF fprintf
-# endif
-
-# define YYDPRINTF(Args)			\
-do {						\
-  if (yydebug)					\
-    YYFPRINTF Args;				\
-} while (YYID (0))
-
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location)			  \
-do {									  \
-  if (yydebug)								  \
-    {									  \
-      YYFPRINTF (stderr, "%s ", Title);					  \
-      yy_symbol_print (stderr,						  \
-		  Type, Value, Location); \
-      YYFPRINTF (stderr, "\n");						  \
-    }									  \
-} while (YYID (0))
+# define YY_SYMBOL_PRINT(Title, Type, Value, Location)                    \
+do {                                                                      \
+  if (yydebug)                                                            \
+    {                                                                     \
+      YYFPRINTF (stderr, "%s ", Title);                                   \
+      yy_symbol_print (stderr,                                            \
+                  Type, Value, Location); \
+      YYFPRINTF (stderr, "\n");                                           \
+    }                                                                     \
+} while (0)
 
 
-/*--------------------------------.
-| Print this symbol on YYOUTPUT.  |
-`--------------------------------*/
+/*----------------------------------------.
+| Print this symbol's value on YYOUTPUT.  |
+`----------------------------------------*/
 
-/*ARGSUSED*/
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
 yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp)
-#else
-static void
-yy_symbol_value_print (yyoutput, yytype, yyvaluep, yylocationp)
-    FILE *yyoutput;
-    int yytype;
-    YYSTYPE const * const yyvaluep;
-    YYLTYPE const * const yylocationp;
-#endif
 {
   FILE *yyo = yyoutput;
   YYUSE (yyo);
+  YYUSE (yylocationp);
   if (!yyvaluep)
     return;
-  YYUSE (yylocationp);
 # ifdef YYPRINT
   if (yytype < YYNTOKENS)
     YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
-# else
-  YYUSE (yyoutput);
 # endif
-  switch (yytype)
-    {
-      default:
-        break;
-    }
+  YYUSE (yytype);
 }
 
 
@@ -937,23 +861,11 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep, yylocationp)
 | Print this symbol on YYOUTPUT.  |
 `--------------------------------*/
 
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
 yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp)
-#else
-static void
-yy_symbol_print (yyoutput, yytype, yyvaluep, yylocationp)
-    FILE *yyoutput;
-    int yytype;
-    YYSTYPE const * const yyvaluep;
-    YYLTYPE const * const yylocationp;
-#endif
 {
-  if (yytype < YYNTOKENS)
-    YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
-  else
-    YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
+  YYFPRINTF (yyoutput, "%s %s (",
+             yytype < YYNTOKENS ? "token" : "nterm", yytname[yytype]);
 
   YY_LOCATION_PRINT (yyoutput, *yylocationp);
   YYFPRINTF (yyoutput, ": ");
@@ -966,16 +878,8 @@ yy_symbol_print (yyoutput, yytype, yyvaluep, yylocationp)
 | TOP (included).                                                   |
 `------------------------------------------------------------------*/
 
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
 yy_stack_print (yytype_int16 *yybottom, yytype_int16 *yytop)
-#else
-static void
-yy_stack_print (yybottom, yytop)
-    yytype_int16 *yybottom;
-    yytype_int16 *yytop;
-#endif
 {
   YYFPRINTF (stderr, "Stack now");
   for (; yybottom <= yytop; yybottom++)
@@ -986,50 +890,42 @@ yy_stack_print (yybottom, yytop)
   YYFPRINTF (stderr, "\n");
 }
 
-# define YY_STACK_PRINT(Bottom, Top)				\
-do {								\
-  if (yydebug)							\
-    yy_stack_print ((Bottom), (Top));				\
-} while (YYID (0))
+# define YY_STACK_PRINT(Bottom, Top)                            \
+do {                                                            \
+  if (yydebug)                                                  \
+    yy_stack_print ((Bottom), (Top));                           \
+} while (0)
 
 
 /*------------------------------------------------.
 | Report that the YYRULE is going to be reduced.  |
 `------------------------------------------------*/
 
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
-yy_reduce_print (YYSTYPE *yyvsp, YYLTYPE *yylsp, int yyrule)
-#else
-static void
-yy_reduce_print (yyvsp, yylsp, yyrule)
-    YYSTYPE *yyvsp;
-    YYLTYPE *yylsp;
-    int yyrule;
-#endif
+yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp, int yyrule)
 {
+  unsigned long int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
   int yyi;
-  unsigned long int yylno = yyrline[yyrule];
   YYFPRINTF (stderr, "Reducing stack by rule %d (line %lu):\n",
-	     yyrule - 1, yylno);
+             yyrule - 1, yylno);
   /* The symbols being reduced.  */
   for (yyi = 0; yyi < yynrhs; yyi++)
     {
       YYFPRINTF (stderr, "   $%d = ", yyi + 1);
-      yy_symbol_print (stderr, yyrhs[yyprhs[yyrule] + yyi],
-		       &(yyvsp[(yyi + 1) - (yynrhs)])
-		       , &(yylsp[(yyi + 1) - (yynrhs)])		       );
+      yy_symbol_print (stderr,
+                       yystos[yyssp[yyi + 1 - yynrhs]],
+                       &(yyvsp[(yyi + 1) - (yynrhs)])
+                       , &(yylsp[(yyi + 1) - (yynrhs)])                       );
       YYFPRINTF (stderr, "\n");
     }
 }
 
-# define YY_REDUCE_PRINT(Rule)		\
-do {					\
-  if (yydebug)				\
-    yy_reduce_print (yyvsp, yylsp, Rule); \
-} while (YYID (0))
+# define YY_REDUCE_PRINT(Rule)          \
+do {                                    \
+  if (yydebug)                          \
+    yy_reduce_print (yyssp, yyvsp, yylsp, Rule); \
+} while (0)
 
 /* Nonzero means print parse trace.  It is left uninitialized so that
    multiple parsers can coexist.  */
@@ -1043,7 +939,7 @@ int yydebug;
 
 
 /* YYINITDEPTH -- initial size of the parser's stacks.  */
-#ifndef	YYINITDEPTH
+#ifndef YYINITDEPTH
 # define YYINITDEPTH 200
 #endif
 
@@ -1066,15 +962,8 @@ int yydebug;
 #   define yystrlen strlen
 #  else
 /* Return the length of YYSTR.  */
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static YYSIZE_T
 yystrlen (const char *yystr)
-#else
-static YYSIZE_T
-yystrlen (yystr)
-    const char *yystr;
-#endif
 {
   YYSIZE_T yylen;
   for (yylen = 0; yystr[yylen]; yylen++)
@@ -1090,16 +979,8 @@ yystrlen (yystr)
 #  else
 /* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
    YYDEST.  */
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static char *
 yystpcpy (char *yydest, const char *yysrc)
-#else
-static char *
-yystpcpy (yydest, yysrc)
-    char *yydest;
-    const char *yysrc;
-#endif
 {
   char *yyd = yydest;
   const char *yys = yysrc;
@@ -1129,27 +1010,27 @@ yytnamerr (char *yyres, const char *yystr)
       char const *yyp = yystr;
 
       for (;;)
-	switch (*++yyp)
-	  {
-	  case '\'':
-	  case ',':
-	    goto do_not_strip_quotes;
+        switch (*++yyp)
+          {
+          case '\'':
+          case ',':
+            goto do_not_strip_quotes;
 
-	  case '\\':
-	    if (*++yyp != '\\')
-	      goto do_not_strip_quotes;
-	    /* Fall through.  */
-	  default:
-	    if (yyres)
-	      yyres[yyn] = *yyp;
-	    yyn++;
-	    break;
+          case '\\':
+            if (*++yyp != '\\')
+              goto do_not_strip_quotes;
+            /* Fall through.  */
+          default:
+            if (yyres)
+              yyres[yyn] = *yyp;
+            yyn++;
+            break;
 
-	  case '"':
-	    if (yyres)
-	      yyres[yyn] = '\0';
-	    return yyn;
-	  }
+          case '"':
+            if (yyres)
+              yyres[yyn] = '\0';
+            return yyn;
+          }
     do_not_strip_quotes: ;
     }
 
@@ -1172,11 +1053,11 @@ static int
 yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                 yytype_int16 *yyssp, int yytoken)
 {
-  YYSIZE_T yysize0 = yytnamerr (YY_NULL, yytname[yytoken]);
+  YYSIZE_T yysize0 = yytnamerr (YY_NULLPTR, yytname[yytoken]);
   YYSIZE_T yysize = yysize0;
   enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
   /* Internationalized format string. */
-  const char *yyformat = YY_NULL;
+  const char *yyformat = YY_NULLPTR;
   /* Arguments of yyformat. */
   char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
   /* Number of reported tokens (one for the "unexpected", one per
@@ -1184,10 +1065,6 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
   int yycount = 0;
 
   /* There are many possibilities here to consider:
-     - Assume YYFAIL is not used.  It's too flawed to consider.  See
-       <http://lists.gnu.org/archive/html/bison-patches/2009-12/msg00024.html>
-       for details.  YYERROR is fine as it does not invoke this
-       function.
      - If this state is a consistent state with a default action, then
        the only way this function was invoked is if the default action
        is an error action.  In that case, don't check for expected
@@ -1237,7 +1114,7 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                   }
                 yyarg[yycount++] = yytname[yyx];
                 {
-                  YYSIZE_T yysize1 = yysize + yytnamerr (YY_NULL, yytname[yyx]);
+                  YYSIZE_T yysize1 = yysize + yytnamerr (YY_NULLPTR, yytname[yyx]);
                   if (! (yysize <= yysize1
                          && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
                     return 2;
@@ -1304,33 +1181,18 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 | Release the memory associated to this symbol.  |
 `-----------------------------------------------*/
 
-/*ARGSUSED*/
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
 yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, YYLTYPE *yylocationp)
-#else
-static void
-yydestruct (yymsg, yytype, yyvaluep, yylocationp)
-    const char *yymsg;
-    int yytype;
-    YYSTYPE *yyvaluep;
-    YYLTYPE *yylocationp;
-#endif
 {
   YYUSE (yyvaluep);
   YYUSE (yylocationp);
-
   if (!yymsg)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
-  switch (yytype)
-    {
-
-      default:
-        break;
-    }
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+  YYUSE (yytype);
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
 }
 
 
@@ -1339,26 +1201,14 @@ yydestruct (yymsg, yytype, yyvaluep, yylocationp)
 /* The lookahead symbol.  */
 int yychar;
 
-
-#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END
-#endif
-#ifndef YY_INITIAL_VALUE
-# define YY_INITIAL_VALUE(Value) /* Nothing. */
-#endif
-
 /* The semantic value of the lookahead symbol.  */
-YYSTYPE yylval YY_INITIAL_VALUE(yyval_default);
-
+YYSTYPE yylval;
 /* Location data for the lookahead symbol.  */
 YYLTYPE yylloc
 # if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
   = { 1, 1, 1, 1 }
 # endif
 ;
-
-
 /* Number of syntax errors so far.  */
 int yynerrs;
 
@@ -1367,36 +1217,17 @@ int yynerrs;
 | yyparse.  |
 `----------*/
 
-#ifdef YYPARSE_PARAM
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-int
-yyparse (void *YYPARSE_PARAM)
-#else
-int
-yyparse (YYPARSE_PARAM)
-    void *YYPARSE_PARAM;
-#endif
-#else /* ! YYPARSE_PARAM */
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 int
 yyparse (void)
-#else
-int
-yyparse ()
-
-#endif
-#endif
 {
     int yystate;
     /* Number of tokens to shift before error messages enabled.  */
     int yyerrstatus;
 
     /* The stacks and their tools:
-       `yyss': related to states.
-       `yyvs': related to semantic values.
-       `yyls': related to locations.
+       'yyss': related to states.
+       'yyvs': related to semantic values.
+       'yyls': related to locations.
 
        Refer to the stacks through separate pointers, to allow yyoverflow
        to reallocate them elsewhere.  */
@@ -1475,26 +1306,26 @@ yyparse ()
 
 #ifdef yyoverflow
       {
-	/* Give user a chance to reallocate the stack.  Use copies of
-	   these so that the &'s don't force the real ones into
-	   memory.  */
-	YYSTYPE *yyvs1 = yyvs;
-	yytype_int16 *yyss1 = yyss;
-	YYLTYPE *yyls1 = yyls;
+        /* Give user a chance to reallocate the stack.  Use copies of
+           these so that the &'s don't force the real ones into
+           memory.  */
+        YYSTYPE *yyvs1 = yyvs;
+        yytype_int16 *yyss1 = yyss;
+        YYLTYPE *yyls1 = yyls;
 
-	/* Each stack pointer address is followed by the size of the
-	   data in use in that stack, in bytes.  This used to be a
-	   conditional around just the two extra args, but that might
-	   be undefined if yyoverflow is a macro.  */
-	yyoverflow (YY_("memory exhausted"),
-		    &yyss1, yysize * sizeof (*yyssp),
-		    &yyvs1, yysize * sizeof (*yyvsp),
-		    &yyls1, yysize * sizeof (*yylsp),
-		    &yystacksize);
+        /* Each stack pointer address is followed by the size of the
+           data in use in that stack, in bytes.  This used to be a
+           conditional around just the two extra args, but that might
+           be undefined if yyoverflow is a macro.  */
+        yyoverflow (YY_("memory exhausted"),
+                    &yyss1, yysize * sizeof (*yyssp),
+                    &yyvs1, yysize * sizeof (*yyvsp),
+                    &yyls1, yysize * sizeof (*yylsp),
+                    &yystacksize);
 
-	yyls = yyls1;
-	yyss = yyss1;
-	yyvs = yyvs1;
+        yyls = yyls1;
+        yyss = yyss1;
+        yyvs = yyvs1;
       }
 #else /* no yyoverflow */
 # ifndef YYSTACK_RELOCATE
@@ -1502,23 +1333,23 @@ yyparse ()
 # else
       /* Extend the stack our own way.  */
       if (YYMAXDEPTH <= yystacksize)
-	goto yyexhaustedlab;
+        goto yyexhaustedlab;
       yystacksize *= 2;
       if (YYMAXDEPTH < yystacksize)
-	yystacksize = YYMAXDEPTH;
+        yystacksize = YYMAXDEPTH;
 
       {
-	yytype_int16 *yyss1 = yyss;
-	union yyalloc *yyptr =
-	  (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
-	if (! yyptr)
-	  goto yyexhaustedlab;
-	YYSTACK_RELOCATE (yyss_alloc, yyss);
-	YYSTACK_RELOCATE (yyvs_alloc, yyvs);
-	YYSTACK_RELOCATE (yyls_alloc, yyls);
+        yytype_int16 *yyss1 = yyss;
+        union yyalloc *yyptr =
+          (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
+        if (! yyptr)
+          goto yyexhaustedlab;
+        YYSTACK_RELOCATE (yyss_alloc, yyss);
+        YYSTACK_RELOCATE (yyvs_alloc, yyvs);
+        YYSTACK_RELOCATE (yyls_alloc, yyls);
 #  undef YYSTACK_RELOCATE
-	if (yyss1 != yyssa)
-	  YYSTACK_FREE (yyss1);
+        if (yyss1 != yyssa)
+          YYSTACK_FREE (yyss1);
       }
 # endif
 #endif /* no yyoverflow */
@@ -1528,10 +1359,10 @@ yyparse ()
       yylsp = yyls + yysize - 1;
 
       YYDPRINTF ((stderr, "Stack size increased to %lu\n",
-		  (unsigned long int) yystacksize));
+                  (unsigned long int) yystacksize));
 
       if (yyss + yystacksize - 1 <= yyssp)
-	YYABORT;
+        YYABORT;
     }
 
   YYDPRINTF ((stderr, "Entering state %d\n", yystate));
@@ -1560,7 +1391,7 @@ yybackup:
   if (yychar == YYEMPTY)
     {
       YYDPRINTF ((stderr, "Reading a token: "));
-      yychar = YYLEX;
+      yychar = yylex ();
     }
 
   if (yychar <= YYEOF)
@@ -1625,7 +1456,7 @@ yyreduce:
   yylen = yyr2[yyn];
 
   /* If YYLEN is nonzero, implement the default value of the action:
-     `$$ = $1'.
+     '$$ = $1'.
 
      Otherwise, the following line sets YYVAL to garbage.
      This behavior is undocumented and Bison
@@ -1640,265 +1471,957 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-/* Line 1792 of yacc.c  */
-#line 132 "Frontend/Parser/ParserBuechi.yy"
-    { TheBuechi = BuechiAutomaton((yyvsp[(3) - (9)].yt_tBuechiRules),(yyvsp[(7) - (9)].yt_tAcceptingSet)); }
+#line 139 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { TheBuechi = BuechiAutomaton((yyvsp[-6].yt_tBuechiRules),(yyvsp[-2].yt_tAcceptingSet)); }
+#line 1477 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 3:
-/* Line 1792 of yacc.c  */
-#line 137 "Frontend/Parser/ParserBuechi.yy"
+#line 144 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     { (yyval.yt_tBuechiRules) = EmptyBuechiRules(); }
+#line 1483 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 4:
-/* Line 1792 of yacc.c  */
-#line 139 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tBuechiRules) = (yyvsp[(1) - (1)].yt_tBuechiRules); }
+#line 146 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { (yyval.yt_tBuechiRules) = (yyvsp[0].yt_tBuechiRules); }
+#line 1489 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 5:
-/* Line 1792 of yacc.c  */
-#line 141 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tBuechiRules) = BuechiRules((yyvsp[(1) - (3)].yt_tBuechiRules),(yyvsp[(3) - (3)].yt_tBuechiRules)); }
+#line 148 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { (yyval.yt_tBuechiRules) = BuechiRules((yyvsp[-2].yt_tBuechiRules),(yyvsp[0].yt_tBuechiRules)); }
+#line 1495 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 6:
-/* Line 1792 of yacc.c  */
-#line 146 "Frontend/Parser/ParserBuechi.yy"
+#line 153 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     {
-  	      Symbol *t = buechiStateTable->lookup((yyvsp[(1) - (1)].yt_casestring)->name);
+  	      Symbol *t = buechiStateTable->lookup((yyvsp[0].yt_casestring)->name);
   	      if (t == NULL)
           {
-  		      t = new Symbol((yyvsp[(1) - (1)].yt_casestring)->name);
+  		      t = new Symbol((yyvsp[0].yt_casestring)->name);
   		      buechiStateTable->insert(t);
   		      t->setIndex(currentNextIndex++);
   	      }
       }
+#line 1509 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 7:
-/* Line 1792 of yacc.c  */
-#line 156 "Frontend/Parser/ParserBuechi.yy"
+#line 163 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     {
-          Symbol *t = buechiStateTable->lookup((yyvsp[(1) - (4)].yt_casestring)->name);
-          (yyval.yt_tBuechiRules) = BuechiRule((mkinteger(t->getIndex())),(yyvsp[(4) - (4)].yt_tTransitionRules)); (yyvsp[(1) - (4)].yt_casestring)->free(true);
+          Symbol *t = buechiStateTable->lookup((yyvsp[-3].yt_casestring)->name);
+          (yyval.yt_tBuechiRules) = BuechiRule((mkinteger(t->getIndex())),(yyvsp[0].yt_tTransitionRules)); (yyvsp[-3].yt_casestring)->free(true);
       }
+#line 1518 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 8:
-/* Line 1792 of yacc.c  */
-#line 164 "Frontend/Parser/ParserBuechi.yy"
+#line 171 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     { (yyval.yt_tTransitionRules) = EmptyTransitionRules(); }
+#line 1524 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 9:
-/* Line 1792 of yacc.c  */
-#line 166 "Frontend/Parser/ParserBuechi.yy"
+#line 173 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     {
-        Symbol *t = buechiStateTable->lookup((yyvsp[(3) - (4)].yt_casestring)->name);
+        Symbol *t = buechiStateTable->lookup((yyvsp[-1].yt_casestring)->name);
 	  	if (UNLIKELY(t == NULL)){
-	  		buechiStateTable->insert(new Symbol((yyvsp[(3) - (4)].yt_casestring)->name));
-	  		t = buechiStateTable->lookup((yyvsp[(3) - (4)].yt_casestring)->name);
+	  		buechiStateTable->insert(new Symbol((yyvsp[-1].yt_casestring)->name));
+	  		t = buechiStateTable->lookup((yyvsp[-1].yt_casestring)->name);
 	  		t->setIndex(currentNextIndex++);
 	  	}
-        (yyval.yt_tTransitionRules) = TransitionRules(TransitionRule(StatePredicateFormula((yyvsp[(1) - (4)].yt_tStatePredicate)),mkinteger(t->getIndex())),(yyvsp[(4) - (4)].yt_tTransitionRules));
+        (yyval.yt_tTransitionRules) = TransitionRules(TransitionRule(StatePredicateFormula((yyvsp[-3].yt_tStatePredicate)),mkinteger(t->getIndex())),(yyvsp[0].yt_tTransitionRules));
     }
+#line 1538 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 10:
-/* Line 1792 of yacc.c  */
-#line 179 "Frontend/Parser/ParserBuechi.yy"
+#line 186 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     { (yyval.yt_tAcceptingSet) = EmptyAcceptingSet(); }
+#line 1544 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 11:
-/* Line 1792 of yacc.c  */
-#line 181 "Frontend/Parser/ParserBuechi.yy"
+#line 188 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     {
-        Symbol *t = buechiStateTable->lookup((yyvsp[(1) - (1)].yt_casestring)->name);
+        Symbol *t = buechiStateTable->lookup((yyvsp[0].yt_casestring)->name);
         if (UNLIKELY(t == NULL))
         {
-            yyerrors((yyvsp[(1) - (1)].yt_casestring)->name, (yylsp[(1) - (1)]), "state '%s' unknown", (yyvsp[(1) - (1)].yt_casestring)->name);
+            yyerrors((yyvsp[0].yt_casestring)->name, (yylsp[0]), "state '%s' unknown", (yyvsp[0].yt_casestring)->name);
         }
         (yyval.yt_tAcceptingSet) = AcceptingState(mkinteger(t->getIndex()));
     }
+#line 1557 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 12:
-/* Line 1792 of yacc.c  */
-#line 190 "Frontend/Parser/ParserBuechi.yy"
+#line 197 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     {
-        Symbol *t = buechiStateTable->lookup((yyvsp[(1) - (3)].yt_casestring)->name);
+        Symbol *t = buechiStateTable->lookup((yyvsp[-2].yt_casestring)->name);
         if (UNLIKELY(t == NULL))
         {
-            yyerrors((yyvsp[(1) - (3)].yt_casestring)->name, (yylsp[(1) - (3)]), "state '%s' unknown", (yyvsp[(1) - (3)].yt_casestring)->name);
+            yyerrors((yyvsp[-2].yt_casestring)->name, (yylsp[-2]), "state '%s' unknown", (yyvsp[-2].yt_casestring)->name);
         }
-        (yyval.yt_tAcceptingSet) = AcceptingSet(AcceptingState(mkinteger(t->getIndex())),(yyvsp[(3) - (3)].yt_tAcceptingSet));
+        (yyval.yt_tAcceptingSet) = AcceptingSet(AcceptingState(mkinteger(t->getIndex())),(yyvsp[0].yt_tAcceptingSet));
     }
+#line 1570 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 13:
-/* Line 1792 of yacc.c  */
-#line 202 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = (yyvsp[(2) - (3)].yt_tStatePredicate); }
+#line 209 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { (yyval.yt_tStatePredicate) = (yyvsp[-1].yt_tStatePredicate); }
+#line 1576 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 14:
-/* Line 1792 of yacc.c  */
-#line 204 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = AtomicProposition((yyvsp[(1) - (1)].yt_tAtomicProposition)); }
+#line 211 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	if((yyvsp[0].yt_tAtomicProposition)->pred->magicnumber == MAGIC_NUMBER_TRUE)
+	{
+		delete (yyvsp[0].yt_tAtomicProposition)->pred;
+		(yyvsp[0].yt_tAtomicProposition) -> pred = new TruePredicate();
+	}
+	else if((yyvsp[0].yt_tAtomicProposition)->pred->magicnumber == MAGIC_NUMBER_FALSE)
+	{
+		delete (yyvsp[0].yt_tAtomicProposition)->pred;
+		(yyvsp[0].yt_tAtomicProposition) -> pred = new FalsePredicate();
+	}
+	(yyval.yt_tStatePredicate) = AtomicProposition((yyvsp[0].yt_tAtomicProposition)); 
+	(yyval.yt_tStatePredicate) -> shape = (yyvsp[0].yt_tAtomicProposition) -> shape;
+	(yyval.yt_tStatePredicate) -> formula = (yyvsp[0].yt_tAtomicProposition) -> pred;
+    }
+#line 1596 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 15:
-/* Line 1792 of yacc.c  */
-#line 206 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = Negation((yyvsp[(2) - (2)].yt_tStatePredicate)); }
+#line 227 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	switch((yyvsp[0].yt_tStatePredicate) -> shape)
+	{
+	case AT_TEMP: 	(yyval.yt_tStatePredicate) = Negation((yyvsp[0].yt_tStatePredicate)); 
+			break;
+	case AT_DL:
+	case AT_FIR:
+	case AT_COMP: 	(yyvsp[0].yt_tStatePredicate) -> formula = (yyvsp[0].yt_tStatePredicate) -> formula -> negate(); 
+			(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate); 
+			break;
+	case AT_TRUE: 	delete((yyvsp[0].yt_tStatePredicate) -> formula);
+			(yyvsp[0].yt_tStatePredicate) -> formula = new FalsePredicate();
+			(yyvsp[0].yt_tStatePredicate) -> shape = AT_FALSE;
+			(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+			break;
+	case AT_FALSE: 	delete((yyvsp[0].yt_tStatePredicate) -> formula);
+			(yyvsp[0].yt_tStatePredicate) -> formula = new TruePredicate();
+			(yyvsp[0].yt_tStatePredicate) -> shape = AT_TRUE;
+			(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+			break;
+	case AT_AND: 	(yyvsp[0].yt_tStatePredicate) -> formula -> negate();
+			(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+			(yyval.yt_tStatePredicate) -> shape = AT_OR;
+			break;
+	case AT_OR: 	(yyvsp[0].yt_tStatePredicate) -> formula -> negate();
+			(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+			(yyval.yt_tStatePredicate) -> shape = AT_AND;
+			break;
+	}
+    }
+#line 1631 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 16:
-/* Line 1792 of yacc.c  */
-#line 208 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = Conjunction((yyvsp[(1) - (3)].yt_tStatePredicate), (yyvsp[(3) - (3)].yt_tStatePredicate)); }
+#line 258 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TEMP || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TEMP)
+	{
+		(yyval.yt_tStatePredicate) = Conjunction((yyvsp[-2].yt_tStatePredicate), (yyvsp[0].yt_tStatePredicate)); 
+		(yyval.yt_tStatePredicate) -> shape = AT_TEMP;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_FALSE || (yyvsp[0].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		delete (yyvsp[-2].yt_tStatePredicate) -> formula;
+		delete (yyvsp[0].yt_tStatePredicate) -> formula;
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = new FalsePredicate();
+		(yyval.yt_tStatePredicate) -> shape = AT_FALSE;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = (yyvsp[0].yt_tStatePredicate) -> shape;
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = (yyvsp[-2].yt_tStatePredicate) -> shape;
+	} 
+	else if(((yyvsp[-2].yt_tStatePredicate)->shape == AT_AND) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR) || ((yyvsp[0].yt_tStatePredicate) -> shape == AT_FIR) || ((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate) -> formula) -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+	}
+	else if(((yyvsp[0].yt_tStatePredicate)->shape == AT_AND) && (((yyvsp[-2].yt_tStatePredicate) -> shape == AT_OR) || ((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP) || ((yyvsp[-2].yt_tStatePredicate) -> shape == AT_DL) || ((yyvsp[-2].yt_tStatePredicate) -> shape == AT_FIR)))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula) -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate)->shape == AT_AND) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate)->formula));
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else // both $1 and $3 are AT_FIR, AT_COMP, AT_DL or AT_OR
+	{
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+		result -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		result -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = result;
+		(yyval.yt_tStatePredicate) -> shape = AT_AND;
+	}
+    }
+#line 1685 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 17:
-/* Line 1792 of yacc.c  */
-#line 210 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = Disjunction((yyvsp[(1) - (3)].yt_tStatePredicate), (yyvsp[(3) - (3)].yt_tStatePredicate)); }
+#line 308 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TEMP || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TEMP)
+	{
+		(yyval.yt_tStatePredicate) = Disjunction((yyvsp[-2].yt_tStatePredicate), (yyvsp[0].yt_tStatePredicate)); 
+		(yyval.yt_tStatePredicate) -> shape = AT_TEMP;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TRUE || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		delete (yyvsp[-2].yt_tStatePredicate) -> formula;
+		delete (yyvsp[0].yt_tStatePredicate) -> formula;
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = new TruePredicate();
+		(yyval.yt_tStatePredicate) -> shape = AT_TRUE;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = (yyvsp[0].yt_tStatePredicate) -> shape;
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = (yyvsp[-2].yt_tStatePredicate) -> shape;
+	} 
+	else if(((yyvsp[-2].yt_tStatePredicate)->shape == AT_OR) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND) || ((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP) || ((yyvsp[0].yt_tStatePredicate) -> shape == AT_FIR) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL) ))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate) -> formula) -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+	}
+	else if(((yyvsp[0].yt_tStatePredicate)->shape == AT_OR) && (((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) || ((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula) -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate)->shape == AT_OR) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate)->formula));
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else // both $1 and $3 are AT_COMP,AT_FIR,AT_DL or AT_OR
+	{
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(false);
+		result -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		result -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = result;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+    }
+#line 1740 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 18:
-/* Line 1792 of yacc.c  */
-#line 212 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = ExclusiveDisjunction((yyvsp[(1) - (3)].yt_tStatePredicate), (yyvsp[(3) - (3)].yt_tStatePredicate)); }
+#line 359 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	// translate into (p & -q) | (-p & q)
+
+	if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TEMP || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TEMP)
+	{
+		(yyval.yt_tStatePredicate) = ExclusiveDisjunction((yyvsp[-2].yt_tStatePredicate), (yyvsp[0].yt_tStatePredicate)); 
+		(yyval.yt_tStatePredicate) -> shape = AT_TEMP;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyvsp[0].yt_tStatePredicate) -> formula = (yyvsp[0].yt_tStatePredicate) -> formula -> negate();
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = ooppShape((yyvsp[0].yt_tStatePredicate)->shape);
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyvsp[-2].yt_tStatePredicate) -> formula = (yyvsp[-2].yt_tStatePredicate) -> formula -> negate();
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = ooppShape((yyvsp[-2].yt_tStatePredicate)->shape);
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)|| ((yyvsp[0].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_*
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // d = (-p & q)
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate) -> formula) ->addSub(b);     // $1 = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		a -> addSub(d); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if((((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // d = (p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula) ->addSub(b);     // $3 = (-p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if((((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub((yyvsp[-2].yt_tStatePredicate) -> formula); // c = p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // d = (-p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_OR) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[0].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub((yyvsp[0].yt_tStatePredicate) -> formula); // c = -p & q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // d = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if((((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)|| ((yyvsp[0].yt_tStatePredicate)->shape == AT_FIR)||((yyvsp[0].yt_tStatePredicate)->shape==AT_DL)))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // d = (p & -q)
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // d = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(e); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_OR
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // d = (p & -q)
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // d = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(e); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_AND
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // p & -q
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // e = (-p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(e); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_OR) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // -p & q
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // e = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(e); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else // (($1 -> shape == AT_OR) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // -p & q
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // p & -q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(c); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+    }
+#line 1929 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 19:
-/* Line 1792 of yacc.c  */
-#line 214 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = Implication((yyvsp[(1) - (3)].yt_tStatePredicate), (yyvsp[(3) - (3)].yt_tStatePredicate)); }
+#line 544 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TEMP || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TEMP)
+	{
+		(yyval.yt_tStatePredicate) = Implication((yyvsp[-2].yt_tStatePredicate), (yyvsp[0].yt_tStatePredicate)); 
+		(yyval.yt_tStatePredicate) -> shape = AT_TEMP;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_FALSE || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		delete (yyvsp[-2].yt_tStatePredicate) -> formula;
+		delete (yyvsp[0].yt_tStatePredicate) -> formula;
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = new TruePredicate();
+		(yyval.yt_tStatePredicate) -> shape = AT_TRUE;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = (yyvsp[0].yt_tStatePredicate) -> shape;
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyvsp[-2].yt_tStatePredicate)->formula = (yyvsp[-2].yt_tStatePredicate) -> formula -> negate();
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = ooppShape((yyvsp[-2].yt_tStatePredicate) -> shape);
+	} 
+	else if(((yyvsp[-2].yt_tStatePredicate)->shape == AT_AND) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND) || ((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)|| ((yyvsp[0].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		 (yyvsp[-2].yt_tStatePredicate) -> formula = (yyvsp[-2].yt_tStatePredicate) -> formula ->negate();
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate) -> formula) -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[0].yt_tStatePredicate)->shape == AT_OR) && (((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) || ((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		(yyvsp[-2].yt_tStatePredicate) -> formula = (yyvsp[-2].yt_tStatePredicate)-> formula -> negate();
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula) -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate)->shape == AT_AND) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR))
+	{
+		(yyvsp[-2].yt_tStatePredicate) -> formula = (yyvsp[-2].yt_tStatePredicate) -> formula -> negate();
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate)->formula));
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else // both $1 and $3 are AT_* or AT_OR
+	{
+		(yyvsp[-2].yt_tStatePredicate) -> formula = (yyvsp[-2].yt_tStatePredicate) -> formula -> negate();
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(false);
+		result -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		result -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = result;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+    }
+#line 1989 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 20:
-/* Line 1792 of yacc.c  */
-#line 216 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tStatePredicate) = Equivalence((yyvsp[(1) - (3)].yt_tStatePredicate), (yyvsp[(3) - (3)].yt_tStatePredicate)); }
+#line 600 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	// translate into (p & q) | (-p & -q)
+
+	if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TEMP || (yyvsp[0].yt_tStatePredicate) -> shape == AT_TEMP)
+	{
+		(yyval.yt_tStatePredicate) = Equivalence((yyvsp[-2].yt_tStatePredicate), (yyvsp[0].yt_tStatePredicate)); 
+		(yyval.yt_tStatePredicate) -> shape = AT_TEMP;
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyvsp[0].yt_tStatePredicate) -> formula = (yyvsp[0].yt_tStatePredicate) -> formula -> negate();
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = ooppShape((yyvsp[0].yt_tStatePredicate)->shape);
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_FALSE)
+	{
+		(yyvsp[-2].yt_tStatePredicate) -> formula = (yyvsp[-2].yt_tStatePredicate) -> formula -> negate();
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> shape = ooppShape((yyvsp[-2].yt_tStatePredicate)->shape);
+	}
+	else if((yyvsp[0].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+	}
+	else if((yyvsp[-2].yt_tStatePredicate) -> shape == AT_TRUE)
+	{
+		(yyval.yt_tStatePredicate) = (yyvsp[0].yt_tStatePredicate);
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[0].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub(b); // d = (-p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate) -> formula) ->addSub((yyvsp[0].yt_tStatePredicate)->formula);     // $1 = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		a -> addSub(d); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if((((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)|| ((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub(b); // d = (-p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate) -> formula) ->addSub((yyvsp[-2].yt_tStatePredicate)->formula);     // $3 = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if((((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub(b); // c = -p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		d -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // d = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_OR) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[0].yt_tStatePredicate)->shape==AT_FIR) || ((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub(b); // c = -p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub((yyvsp[0].yt_tStatePredicate)->formula);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // d = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if((((yyvsp[-2].yt_tStatePredicate) -> shape == AT_COMP)|| ((yyvsp[-2].yt_tStatePredicate)->shape == AT_FIR) || ((yyvsp[-2].yt_tStatePredicate)->shape == AT_DL)) && (((yyvsp[0].yt_tStatePredicate) -> shape == AT_COMP)||((yyvsp[0].yt_tStatePredicate)->shape == AT_FIR)||((yyvsp[0].yt_tStatePredicate)->shape == AT_DL)))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub(c); // d = (-p & -q)
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		e -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // e = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(e); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_OR
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub(c); // d = (-p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate)->formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate)->formula)); //$1 = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_AND) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_OR))
+	{
+		StatePredicate * b = (yyvsp[0].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_AND
+		StatePredicate * c = (yyvsp[-2].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub(c); // -p & -q
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[-2].yt_tStatePredicate)->formula)->addSub((yyvsp[0].yt_tStatePredicate)->formula); // $1 = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub((yyvsp[-2].yt_tStatePredicate)->formula); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else if(((yyvsp[-2].yt_tStatePredicate) -> shape == AT_OR) && ((yyvsp[0].yt_tStatePredicate) -> shape == AT_AND))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub(c); // -p & -q
+		reinterpret_cast<AtomicBooleanPredicate *>((yyvsp[0].yt_tStatePredicate)->formula)->addSub((yyvsp[-2].yt_tStatePredicate)->formula); //$3 = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+	else // (($1 -> shape == AT_OR) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = (yyvsp[-2].yt_tStatePredicate) -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = (yyvsp[0].yt_tStatePredicate)->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> merge(reinterpret_cast<AtomicBooleanPredicate *>(c)); // -p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub((yyvsp[-2].yt_tStatePredicate)->formula);
+		d -> addSub((yyvsp[0].yt_tStatePredicate)->formula); // d = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(d); // a = result
+		(yyval.yt_tStatePredicate) = (yyvsp[-2].yt_tStatePredicate);
+		(yyval.yt_tStatePredicate) -> formula = a;
+		(yyval.yt_tStatePredicate) -> shape = AT_OR;
+	}
+    }
+#line 2174 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 21:
-/* Line 1792 of yacc.c  */
-#line 221 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = EqualsAtomicProposition((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 784 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[0].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	Term * T = (yyvsp[-2].yt_tTerm) -> ttt -> copy();
+	T -> multiply(-1);
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	result -> addSub(new AtomicStatePredicate((yyvsp[-2].yt_tTerm)->ttt));	
+	result -> addSub(new AtomicStatePredicate(T));	
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_AND;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2191 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 22:
-/* Line 1792 of yacc.c  */
-#line 223 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = NotEqualsAtomicProposition((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 797 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[0].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	Term * T = (yyvsp[-2].yt_tTerm) -> ttt -> copy();
+	T -> multiply(-1);
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	result -> addSub(new AtomicStatePredicate((yyvsp[-2].yt_tTerm)->ttt));	
+	result -> addSub(new AtomicStatePredicate(T));	
+	result = (AtomicBooleanPredicate *) result -> negate();
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_OR;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2209 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 23:
-/* Line 1792 of yacc.c  */
-#line 225 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = GreaterAtomicProposition((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 811 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[-2].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	Term * T = new Term();
+	T -> place = Net::Card[PL];
+	T -> mult = 1;
+	(yyvsp[-2].yt_tTerm) -> ttt -> append(T);
+	AtomicStatePredicate * result = new AtomicStatePredicate((yyvsp[-2].yt_tTerm)->ttt);
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_COMP;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+	
+    }
+#line 2227 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 24:
-/* Line 1792 of yacc.c  */
-#line 227 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = GreaterEqualAtomicProposition((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 825 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[-2].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	AtomicStatePredicate * result = new AtomicStatePredicate((yyvsp[-2].yt_tTerm)->ttt);
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_COMP;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2240 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 25:
-/* Line 1792 of yacc.c  */
-#line 229 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = LessAtomicProposition((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 834 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[0].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	Term * T = new Term();
+	T -> place = Net::Card[PL];
+	T -> mult = 1;
+	(yyvsp[-2].yt_tTerm) -> ttt -> append(T);
+	AtomicStatePredicate * result = new AtomicStatePredicate((yyvsp[-2].yt_tTerm)->ttt);
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_COMP;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2257 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 26:
-/* Line 1792 of yacc.c  */
-#line 231 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = LessEqualAtomicProposition((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 847 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[0].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	AtomicStatePredicate * result = new AtomicStatePredicate((yyvsp[-2].yt_tTerm)->ttt);
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_COMP;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2270 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 27:
-/* Line 1792 of yacc.c  */
-#line 233 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = True(); }
+#line 856 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	TruePredicate * result = new TruePredicate();
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_TRUE;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2281 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 28:
-/* Line 1792 of yacc.c  */
-#line 235 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = False(); }
+#line 863 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	FalsePredicate * result = new FalsePredicate();
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_FALSE;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2292 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 29:
-/* Line 1792 of yacc.c  */
-#line 237 "Frontend/Parser/ParserBuechi.yy"
+#line 870 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
     {
-        Symbol *t = symbolTables->TransitionTable->lookup((yyvsp[(3) - (4)].yt_casestring)->name);
+        Symbol *t = symbolTables->TransitionTable->lookup((yyvsp[-1].yt_casestring)->name);
         if (UNLIKELY(t == NULL))
         {
-            yyerrors((yyvsp[(3) - (4)].yt_casestring)->name, (yylsp[(3) - (4)]), "transition '%s' unknown", (yyvsp[(3) - (4)].yt_casestring)->name);
+            yyerrors((yyvsp[-1].yt_casestring)->name, (yylsp[-1]), "transition '%s' unknown", (yyvsp[-1].yt_casestring)->name);
         }
-        (yyval.yt_tAtomicProposition) = Fireable(mkinteger(t->getIndex()));
+	FireablePredicate * result = new FireablePredicate(t->getIndex(),true);
+	(yyval.yt_tAtomicProposition) = Elementary();
+	(yyval.yt_tAtomicProposition) -> shape = AT_FIR;
+	(yyval.yt_tAtomicProposition) -> pred = result;
     }
+#line 2308 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 30:
-/* Line 1792 of yacc.c  */
-#line 246 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tAtomicProposition) = Initial(); }
+#line 882 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	for(arrayindex_t i = 0; i < Place::CardSignificant;i++)
+	{
+		capacity_t m0 = Marking::Initial[i];
+	
+		// insert p <= m0
+		Term * T1 = new Term();
+		T1 -> place  = i;
+		T1 -> mult = 1;
+		Term * T2 = new Term();
+		T2 -> place = Net::Card[PL];
+		T2 -> mult = -m0;
+		T1 -> append(T2);
+		result -> addSub(new AtomicStatePredicate(T1));
+
+		// insert p >= m0
+		T1 = new Term();
+		T1 -> place = i;
+		T1 -> mult = -1;
+		T2 = new Term();
+		T2 -> place = Net::Card[PL];
+		T2 -> mult = m0;
+		T1 -> append(T2);
+		result -> addSub(new AtomicStatePredicate(T1));
+	}
+	(yyval.yt_tAtomicProposition) = Elementary(); 
+	(yyval.yt_tAtomicProposition) -> shape = AT_AND;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2343 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 31:
-/* Line 1792 of yacc.c  */
-#line 251 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tTerm) = (yyvsp[(2) - (3)].yt_tTerm); }
+#line 913 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	DeadlockPredicate * result = new DeadlockPredicate(true);
+	(yyval.yt_tAtomicProposition) = Elementary(); 
+	(yyval.yt_tAtomicProposition) -> shape = AT_DL;
+	(yyval.yt_tAtomicProposition) -> pred = result;
+    }
+#line 2354 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 32:
-/* Line 1792 of yacc.c  */
-#line 253 "Frontend/Parser/ParserBuechi.yy"
-    {
-        Symbol *p = symbolTables->PlaceTable->lookup((yyvsp[(1) - (1)].yt_casestring)->name);
-        if (UNLIKELY(p == NULL))
-        {
-            yyerrors((yyvsp[(1) - (1)].yt_casestring)->name, (yylsp[(1) - (1)]), "place '%s' unknown", (yyvsp[(1) - (1)].yt_casestring)->name);
-        }
-        (yyval.yt_tTerm) = Node(mkinteger(p->getIndex()));
-    }
+#line 923 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { (yyval.yt_tTerm) = (yyvsp[-1].yt_tTerm); }
+#line 2360 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 33:
-/* Line 1792 of yacc.c  */
-#line 262 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tTerm) = Number((yyvsp[(1) - (1)].yt_integer)); }
+#line 925 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    {
+        Symbol *p = symbolTables->PlaceTable->lookup((yyvsp[0].yt_casestring)->name);
+        if (UNLIKELY(p == NULL))
+        {
+            yyerrors((yyvsp[0].yt_casestring)->name, (yylsp[0]), "place '%s' unknown", (yyvsp[0].yt_casestring)->name);
+        }
+	(yyval.yt_tTerm) = Complex();
+	(yyval.yt_tTerm) -> ttt = new Term();
+	(yyval.yt_tTerm) -> ttt -> place = p -> getIndex();
+	(yyval.yt_tTerm) -> ttt -> mult = 1;
+    }
+#line 2376 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 34:
-/* Line 1792 of yacc.c  */
-#line 264 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tTerm) = Sum((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 937 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyval.yt_tTerm) = Complex(); 
+	(yyval.yt_tTerm) -> ttt = new Term();
+	(yyval.yt_tTerm) -> ttt -> place = Net::Card[PL];
+	(yyval.yt_tTerm) -> ttt -> mult = (yyvsp[0].yt_integer) -> value;
+    }
+#line 2387 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 35:
-/* Line 1792 of yacc.c  */
-#line 266 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tTerm) = Difference((yyvsp[(1) - (3)].yt_tTerm), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 944 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	(yyval.yt_tTerm) = (yyvsp[-2].yt_tTerm); 
+    }
+#line 2396 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
   case 36:
-/* Line 1792 of yacc.c  */
-#line 268 "Frontend/Parser/ParserBuechi.yy"
-    { (yyval.yt_tTerm) = Product((yyvsp[(1) - (3)].yt_integer), (yyvsp[(3) - (3)].yt_tTerm)); }
+#line 949 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[0].yt_tTerm) -> ttt -> multiply(-1);
+	(yyvsp[-2].yt_tTerm) -> ttt -> append((yyvsp[0].yt_tTerm) -> ttt);
+	(yyval.yt_tTerm) = (yyvsp[-2].yt_tTerm); 
+    }
+#line 2406 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
+    break;
+
+  case 37:
+#line 955 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { 
+	(yyvsp[0].yt_tTerm) -> ttt->multiply((yyvsp[-2].yt_integer)->value);
+	(yyval.yt_tTerm) = (yyvsp[0].yt_tTerm); 
+    }
+#line 2415 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
+    break;
+
+  case 38:
+#line 962 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1646  */
+    { (yyval.yt_casestring) = (yyvsp[0].yt_casestring); }
+#line 2421 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
     break;
 
 
-/* Line 1792 of yacc.c  */
-#line 1902 "Frontend/Parser/ParserBuechi.cc"
+#line 2425 "Frontend/Parser/ParserBuechi.cc" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1921,7 +2444,7 @@ yyreduce:
   *++yyvsp = yyval;
   *++yylsp = yyloc;
 
-  /* Now `shift' the result of the reduction.  Determine what state
+  /* Now 'shift' the result of the reduction.  Determine what state
      that goes to, based on the state we popped back to and the rule
      number reduced by.  */
 
@@ -1936,9 +2459,9 @@ yyreduce:
   goto yynewstate;
 
 
-/*------------------------------------.
-| yyerrlab -- here on detecting error |
-`------------------------------------*/
+/*--------------------------------------.
+| yyerrlab -- here on detecting error.  |
+`--------------------------------------*/
 yyerrlab:
   /* Make sure we have latest lookahead translation.  See comments at
      user semantic actions for why this is necessary.  */
@@ -1989,20 +2512,20 @@ yyerrlab:
   if (yyerrstatus == 3)
     {
       /* If just tried and failed to reuse lookahead token after an
-	 error, discard it.  */
+         error, discard it.  */
 
       if (yychar <= YYEOF)
-	{
-	  /* Return failure if at end of input.  */
-	  if (yychar == YYEOF)
-	    YYABORT;
-	}
+        {
+          /* Return failure if at end of input.  */
+          if (yychar == YYEOF)
+            YYABORT;
+        }
       else
-	{
-	  yydestruct ("Error: discarding",
-		      yytoken, &yylval, &yylloc);
-	  yychar = YYEMPTY;
-	}
+        {
+          yydestruct ("Error: discarding",
+                      yytoken, &yylval, &yylloc);
+          yychar = YYEMPTY;
+        }
     }
 
   /* Else will try to reuse lookahead token after shifting the error
@@ -2022,7 +2545,7 @@ yyerrorlab:
      goto yyerrorlab;
 
   yyerror_range[1] = yylsp[1-yylen];
-  /* Do not reclaim the symbols of the rule which action triggered
+  /* Do not reclaim the symbols of the rule whose action triggered
      this YYERROR.  */
   YYPOPSTACK (yylen);
   yylen = 0;
@@ -2035,29 +2558,29 @@ yyerrorlab:
 | yyerrlab1 -- common code for both syntax error and YYERROR.  |
 `-------------------------------------------------------------*/
 yyerrlab1:
-  yyerrstatus = 3;	/* Each real token shifted decrements this.  */
+  yyerrstatus = 3;      /* Each real token shifted decrements this.  */
 
   for (;;)
     {
       yyn = yypact[yystate];
       if (!yypact_value_is_default (yyn))
-	{
-	  yyn += YYTERROR;
-	  if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYTERROR)
-	    {
-	      yyn = yytable[yyn];
-	      if (0 < yyn)
-		break;
-	    }
-	}
+        {
+          yyn += YYTERROR;
+          if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYTERROR)
+            {
+              yyn = yytable[yyn];
+              if (0 < yyn)
+                break;
+            }
+        }
 
       /* Pop the current state because it cannot handle the error token.  */
       if (yyssp == yyss)
-	YYABORT;
+        YYABORT;
 
       yyerror_range[1] = *yylsp;
       yydestruct ("Error: popping",
-		  yystos[yystate], yyvsp, yylsp);
+                  yystos[yystate], yyvsp, yylsp);
       YYPOPSTACK (1);
       yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
@@ -2113,14 +2636,14 @@ yyreturn:
       yydestruct ("Cleanup: discarding lookahead",
                   yytoken, &yylval, &yylloc);
     }
-  /* Do not reclaim the symbols of the rule which action triggered
+  /* Do not reclaim the symbols of the rule whose action triggered
      this YYABORT or YYACCEPT.  */
   YYPOPSTACK (yylen);
   YY_STACK_PRINT (yyss, yyssp);
   while (yyssp != yyss)
     {
       yydestruct ("Cleanup: popping",
-		  yystos[*yyssp], yyvsp, yylsp);
+                  yystos[*yyssp], yyvsp, yylsp);
       YYPOPSTACK (1);
     }
 #ifndef yyoverflow
@@ -2131,14 +2654,25 @@ yyreturn:
   if (yymsg != yymsgbuf)
     YYSTACK_FREE (yymsg);
 #endif
-  /* Make sure YYID is used.  */
-  return YYID (yyresult);
+  return yyresult;
 }
+#line 965 "Frontend/Parser/ParserBuechi.yy" /* yacc.c:1906  */
 
 
-/* Line 2055 of yacc.c  */
-#line 271 "Frontend/Parser/ParserBuechi.yy"
-
+tShape ooppShape(tShape s)
+{
+	switch(s)
+	{
+	case AT_COMP: return AT_COMP;
+	case AT_FIR: return AT_FIR;
+	case AT_DL: return AT_DL;
+	case AT_TEMP: return AT_TEMP;
+	case AT_AND: return AT_OR;
+	case AT_OR: return AT_AND;
+	case AT_TRUE: return AT_FALSE;
+	case AT_FALSE: return AT_TRUE;
+	}
+}
 
 /// display a parser error and exit
 void ptbuechi_error(char const* mess) __attribute__((noreturn));

@@ -1,0 +1,541 @@
+%name-prefix="ptnetlola_"
+%{
+#define YYSTYPE_IS_DECLARED 1
+#include <cassert>
+#include <Frontend/Parser/ast-system-k.h>
+#include <Frontend/Parser/diagnosis.h>
+#include <Frontend/Parser/symboltable.h>
+#include <Frontend/Parser/unfold.h>
+#include <Frontend/Parser/ast-system-k.h>
+#include <Frontend/Parser/ast-system-yystype.h>
+#include <Frontend/Parser/ParserNet.hh>
+#include <Frontend/Parser/ParserPTNet.h>
+
+kc::net root;
+ParserPTNet* TheResult;
+
+SymbolTab* GlobalTable, * LocalTable;
+
+char ptnetlola_lex();
+%}
+
+%{ KC_TYPES_HEADER
+//UType* yt_type;
+%}
+
+
+%expect 1 // DanglingElse conflict
+%defines 
+%error-verbose
+%locations
+
+/* Schlüsselworte */ /* Trennzeichen */ /* Konstanten */
+
+%token IDENT "identifier"
+%token NUMBER "number"
+%token _CONSUME_ "CONSUME"
+%token _FAIR_ "FAIR"
+%token _GUARD_ "GUARD"
+%token _MARKING_ "MARKING"
+%token _NET_ "NET"
+%token _PLACE_ "PLACE"
+%token _PRODUCE_ "PRODUCE"
+%token _SAFE_ "SAFE"
+%token _STRONG_ "STRONG"
+%token _TRANSITION_ "TRANSITION"
+%token _WEAK_ "WEAK"
+%token _ALL_"all"
+%token _BOOLEAN_ "bool"
+%token _BREAK_ "break"
+%token _CASE_ "case"
+%token _CONST_ "const"
+%token _CONTINUE_ "continue"
+%token _DEFAULT_ "default"
+%token _DO_ "do"
+%token _ELSE_ "else"
+%token _ENUM_ "enum"
+%token _FALSE_ "false"
+%token _FOR_ "for"
+%token _IF_ "if"
+%token _INT_ "int"
+%token _RETURN_ "return"
+%token _STRUCT_ "struct"
+%token _SWITCH_ "switch"
+%token _TRUE_ "true"
+%token _TYPEDEF_ "typedef"
+%token _WHILE_ "while"
+%token _multiset_ "^"
+%token _leftbracket_ "[" 
+%token _rightbracket_ "]"
+%token _dot_ "."
+%token _colon_ ":"
+%token _semicolon_ ";" 
+%token _leftparenthesis_ "("
+%token _rightparenthesis_ ")"
+%token _comma_ ","
+%token _braceleft_ "{"
+%token _braceright_ "}"
+%token _plusAssign_ "+="
+%token _minusAssign_ "-="
+%token _timesAssign_ "*="
+%token _divideAssign_ "/="
+%token _modAssign_ "%="
+%token _increment_ "++"
+%token _decrement_ "--"
+%token _not_ "!"
+%token _and_ "&&"
+%token _or_ "||"
+%token _equivalent_ "==" 
+%token _otherIf_ "?"
+
+/* Prioritäten, Assoziativitäten */
+
+%left _comma_
+%left _equals_ _notequal_
+%right _otherIf_ _colon_
+%left _lessthan_ _lessorequal_ _greaterthan_ _greaterorequal_
+%left _plus_ _minus_ _times_ _divide_ _mod_ _and_ _or_
+%right _not_
+
+%left _plusAssign_ _minusAssign_ _timesAssign_ _divideAssign_ _modAssign_ _equivalent_
+
+/* Terminale */
+
+%type <yt_integer> NUMBER
+%type <yt_casestring> IDENT
+//%type <str> IDENT
+
+/* Nichtterminale */
+
+%type<yt_expression> functioncall
+%type<yt_expressionlist> expressionlist
+%type<yt_net> net
+%type<yt_casestring> netName
+%type<yt_definitionsList> definitionsList
+%type<yt_definitions> definitions 
+%type<yt_definitions> sort
+%type<yt_type> type
+%type<yt_optionalNumber> optionalNumber
+%type<yt_identList> identList
+%type<yt_idents> idents
+%type<yt_structTypeList> structTypeList 
+%type<yt_structType> structType
+%type<yt_varOrArray> varOrArray
+%type<yt_arrayList> arrayList
+%type<yt_expression> array
+%type<yt_definitions> function
+%type<yt_functionParametersList> optFunctionParameters
+%type<yt_functionParametersList> functionParametersList
+%type<yt_functionParameters> functionParameters
+%type<yt_definitions> constant
+%type<yt_expression> expression
+%type<yt_expression> assignment
+%type<yt_expression> incdecrement
+%type<yt_expression> arithmetic
+%type<yt_expression> logical
+%type<yt_expression> comparison
+%type<yt_leftvalue> leftvalue
+%type<yt_expression> other
+%type<yt_initializerList> initializerList
+%type<yt_expressionListColon> expressionListColon
+%type<yt_placeblocklist> places
+%type<yt_optSafe> optSafe
+%type<yt_integer> optNumber
+%type<yt_placeblock> placeblock
+%type<yt_placelist> placelist
+%type<yt_place> place
+%type<yt_marking> marking
+%type<yt_marking> markingList
+%type<yt_transition> transition
+%type<yt_fairness> fairness
+%type<yt_variable> variable
+%type<yt_varOrArrayList> varOrArrayList
+%type<yt_guard> guard
+%type<yt_identExprList> optIdentExprList
+%type<yt_identExprList> identExprList
+%type<yt_block> block
+%type<yt_declarationOrStatement> declarationOrStatement
+%type<yt_declaration> declaration
+%type<yt_statement> statement
+%type<yt_statement> ifStatement
+%type<yt_switchCase> switchCase
+%type<yt_switchCaseList> switchCaseList
+%type<yt_statement> optElse
+%type<yt_expression> expressionWithoutInitializer
+%type<yt_expression> arithmeticWithoutInitializer
+%type<yt_expression> logicalWithoutInitializer
+%type<yt_expression> comparisonWithoutInitializer
+%type<yt_expression> otherWithoutInitializer
+
+%%
+
+net:
+  { HLSymbolTable::pushScope(); /*new*/GlobalTable = new SymbolTab(1024);}
+  netName definitionsList _PLACE_ places _MARKING_ marking _semicolon_ transition 
+  { HLSymbolTable::popScope(); }
+  { root = $$ = kc::Net($2,$3,$5,$7,$9); } 
+;
+
+netName:
+  /* empty */ { $$ = kc::mkcasestring("") ; }
+| _NET_ IDENT { HLSymbolTable::define($2->name, MODULE, @2);}
+  { $$ = $2 ; }
+;
+
+definitionsList:
+  /* empty */ { $$ = kc::EmptyDefinitionsList() ; }
+| definitionsList definitions { $$ = kc::DefinitionsList($1,$2) ; }
+;
+
+definitions:
+  sort { $$ = $1 ; }
+| function { $$ = $1 ; }
+| constant { $$ = $1 ; }
+;
+
+sort:
+ _TYPEDEF_ type IDENT { HLSymbolTable::define($3->name, SORT, @3); } arrayList  _semicolon_ { $$ = kc::Sort($2,$3,$5) ; } 
+;
+
+type:
+  _BOOLEAN_ { $$ = kc::TypeBool() ; }
+| _ENUM_ _braceleft_ identList _braceright_ 
+  { $$ = kc::TypeEnum($3) ; }
+| IDENT { HLSymbolTable::use($1->name, @1); } { $$ = kc::TypeIdent($1) ; }
+| _INT_ _leftparenthesis_ expression _comma_ expression _rightparenthesis_ { $$ = kc::TypeIntInterval($3,$5) ; }
+| _STRUCT_ _braceleft_ structTypeList _braceright_ { $$ = kc::TypeStruct($3); }
+| _INT_ { $$ = kc::TypeInt() ; }
+| _multiset_ type { $$ = kc::TypeMultiset($2) ; }
+;
+
+optionalNumber:
+  /* empty */ { $$ = kc::EmptyOptNumber() ; }
+| _colon_ NUMBER { $$ = kc::OptNumber($2) ; }
+;
+
+identList:
+  /* empty */ { $$ = kc::EmptyIdentList() ; }
+| identList idents { $$ = kc::IdentList($1,$2) ; }
+;
+
+idents:
+_comma_ IDENT { HLSymbolTable::define($2->name, ENUM, @2); } optionalNumber { $$ = kc::Idents($2,$4) ; }
+;
+
+structTypeList:
+  structType { $$ = kc::StructTypeList(EmptyStructTypeList(),$1) ; }
+| structTypeList structType { $$ = kc::StructTypeList($1,$2) ; }
+;
+
+structType:
+  type IDENT 
+  { HLSymbolTable::define($2->name, STRUCTTYPE, @2); }
+  arrayList _semicolon_ 
+  { $$ = kc::StructType($1,$2,$4) ; }
+;
+
+varOrArray:
+ IDENT { HLSymbolTable::define($1->name, VARIABLE, @1); } arrayList { $$ = kc::VarOrArray($1,$3) ; }
+;
+
+arrayList:
+  /* empty */ { $$ = kc::EmptyArrayList() ; }
+| arrayList array { $$ = kc::ArrayList($1,$2) ; }
+;
+
+array:
+_leftbracket_ expressionlist _rightbracket_ { $$ = kc::ExprCommaSeparated($2) ; }
+;
+
+function:
+  type IDENT { HLSymbolTable::define($2->name, FUNCTION, @2); } arrayList
+  { HLSymbolTable::pushScope(); }
+  _leftparenthesis_ optFunctionParameters _rightparenthesis_ block 
+  { HLSymbolTable::popScope(); }
+  { $$ = kc::Function($1,$2,$4, $7,$9) ; }
+;
+
+optFunctionParameters:
+  /* empty */ { $$ = kc::EmptyFunctionParametersList() ; }
+| type varOrArray functionParametersList { $$ = kc::FunctionParametersList(kc::FunctionParameters($1,$2),$3) ; }
+;
+
+functionParametersList:
+  /* empty */ { $$ = kc::EmptyFunctionParametersList() ; }
+| functionParameters functionParametersList { $$ = kc::FunctionParametersList($1,$2) ; }
+;
+
+functionParameters:
+_comma_ type varOrArray { $$ = kc::FunctionParameters($2,$3) ; }
+;
+
+constant: 
+_CONST_ type IDENT { HLSymbolTable::define($3->name, CONSTANT, @3); } arrayList _equals_ expression _semicolon_ { $$ = kc::Constant($2,$3,$5,$7) ; }
+;
+
+expression:
+  assignment { $$ = $1 ; }
+| incdecrement { $$ = $1 ; }
+| arithmetic { $$ = $1 ; }
+| logical { $$ = $1 ; /*assert($$->type_id==1);*/}
+| comparison { $$ = $1 ; }
+| leftvalue { $$ = kc::ExprLeftvalue($1) ; }
+| other { $$ = $1 ; }
+| initializerList { $$ = kc::ExprInitializerList($1) ; }
+| _leftparenthesis_ expressionlist _rightparenthesis_ { $$ = kc::ExprCommaSeparated($2) ; }
+;
+
+expressionWithoutInitializer:
+  assignment { $$ = $1 ; }
+| incdecrement { $$ = $1 ; }
+| arithmeticWithoutInitializer { $$ = $1 ; }
+| logicalWithoutInitializer { $$ = $1 ; }
+| comparisonWithoutInitializer { $$ = $1 ; }
+| leftvalue { $$ = kc::ExprLeftvalue($1) ; }
+| otherWithoutInitializer { $$ = $1 ; }
+| _leftparenthesis_ expressionlist _rightparenthesis_ { $$ = kc::ExprCommaSeparated($2) ; }
+;
+
+assignment: 
+  leftvalue _equals_ expression { $$ = kc::AssignEqual($1,$3) ; }
+| leftvalue _plusAssign_ expression { $$ = kc::AssignPlus($1,$3) ; }
+| leftvalue _minusAssign_ expression { $$ = kc::AssignMinus($1,$3) ; }
+| leftvalue _timesAssign_ expression { $$ = kc::AssignTimes($1,$3) ; }
+| leftvalue _divideAssign_ expression { $$ = kc::AssignDivide($1,$3) ; }
+| leftvalue _modAssign_ expression { $$ = kc::AssignMod($1,$3) ; }
+;
+
+incdecrement:
+  _increment_ leftvalue { $$ = kc::IncrementVal($2) ; }
+| _decrement_ leftvalue { $$ = kc::DecrementVal($2) ; }
+| leftvalue _increment_ { $$ = kc::ValIncrement($1) ; }
+| leftvalue _decrement_ { $$ = kc::ValDecrement($1) ; }
+;
+
+arithmetic:
+  _plus_ expression { $$ = kc::PositiveExpr($2) ; }
+| _minus_ expression { $$ = kc::NegativeExpr($2) ; }
+| expression _plus_ expression { $$ = kc::ExprAddition($1,$3) ; }
+| expression _minus_ expression { $$ = kc::ExprSubtraction($1,$3) ; }
+| expression _times_ expression { $$ = kc::ExprMultiplication($1,$3) ; }
+| expression _divide_ expression { $$ = kc::ExprDivision($1,$3) ; }
+| expression _mod_ expression { $$ = kc::ExprModulo($1,$3) ; }
+| NUMBER { $$ = kc::ExprNumber($1) ; }
+;
+
+arithmeticWithoutInitializer:
+  _plus_ expression { $$ = kc::PositiveExpr($2) ; }
+| _minus_ expression { $$ = kc::NegativeExpr($2) ; }
+| expressionWithoutInitializer _plus_ expression { $$ = kc::ExprAddition($1,$3) ; }
+| expressionWithoutInitializer _minus_ expression { $$ = kc::ExprSubtraction($1,$3) ; }
+| expressionWithoutInitializer _times_ expression { $$ = kc::ExprMultiplication($1,$3) ; }
+| expressionWithoutInitializer _divide_ expression { $$ = kc::ExprDivision($1,$3) ; }
+| expressionWithoutInitializer _mod_ expression { $$ = kc::ExprModulo($1,$3) ; }
+| NUMBER { $$ = kc::ExprNumber($1) ; }
+;
+
+logical:
+  _not_ expression { $$ = kc::NotExpr($2) ; }
+| expression _and_ expression { $$ = kc::ExprAnd($1,$3) ; }
+| expression _or_ expression { $$ = kc::ExprOr($1,$3) ; }
+| _TRUE_ { $$ = kc::ExprTrue() ;}
+| _FALSE_ { $$ = kc::ExprFalse() ; }
+;
+
+logicalWithoutInitializer:
+  _not_ expression { $$ = kc::NotExpr($2) ; }
+| expressionWithoutInitializer _and_ expression { $$ = kc::ExprAnd($1,$3) ; }
+| expressionWithoutInitializer _or_ expression { $$ = kc::ExprOr($1,$3) ; }
+| _TRUE_ { $$ = kc::ExprTrue() ; }
+| _FALSE_ { $$ = kc::ExprFalse() ; }
+;
+
+comparison:
+  expression _equivalent_ expression { $$ = kc::ExprEquivalent($1,$3) ; }
+| expression _notequal_ expression { $$ = kc::ExprNotEqual($1,$3) ; }
+| expression _lessthan_ expression { $$ = kc::ExprLessThan($1,$3) ; }
+| expression _greaterthan_ expression { $$ = kc::ExprGreaterThan($1,$3) ; }
+| expression _lessorequal_ expression { $$ = kc::ExprLessOrEqual($1,$3) ; }
+| expression _greaterorequal_ expression { $$ = kc::ExprGreaterOrEqual($1,$3) ; }
+;
+
+comparisonWithoutInitializer:
+  expressionWithoutInitializer _equivalent_ expression { $$ = kc::ExprEquivalent($1,$3) ; }
+| expressionWithoutInitializer _notequal_ expression { $$ = kc::ExprNotEqual($1,$3) ; }
+| expressionWithoutInitializer _lessthan_ expression { $$ = kc::ExprLessThan($1,$3) ; }
+| expressionWithoutInitializer _greaterthan_ expression { $$ = kc::ExprGreaterThan($1,$3) ; }
+| expressionWithoutInitializer _lessorequal_ expression { $$ = kc::ExprLessOrEqual($1,$3) ; }
+| expressionWithoutInitializer _greaterorequal_ expression { $$ = kc::ExprGreaterOrEqual($1,$3) ; }
+;
+
+leftvalue:
+  IDENT { HLSymbolTable::use($1->name, @1); } { $$ = kc::LeftValIdent($1) ; }
+| leftvalue _leftbracket_ expression _rightbracket_ { $$ = kc::LeftValBrackets($1,$3) ; }
+| leftvalue _dot_ IDENT { HLSymbolTable::use($3->name, @3); } { $$ = kc::LeftValDot($1,$3) ; }
+;
+
+other:
+  functioncall { $$ = $1;}
+| expression _otherIf_ expression _colon_ expression { $$ = kc::ExprOtherIf($1,$3,$5) ; }
+| _ALL_ _leftparenthesis_ type _rightparenthesis_ { $$ = kc::ExprAll($3) ; }
+;
+
+otherWithoutInitializer:
+  functioncall { $$ = $1;}
+| expressionWithoutInitializer _otherIf_ expression _colon_ expression { $$ = kc::ExprOtherIf($1,$3,$5) ; }
+| _ALL_ _leftparenthesis_ type _rightparenthesis_ { $$ = kc::ExprAll($3) ; }
+;
+
+functioncall:
+   IDENT _leftparenthesis_ _rightparenthesis_ { $$ = kc::FunctionCall($1,kc::EmptyExpressionList());}
+|  IDENT _leftparenthesis_ expressionlist _rightparenthesis_{ $$ = kc::FunctionCall($1,$3);}
+;
+
+expressionlist:
+    expression                           {$$ = kc::ExpressionList($1,kc::EmptyExpressionList());}
+|   expression _comma_ expressionlist   {$$ = kc::ExpressionList($1,$3);}
+;
+
+
+initializerList:
+  _braceleft_ expressionlist _braceright_ { $$ = kc::ExprInBraces($2) ; }
+| _braceleft_ expression _colon_ expression expressionListColon _braceright_ { $$ = kc::ExprInBracesColon($2,$4,$5) ; }
+;
+
+expressionListColon:
+  /* empty */ { $$ = kc::EmptyExpressionListColon() ; }
+| _comma_ expression _colon_ expression expressionListColon { $$ = kc::ExpressionListColon($2,$4,$5) ; }
+;
+
+places:
+    placeblock         { $$ = kc::PlaceBlockList($1,kc::EmptyPlaceBlockList());}
+|   placeblock places  { $$ = kc::PlaceBlockList($1,$2);}
+;
+
+placeblock:
+    optSafe type placelist _semicolon_ { $$ = kc::PlaceBlock($1,$2,$3);}
+|   optSafe placelist _semicolon_ { $$ = kc::PlaceBlock($1,kc::TypeBlack(),$2);}
+;
+optSafe:
+  /* empty */ { $$ = kc::EmptySafe() ; }
+| _SAFE_ optNumber { $$ = kc::Safe($2) ; }
+;
+
+optNumber:
+  /*empty*/ { $$ = kc::mkinteger(1) ; }
+| NUMBER { $$ = $1; }
+;
+
+place:
+  IDENT { HLSymbolTable::define($1->name, PLACE, @1); } { $$ = kc::Place($1) ; }
+;
+
+placelist:
+    place  { $$ = kc::PlaceList($1,kc::EmptyPlaceList());}
+|   placelist _comma_ place  { $$ = kc::PlaceList($3,$1);}
+;
+marking:
+  /* empty */ { $$ = kc::EmptyMarking() ; }
+| IDENT { HLSymbolTable::use($1->name, @1); } _colon_ expression markingList { $$ = kc::Marking($1,$4,$5) ; }
+;
+
+markingList:
+  /* empty */ { $$ = kc::EmptyMarking() ; }
+| _comma_ IDENT { HLSymbolTable::use($2->name, @2); } _colon_ expression markingList { $$ = kc::Marking($2,$5,$6) ; }
+;
+
+transition:
+  /* empty */ { $$ = kc::EmptyTransition() ; }
+| _TRANSITION_ IDENT { HLSymbolTable::define($2->name, TRANSITION, @2); } { HLSymbolTable::pushScope(); } fairness variable guard _CONSUME_ optIdentExprList _semicolon_ _PRODUCE_ optIdentExprList _semicolon_ { HLSymbolTable::popScope(); } transition { $$ = kc::Transition($2,$5,$6,$7,$9,$12,$15) ; }
+;
+
+fairness:
+  /* empty */ { $$ = kc::EmptyFairness() ; }
+| _WEAK_ _FAIR_ { $$ = kc::WeakFair() ; }
+| _STRONG_ _FAIR_ { $$ = kc::StrongFair() ; }
+;
+
+variable:
+  /* empty */ { $$ = kc::EmptyVariable() ; }
+| type varOrArray varOrArrayList _semicolon_ variable { $$ = kc::Variable($1,kc::VarOrArrayList($2,$3),$5) ; }
+;
+
+varOrArrayList:
+  /* empty */ { $$ = kc::EmptyVarOrArrayList() ; }
+| _comma_ varOrArray varOrArrayList { $$ = kc::VarOrArrayList($2,$3) ; }
+;
+
+guard:
+  /* empty */ { $$ = kc::Guard(kc::ExprTrue()) ; }
+| _GUARD_ expression { $$ = kc::Guard($2) ; }
+;
+
+optIdentExprList:
+  /* empty */ { $$ = kc::EmptyIdentExprList() ; }
+| IDENT { HLSymbolTable::use($1->name, @1); } _colon_ expression identExprList { $$ = kc::IdentExprList($1,$4,$5) ; }
+;
+
+identExprList:
+  /* empty */ { $$ = kc::EmptyIdentExprList() ; }
+| _comma_ IDENT { HLSymbolTable::use($2->name, @2); } _colon_ expression identExprList { $$ = kc::IdentExprList($2,$5,$6) ; }
+;
+
+block:
+  _braceleft_ declarationOrStatement _braceright_ { $$ = kc::Block($2) ; }
+;
+
+declarationOrStatement:
+  /* empty */ { $$ = kc::EmptyDeclarationOrStatement() ; }
+| declaration declarationOrStatement { $$ = kc::DeclOrStatemDeclaration($1,$2) ; }
+| statement declarationOrStatement { $$ = kc::DeclOrStatemStatement($1,$2) ; }
+; 
+
+declaration: 
+  type varOrArray varOrArrayList _semicolon_ { $$ = kc::Declaration($1,kc::VarOrArrayList($2,$3)) ; }
+;
+
+statement:
+  _semicolon_ { $$ = kc::StatementSkip() ; }
+| { HLSymbolTable::pushScope(); } block { HLSymbolTable::popScope(); } { $$ = kc::StatementBlock($2) ; }
+| expressionWithoutInitializer _semicolon_ { $$ = kc::StatementExprSemicolon($1) ; }
+| expressionWithoutInitializer _comma_ expressionlist _semicolon_ { $$ = kc::StatementExprSemicolon(kc::ExprCommaSeparated(kc::ExpressionList($1,$3))) ; }
+| ifStatement { $$ = $1 ; }
+| _WHILE_ _leftparenthesis_ expressionlist _rightparenthesis_ statement { $$ = kc::StatementWhile(kc::ExprCommaSeparated($3),$5) ; }
+| _DO_ statement _WHILE_ _leftparenthesis_ expressionlist _rightparenthesis_ _semicolon_ { $$ = kc::StatementDoWhile($2,kc::ExprCommaSeparated($5)) ; }
+| _FOR_ _leftparenthesis_ expressionlist _semicolon_ expressionlist _semicolon_ expressionlist _rightparenthesis_ statement { $$ = kc::StatementForExpr(kc::ExprCommaSeparated($3),kc::ExprCommaSeparated($5),kc::ExprCommaSeparated($7),$9) ; }
+| _FOR_ _leftparenthesis_ type IDENT { HLSymbolTable::define($4->name, VARIABLE, @4); } _equals_ expressionlist _semicolon_ expressionlist _semicolon_ expressionlist _rightparenthesis_ statement { $$ = kc::StatementForTypeExpr($3,$4,kc::ExprCommaSeparated($7),kc::ExprCommaSeparated($9),kc::ExprCommaSeparated($11),$13) ; }
+| _FOR_ _leftparenthesis_ IDENT { HLSymbolTable::use($3->name, @3); } _colon_ expressionlist _rightparenthesis_ statement { $$ = kc::StatementForIdentColon($3,kc::ExprCommaSeparated($6),$8) ; }
+| _FOR_ _leftparenthesis_ type IDENT { HLSymbolTable::define($4->name, VARIABLE, @4); } _colon_ _ALL_ _leftparenthesis_ type _rightparenthesis_ _rightparenthesis_ { $$ = kc::StatementForAll($3,$4,$9) ; }
+| _SWITCH_ _leftparenthesis_ expressionlist _rightparenthesis_ _braceleft_ switchCaseList _braceright_ { $$ = kc::StatementSwitch(kc::ExprCommaSeparated($3),$6) ; }
+| _BREAK_ _semicolon_ { $$ = kc::StatementBreak() ; }
+| _CONTINUE_ _semicolon_ { $$ = kc::StatementContinue() ; }
+| _RETURN_ expressionlist _semicolon_ { $$ = kc::StatementReturn(kc::ExprCommaSeparated($2)) ; }
+;
+
+ifStatement:
+  _IF_ _leftparenthesis_ expressionlist _rightparenthesis_ statement optElse { $$ = kc::StatementIf(kc::ExprCommaSeparated($3),$5,$6) ; }
+
+optElse:
+  /*empty*/ { $$ = kc::StatementSkip() ; }
+| _ELSE_ statement { $$ = $2 ; }
+;
+
+switchCase:
+  _CASE_ expressionlist _colon_ statement { $$ = kc::SwitchCase(kc::ExprCommaSeparated($2),$4) ; }
+| _DEFAULT_ _colon_ statement { $$ = kc::SwitchDefault($3) ; }
+;
+
+switchCaseList:
+  /* empty */ { $$ = kc::EmptySwitchCaseList() ; }
+| switchCase switchCaseList { $$ = kc::SwitchCaseList($1,$2) ; }
+;
+
+%%
+
+/// Wrapping the Parser
+ParserPTNet* ParserPTNetLoLA()
+{
+    TheResult = new ParserPTNet();
+    ptnetlola_parse();
+    return TheResult;
+}

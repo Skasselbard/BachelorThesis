@@ -269,7 +269,8 @@ bool DFSExploration::sweepline(SimpleProperty &property, NetState &ns, SweepEmpt
                                Firelist &myFirelist, int frontNumber, int threadNumber)
 {
     s = new Sweep<void> (property, ns, myStore, myFirelist, frontNumber, threadNumber);
-    return (*s).run();
+    bool result = (*s).run();
+    return result;
 }
 
 /*!

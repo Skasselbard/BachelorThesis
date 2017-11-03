@@ -41,6 +41,8 @@ This class handles initial satisfiability.
 
 InitialTask::InitialTask()
 {
+taskname = "preprocessing";
+RT::data["task"]["workflow"] = "preprocessing";
 extern bool *place_in_formula;
 extern int ptformula_lex_destroy();
 extern unsigned int places_mentioned;
@@ -55,33 +57,18 @@ place_in_formula = new bool[Net::Card[PL]]();
         TheFormula = TheFormula->rewrite(kc::singletemporal);
         TheFormula = TheFormula->rewrite(kc::simpleneg);
         TheFormula = TheFormula->rewrite(kc::booleanlists);
-    // prepare counting of place in the formula
-    extern bool *place_in_formula;
-    extern unsigned int places_mentioned;
-    extern unsigned int unique_places_mentioned;
-    place_in_formula = new bool[Net::Card[PL]]();
-    places_mentioned = 0;
-    unique_places_mentioned = 0;
 
         TheFormula->unparse(myprinter, kc::internal);
         StatePredicate *result = TheFormula->formula;
- //Task::outputFormulaAsProcessed();
+        Task::outputFormulaAsProcessed();
 
         assert(result);
         RT::rep->status("processed formula with %d atomic propositions",
                        result->countAtomic());
-        RT::data["analysis"]["formula"]["atomic_propositions"] = static_cast<int>(result->countAtomic());
 
         spFormula = result;
     }
-    // report places mentioned in the formula and clean up
-    //RT::rep->status("formula mentions %d of %d places; total mentions: %d",
-    //                unique_places_mentioned, Net::Card[PL], places_mentioned);
-    //delete[] place_in_formula;
 
-    RT::data["analysis"]["formula"]["places_mentioned"] = static_cast<int>(places_mentioned);
-    RT::data["analysis"]["formula"]["places_mentioned_unique"] = static_cast<int>
-            (unique_places_mentioned);
 
     if (RT::args.formula_given)
     {
@@ -121,7 +108,9 @@ void InitialTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+  RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The net satisfies the property already in its initial state.").str());
 
@@ -129,7 +118,9 @@ void InitialTask::interpreteResult(ternary_t result)
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+  RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The net violates the given property already in its initial state.").str());
@@ -166,8 +157,8 @@ capacity_t *InitialTask::getMarking()
 
 void InitialTask::getStatistics()
 {
-	 RT::data["analysis"]["stats"]["states"] = 0;
-         RT::data["analysis"]["stats"]["edges"] = 0;
+	 RT::data["result"]["markings"] = 0;
+         RT::data["result"]["edges"] = 0;
          RT::rep->status("%u markings, %u edges", 0, 0);
 }
 

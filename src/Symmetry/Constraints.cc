@@ -149,10 +149,11 @@ void SymmetryCalculator::ComputeSymmetries()
     // announce start of computation
 
     RT::rep->status("computing symmetries (%s)", RT::rep->markup(MARKUP_PARAMETER, "--symmetry").str());
-    RT::data["limits"]["symmetrytime"] = JSON::null;
+    RT::data["task"]["search"]["symmetry"]["timelimit"] = JSON::null;
     if (RT::args.symmtimelimit_given)
     {
-        RT::data["limits"]["symmetrytime"] = RT::args.symmtimelimit_arg;
+        RT::data["task"]["search"]["symmetry"]["timelimit"] = RT::args.symmtimelimit_arg;
+        RT::data["task"]["search"]["symmetry"]["interrupted"] = false;
         RT::rep->status("time limit for symmetry computation of %u seconds given (%s)",
                         RT::args.symmtimelimit_arg, RT::rep->markup(MARKUP_PARAMETER, "--symmtimelimit").str());
     }
@@ -195,6 +196,7 @@ void SymmetryCalculator::ComputeSymmetries()
     // retrieve graph from net && formula, initialize constraints data structure
 
     initGraph();
+
 
     // split constraints according to
     // - node color
@@ -242,15 +244,19 @@ void SymmetryCalculator::ComputeSymmetries()
     if (stop)
     {
         RT::rep->status("symmetry computation interrupted: continue with partial generating set");
+	RT::data["task"]["search"]["symmetry"]["interrupted"] = true;
     }
 
     RT::rep->status("computed %llu generators (%llu in search tree, %llu by composition)",
                     G->knownGenerators, G->realComputed, G->knownGenerators - G->realComputed);
+
     RT::rep->status("representing %LG symmetries", G->sizeofSymmetryGroup());
     RT::rep->status("%u dead branches visited in search tree", deadBranches);
-    RT::data["symmetries"]["generators"] = static_cast<double>(G->knownGenerators);
-    RT::data["symmetries"]["dead_branches"] = static_cast<double>(deadBranches);
-    RT::data["symmetries"]["represented"] = static_cast<double>(G->sizeofSymmetryGroup());
+    RT::data["task"]["search"]["symmetry"]["generators"] = static_cast<int>(G->knownGenerators);
+    RT::data["task"]["search"]["symmetry"]["dead_branches"] = static_cast<int>(deadBranches);
+    RT::data["task"]["search"]["symmetry"]["card"] = static_cast<double>(G->sizeofSymmetryGroup());
+    RT::data["task"]["search"]["symmetry"]["real_computed"] = static_cast<int>(G->realComputed);
+    RT::data["task"]["search"]["symmetry"]["composed"] = static_cast<int>(G->knownGenerators-G->realComputed);
 }
 
 
@@ -702,21 +708,20 @@ bool SymmetryCalculator::initialSplit(Constraint *const c)
 
     // return value: actual split happened
     arrayindex_t return_value = false;
-    arrayindex_t fst = c->from;
-    while (elements[0][DOM][fst]->property[DOM][0] != elements[0][DOM][c->to]->property[DOM][0])
+    while (elements[0][DOM][c->from]->property[DOM][0] != elements[0][DOM][c->to]->property[DOM][0])
     {
         return_value = true;
         // one more split required
 
         // search split point
         arrayindex_t i;
-        for (i = fst + 1; elements[0][DOM][i]->property[DOM][0] == elements[0][DOM][fst]->property[DOM][0];
+        for (i = c->from + 1; elements[0][DOM][i]->property[DOM][0] == elements[0][DOM][c->from]->property[DOM][0];
                 i++)
         {}
 
         // add new constraint
         assert(i <= c->to);
-        constraints[0][cardConstraints[0]].from = fst;
+        constraints[0][cardConstraints[0]].from = c->from;
         constraints[0][cardConstraints[0]].to = i - 1;
         constraints[0][cardConstraints[0]].parent = NULL;
         for (arrayindex_t j = constraints[0][cardConstraints[0]].from;
@@ -731,7 +736,6 @@ bool SymmetryCalculator::initialSplit(Constraint *const c)
 
         // update old constraint
         c->from = i;
-        fst = i;
     }
     c -> touched = false;
     return return_value;
@@ -744,8 +748,14 @@ bool SymmetryCalculator::split(arrayindex_t thr, Constraint *const c)
     // Element data structure
 
     // 1. sort elements according to property
+
+
     sort(thr, DOM, c->from, c->to);
+
+
     sort(thr, COD, c->from, c->to);
+
+
 
     // if extremal property values are different, split fails
     if (elements[thr][COD][c->from]->property[COD][thr] !=
@@ -758,19 +768,18 @@ bool SymmetryCalculator::split(arrayindex_t thr, Constraint *const c)
 
     // 2. while exist differences: append new constraint
 
-    arrayindex_t fst = c->from;
 
-    while (elements[thr][DOM][fst]->property[DOM][thr] != elements[thr][DOM][c->to]->property[DOM][thr])
+    while (elements[thr][DOM][c->from]->property[DOM][thr] != elements[thr][DOM][c->to]->property[DOM][thr])
     {
         // by previous tests, we know that extremal values are the same
-        assert(elements[thr][DOM][fst]->property[DOM][thr] == elements[thr][COD][fst]->property[COD][thr]
+        assert(elements[thr][DOM][c->from]->property[DOM][thr] == elements[thr][COD][c->from]->property[COD][thr]
                && elements[thr][DOM][c->to]->property[DOM][thr] == elements[thr][COD][c->to]->property[COD][thr]);
 
         // search split point
         arrayindex_t i;
 
-        for (i = fst + 1;
-                elements[thr][DOM][i]->property[DOM][thr] == elements[thr][DOM][fst]->property[DOM][thr]; i++)
+        for (i = c->from + 1;
+                elements[thr][DOM][i]->property[DOM][thr] == elements[thr][DOM][c->from]->property[DOM][thr]; i++)
         {}
 
         assert(i <= c->to);
@@ -787,7 +796,7 @@ bool SymmetryCalculator::split(arrayindex_t thr, Constraint *const c)
         // will be true in next round
 
         // add new constraint
-        constraints[thr][cardConstraints[thr]].from = fst;
+        constraints[thr][cardConstraints[thr]].from = c->from;
         constraints[thr][cardConstraints[thr]].to = i - 1;
         constraints[thr][cardConstraints[thr]].parent = c;
         for (arrayindex_t j = constraints[thr][cardConstraints[thr]].from;
@@ -802,7 +811,6 @@ bool SymmetryCalculator::split(arrayindex_t thr, Constraint *const c)
 
         // update old constraint
         c->from = i;
-        fst = i;
     }
     // split successful
     c->touched = false;

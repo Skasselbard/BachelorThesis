@@ -40,6 +40,8 @@ Idee: Maximallänge angeben.
 #include <Frontend/Parser/ast-system-k.h>
 #include <Frontend/Parser/ast-system-yystype.h>
 #include <Frontend/Parser/ParserBuechi.hh>
+#include <Formula/StatePredicate/Term.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
 
 extern void ptbuechi_error(char const* mess);
 unsigned int ptbuechi_colno = 1;
@@ -72,6 +74,7 @@ macro.
 
 FIREABLE               { return _FIREABLE_; }
 INITIAL                { return _INITIAL_; }
+DEADLOCK                { return _DEADLOCK_; }
 
 buechi                 { return _buechi_; }
 accept                 { return _accept_; }

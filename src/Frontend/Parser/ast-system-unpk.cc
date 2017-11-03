@@ -18,6 +18,8 @@
 namespace kc {
 base_uview_class base_uview;
 out_class out;
+count_class count;
+elem_class elem;
 temporal_class temporal;
 internal_class internal;
 buechi_class buechi;
@@ -25,14 +27,15 @@ ctl_class ctl;
 ltl_class ltl;
 toplevelboolean_class toplevelboolean;
 compound_class compound;
-problemwriter_class problemwriter;
-orsAndAndsAndLength_class orsAndAndsAndLength;
+detectcompound_class detectcompound;
 hl_staticanalysis_class hl_staticanalysis;
-countdeadlock_class countdeadlock;
+visible_class visible;
 
 impl_uviews uviews[] = {
     {"base_uview",&base_uview},
     {"out",&out},
+    {"count",&count},
+    {"elem",&elem},
     {"temporal",&temporal},
     {"internal",&internal},
     {"buechi",&buechi},
@@ -40,10 +43,9 @@ impl_uviews uviews[] = {
     {"ltl",&ltl},
     {"toplevelboolean",&toplevelboolean},
     {"compound",&compound},
-    {"problemwriter",&problemwriter},
-    {"orsAndAndsAndLength",&orsAndAndsAndLength},
+    {"detectcompound",&detectcompound},
     {"hl_staticanalysis",&hl_staticanalysis},
-    {"countdeadlock",&countdeadlock},
+    {"visible",&visible},
     {0,0}
 };
 
@@ -98,8 +100,8 @@ bool *place_in_formula = NULL;
 unsigned int places_mentioned = 0;
 unsigned int unique_places_mentioned = 0;
 
-#line  102 "ast-system-unpk.cc"
-#line 736 "Frontend/Parser/formula_unparse.k"
+#line  104 "ast-system-unpk.cc"
+#line 711 "Frontend/Parser/formula_unparse.k"
 #include <config.h>
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/AtomicStatePredicate.h>
@@ -127,8 +129,8 @@ std::stack<size_t> id_stack;
 // next free id
 size_t nextId = 0;
 
-#line  131 "ast-system-unpk.cc"
-#line 1066 "Frontend/Parser/formula_unparse.k"
+#line  133 "ast-system-unpk.cc"
+#line 879 "Frontend/Parser/formula_unparse.k"
 std::map<uint32_t, std::vector<std::pair<uint32_t,uint32_t> > > transitions ;
 std::set<uint32_t> acceptingset;
 std::map<uint32_t, StatePredicate*> predicates;
@@ -144,8 +146,8 @@ uint32_t get_state_number(uint32_t state){
     return states_to_interal[state];
 }
 
-#line  148 "ast-system-unpk.cc"
-#line 1178 "Frontend/Parser/formula_unparse.k"
+#line  150 "ast-system-unpk.cc"
+#line 983 "Frontend/Parser/formula_unparse.k"
 
 #include <Core/Dimensions.h>
 #include <Exploration/StatePredicateProperty.h>
@@ -185,16 +187,16 @@ size_t ctl_result_cache_id = 0;
 // temporal storage to be able to include the LessEqualStatePredicate into an AtomicFormula
 StatePredicateProperty* spp;
 
-#line  189 "ast-system-unpk.cc"
-#line 1379 "Frontend/Parser/formula_unparse.k"
+#line  191 "ast-system-unpk.cc"
+#line 1195 "Frontend/Parser/formula_unparse.k"
 #include <Core/Runtime.h>
 #include <Frontend/Parser/ast-system-rk.h>
 #include <vector>
 
 std::vector<LTLTree_p> ltlstack;
 
-#line  197 "ast-system-unpk.cc"
-#line 1524 "Frontend/Parser/formula_unparse.k"
+#line  199 "ast-system-unpk.cc"
+#line 1412 "Frontend/Parser/formula_unparse.k"
 #include <Core/Runtime.h>
 #include <Frontend/Parser/ast-system-rk.h>
 #include <vector>
@@ -203,8 +205,8 @@ std::vector<LTLTree_p> ltlstack;
 #include <Planning/DisjunctionTask.h>
 #include <Planning/LeafTask.h>
 
-#line  207 "ast-system-unpk.cc"
-#line 1582 "Frontend/Parser/formula_unparse.k"
+#line  209 "ast-system-unpk.cc"
+#line 1467 "Frontend/Parser/formula_unparse.k"
 #include <Core/Runtime.h>
 #include <Frontend/Parser/ast-system-rk.h>
 #include <vector>
@@ -212,25 +214,15 @@ std::vector<LTLTree_p> ltlstack;
 #include <Planning/CompoundTask.h>
 #include <Planning/LeafTask.h>
 
-#line  216 "ast-system-unpk.cc"
-#line 1634 "Frontend/Parser/formula_unparse.k"
+#line  218 "ast-system-unpk.cc"
+#line 1522 "Frontend/Parser/formula_unparse.k"
 #include <Core/Runtime.h>
-#include <Net/Net.h>
+#include <Frontend/Parser/ast-system-rk.h>
+#include <vector>
+#include <Planning/Task.h>
+#include <Planning/CompoundTask.h>
 
-#ifndef __cplusplus11
-inline std::string int_to_string(int i) {
-    std::stringstream s;
-    s << i;
-    return s.str();
-}
-#endif
-
-bool is_first = false;
-
-#line  231 "ast-system-unpk.cc"
-#line 1857 "Frontend/Parser/formula_unparse.k"
-
-#line  234 "ast-system-unpk.cc"
+#line  226 "ast-system-unpk.cc"
 /* end included stuff */
 
 
@@ -293,7 +285,7 @@ unparse(kc_string_t kc_v, printer_functor kc_printer, uview kc_current_view)
     kc_printer(kc_v.c_str(), kc_current_view);
 }
 
-#line  297 "ast-system-unpk.cc"
+#line  289 "ast-system-unpk.cc"
 void
 impl_abstract_phylum::default_unparse(printer_functor kc_printer, uview kc_current_view)
 {
@@ -333,71 +325,125 @@ impl_voidptr__VoidPtr::do_unparse(printer_functor kc_printer, uview kc_current_v
 }
 
 
-#line  337 "ast-system-unpk.cc"
+#line  329 "ast-system-unpk.cc"
 void
 impl_tFormula_Compound::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2415 "Frontend/Parser/formula_unparse.k"
+#line 1964 "Frontend/Parser/formula_unparse.k"
 		const tFormula x = this->tFormula_1;
-#line 2415 "Frontend/Parser/formula_unparse.k"
+#line 1964 "Frontend/Parser/formula_unparse.k"
 		const tFormula y = this->tFormula_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2415 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  353 "ast-system-unpk.cc"
+#line 1965 "Frontend/Parser/formula_unparse.k"
+
+		containsNext = (x -> containsNext || y -> containsNext);
+
+#line  347 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case detectcompound_enum: {
+	    detectcompound_class& kc_current_view=static_cast<detectcompound_class&>(kc_current_view_base);
+	    {
+#line 1530 "Frontend/Parser/formula_unparse.k"
+		const tFormula f = this/**/;
+#line 1530 "Frontend/Parser/formula_unparse.k"
+		const tFormula x = this->tFormula_1;
+#line 1530 "Frontend/Parser/formula_unparse.k"
+		const tFormula y = this->tFormula_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 1531 "Frontend/Parser/formula_unparse.k"
+
+		f->type = FORMULA_COMPOUND;
+
+#line  366 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1591 "Frontend/Parser/formula_unparse.k"
+#line 1476 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 1591 "Frontend/Parser/formula_unparse.k"
+#line 1476 "Frontend/Parser/formula_unparse.k"
 		const tFormula x = this->tFormula_1;
-#line 1591 "Frontend/Parser/formula_unparse.k"
+#line 1476 "Frontend/Parser/formula_unparse.k"
 		const tFormula y = this->tFormula_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 1592 "Frontend/Parser/formula_unparse.k"
+#line 1477 "Frontend/Parser/formula_unparse.k"
 
 		f->task = new CompoundTask(x->task,y->task);
 
-#line  372 "ast-system-unpk.cc"
+#line  385 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 278 "Frontend/Parser/formula_unparse.k"
+#line 236 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 278 "Frontend/Parser/formula_unparse.k"
+#line 236 "Frontend/Parser/formula_unparse.k"
 		const tFormula x = this->tFormula_1;
-#line 278 "Frontend/Parser/formula_unparse.k"
+#line 236 "Frontend/Parser/formula_unparse.k"
 		const tFormula y = this->tFormula_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 279 "Frontend/Parser/formula_unparse.k"
+#line 237 "Frontend/Parser/formula_unparse.k"
 
 		f -> type = FORMULA_COMPOUND; 
 		f -> cannotcompute = x -> cannotcompute || y -> cannotcompute;
 
-#line  392 "ast-system-unpk.cc"
+#line  405 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 194 "Frontend/Parser/formula_unparse.k"
+		const tFormula x = this->tFormula_1;
+#line 194 "Frontend/Parser/formula_unparse.k"
+		const tFormula y = this->tFormula_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 151 "Frontend/Parser/formula_unparse.k"
+		const tFormula x = this->tFormula_1;
+#line 151 "Frontend/Parser/formula_unparse.k"
+		const tFormula y = this->tFormula_2;
+#line 151 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  430 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 151 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  434 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 151 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;
+#line  438 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 85 "Frontend/Parser/formula_unparse.k"
+#line 86 "Frontend/Parser/formula_unparse.k"
 		const tFormula x = this->tFormula_1;
-#line 85 "Frontend/Parser/formula_unparse.k"
+#line 86 "Frontend/Parser/formula_unparse.k"
 		const tFormula y = this->tFormula_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		{ kc_printer(kc_t(" : "), kc_current_view); }
@@ -406,7 +452,7 @@ impl_tFormula_Compound::do_unparse(printer_functor kc_printer, uview kc_current_
 	    break;
 	}
 
-#line  410 "ast-system-unpk.cc"
+#line  456 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -419,146 +465,76 @@ impl_tFormula_Compound::do_unparse(printer_functor kc_printer, uview kc_current_
 }
 
 
-#line  423 "ast-system-unpk.cc"
+#line  469 "ast-system-unpk.cc"
 void
-impl_tFormula_ComputeBound::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_tFormula_CompBound::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    if ((this->tAtomicProposition_1->prod_sel() == sel_LessEqualAtomicProposition)) {
-#line 2416 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_1;
-#line 2416 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_2;
-#line 2416 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  437 "ast-system-unpk.cc"
-			} else
-		    goto kc_unparsing_default;
-	    break;
-	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1597 "Frontend/Parser/formula_unparse.k"
+#line 1481 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 1598 "Frontend/Parser/formula_unparse.k"
+#line 1482 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  451 "ast-system-unpk.cc"
+#line  483 "ast-system-unpk.cc"
 	    }
-	    break;
-	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    if ((this->tAtomicProposition_1->prod_sel() == sel_LessEqualAtomicProposition) && (phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_2->prod_sel() == sel_Number)) {
-#line 1007 "Frontend/Parser/formula_unparse.k"
-		const tFormula f = this/**/;
-#line 1007 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_1;
-#line 1007 "Frontend/Parser/formula_unparse.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_2)->integer_1;
-#line 1008 "Frontend/Parser/formula_unparse.k"
-
-
-		current.clear();
-		formulas.clear();
-		while (not id_stack.empty())
-		id_stack.pop();
-		nextId = 0;
-		id_stack.push(nextId++);
-
-#line  474 "ast-system-unpk.cc"
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1018 "Frontend/Parser/formula_unparse.k"
-
-		arrayindex_t factors_positive = 0;
-		arrayindex_t factors_negative = 0;
-
-
-		for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-		{
-		    if (it->second > 0)
-		    {
-			factors_positive++;
-		    }
-		    else if (it->second < 0)
-		    {
-			factors_negative++;
-		    }
-		}
-
-
-		StatePredicate *g = new AtomicStatePredicate(factors_positive, factors_negative, y->value);
-		arrayindex_t position_pos = 0;
-		arrayindex_t position_neg = 0;
-
-
-		for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-		{
-		    if (it->second > 0)
-		    {
-			((AtomicStatePredicate*)g)->addPos(position_pos++, it->first, it->second);
-		    }
-		    else if (it->second < 0)
-		    {
-			((AtomicStatePredicate*)g)->addNeg(position_neg++, it->first, -it->second);
-		    }
-		}
-
-
-		current.clear();
-
-
-		f -> formula = g;
-
-#line  518 "ast-system-unpk.cc"
-	    } else
-		    goto kc_unparsing_default;
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 284 "Frontend/Parser/formula_unparse.k"
+#line 242 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 284 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition x = this->tAtomicProposition_1;
-#line 285 "Frontend/Parser/formula_unparse.k"
+#line 243 "Frontend/Parser/formula_unparse.k"
 
 		f -> type = FORMULA_BOUND; 
 		f -> cannotcompute = false;
 
-#line  535 "ast-system-unpk.cc"
+#line  497 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 195 "Frontend/Parser/formula_unparse.k"
+		const tFormula c = this/**/;
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 152 "Frontend/Parser/formula_unparse.k"
+		const tFormula c = this/**/;
+#line 152 "Frontend/Parser/formula_unparse.k"
+		fs=c->formula->count(fs);fs->comp--;
+#line  516 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    if ((this->tAtomicProposition_1->prod_sel() == sel_LessEqualAtomicProposition)) {
-#line 86 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_1;
-#line 86 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = phylum_cast<const impl_tAtomicProposition_LessEqualAtomicProposition*>(this->tAtomicProposition_1)->tTerm_2;
+	    {
+#line 87 "Frontend/Parser/formula_unparse.k"
+		const tFormula c = this/**/;
 		{ kc_printer(kc_t("MAX("), kc_current_view); }
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" - "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(")"), kc_current_view); }
-	    } else
-		    goto kc_unparsing_default;
+#line 87 "Frontend/Parser/formula_unparse.k"
+		kc_printer(((AtomicStatePredicate *)(c->formula))->toCompString(),kc_current_view);
+#line  528 "ast-system-unpk.cc"
+			{ kc_printer(kc_t(")"), kc_current_view); }
+	    }
 	    break;
 	}
 
-#line  556 "ast-system-unpk.cc"
+#line  534 "ast-system-unpk.cc"
 	default:
-	kc_unparsing_default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
 	    {
-		default_unparse(kc_printer, kc_current_view );
 	    }
 	    break;
 	}
@@ -566,221 +542,96 @@ impl_tFormula_ComputeBound::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  570 "ast-system-unpk.cc"
+#line  546 "ast-system-unpk.cc"
 void
 impl_tFormula_StatePredicateFormula::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2414 "Frontend/Parser/formula_unparse.k"
+#line 1954 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 2414 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  583 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1859 "Frontend/Parser/formula_unparse.k"
-		const tFormula f = this/**/;
-#line 1859 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1859 "Frontend/Parser/formula_unparse.k"
+#line 1955 "Frontend/Parser/formula_unparse.k"
 
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> number_of_or_dnf = x -> number_of_or_dnf;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  605 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    if ((this->tStatePredicate_1->prod_sel() == sel_AtomicProposition)) {
-#line 1648 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition x = phylum_cast<const impl_tStatePredicate_AtomicProposition*>(this->tStatePredicate_1)->tAtomicProposition_1;
-		{ kc_printer(kc_t("PROBLEM saraProblem:\n"), kc_current_view); }
-		{ kc_printer(kc_t("GOAL REACHABILITY;\n"), kc_current_view); }
-		{ kc_printer(kc_t("FILE "), kc_current_view); }
-#line 1652 "Frontend/Parser/formula_unparse.k"
-		kc_printer(RT::args.inputs[0], kc_current_view); 
-#line  619 "ast-system-unpk.cc"
-			{ kc_printer(kc_t(" TYPE LOLA;\n"), kc_current_view); }
-		{ kc_printer(kc_t("INITIAL "), kc_current_view); }
-#line 1655 "Frontend/Parser/formula_unparse.k"
-
-		is_first = false;
-		for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
+		for(arrayindex_t i = 0; i < Net::Card[TR]; i++)
 		{
-		    if (Marking::Initial[i] > 0)
-		    {
-			if (!is_first)
-			{
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-			    is_first = true;
-			}
-			else
-			{
-			    kc_printer(",", kc_current_view);
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-			}
-		    }
+		    Transition::Visible[i] = false;
 		}
 
-#line  656 "ast-system-unpk.cc"
-		{ kc_printer(kc_t(";\n"), kc_current_view); }
-		{ kc_printer(kc_t("FINAL COVER;\n"), kc_current_view); }
-		{ kc_printer(kc_t("CONSTRAINTS "), kc_current_view); }
+#line  563 "ast-system-unpk.cc"
 		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(";"), kc_current_view); }
-	    } else
-		if ((this->tStatePredicate_1->prod_sel() == sel_ConjunctionList)) {
-#line 1692 "Frontend/Parser/formula_unparse.k"
-		const tConjunction_list l = phylum_cast<const impl_tStatePredicate_ConjunctionList*>(this->tStatePredicate_1)->tConjunction_list_1;
-		{ kc_printer(kc_t("PROBLEM saraProblem:\n"), kc_current_view); }
-		{ kc_printer(kc_t("GOAL REACHABILITY;\n"), kc_current_view); }
-		{ kc_printer(kc_t("FILE "), kc_current_view); }
-#line 1696 "Frontend/Parser/formula_unparse.k"
-		kc_printer(RT::args.inputs[0], kc_current_view); 
-#line  671 "ast-system-unpk.cc"
-			{ kc_printer(kc_t(" TYPE LOLA;\n"), kc_current_view); }
-		{ kc_printer(kc_t("INITIAL "), kc_current_view); }
-#line 1699 "Frontend/Parser/formula_unparse.k"
+#line 1961 "Frontend/Parser/formula_unparse.k"
 
-		for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-		{
-		    if (Marking::Initial[i] > 0)
-		    {
-			if (!is_first)
-			{
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-			    is_first = true;
-			}
-			else
-			{
-			    kc_printer(",", kc_current_view);
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-			}
-		    }
-		}
+		containsNext = x -> containsNext;
 
-#line  707 "ast-system-unpk.cc"
-		{ kc_printer(kc_t(";\n"), kc_current_view); }
-		{ kc_printer(kc_t("FINAL COVER;\n"), kc_current_view); }
-		{ kc_printer(kc_t("CONSTRAINTS "), kc_current_view); }
-		kc::unparse(l, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(";"), kc_current_view); }
-	    } else
-		if ((this->tStatePredicate_1->prod_sel() == sel_DisjunctionList)) {
-#line 1741 "Frontend/Parser/formula_unparse.k"
-		const tDisjunction_list l = phylum_cast<const impl_tStatePredicate_DisjunctionList*>(this->tStatePredicate_1)->tDisjunction_list_1;
-		kc::unparse(l, kc_printer, kc_current_view);
-	    } else
-		    goto kc_unparsing_default;
+#line  569 "ast-system-unpk.cc"
+	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1596 "Frontend/Parser/formula_unparse.k"
+#line 1486 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 1598 "Frontend/Parser/formula_unparse.k"
+#line 1487 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  731 "ast-system-unpk.cc"
+#line  582 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1533 "Frontend/Parser/formula_unparse.k"
+#line 1421 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 1533 "Frontend/Parser/formula_unparse.k"
+#line 1421 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1534 "Frontend/Parser/formula_unparse.k"
+#line 1422 "Frontend/Parser/formula_unparse.k"
 
 		f->task = x->task;
 
-#line  747 "ast-system-unpk.cc"
+#line  598 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1387 "Frontend/Parser/formula_unparse.k"
+#line 1203 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 1387 "Frontend/Parser/formula_unparse.k"
+#line 1203 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1389 "Frontend/Parser/formula_unparse.k"
+#line 1205 "Frontend/Parser/formula_unparse.k"
 
 
 		f->ltl_tree = bin_simpler(push_negation(tl_nn(NOT, ltlstack.back(), NULL)));
 
 
-#line  765 "ast-system-unpk.cc"
+#line  616 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
 	    {
-#line 1244 "Frontend/Parser/formula_unparse.k"
+#line 1060 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 1244 "Frontend/Parser/formula_unparse.k"
+#line 1060 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1244 "Frontend/Parser/formula_unparse.k"
+#line 1060 "Frontend/Parser/formula_unparse.k"
 
 		f->unparse(myprinter, kc::temporal);
 
 		ctl_id_stack.push(ctl_nextId++);
 
-#line  782 "ast-system-unpk.cc"
+#line  633 "ast-system-unpk.cc"
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1250 "Frontend/Parser/formula_unparse.k"
+#line 1066 "Frontend/Parser/formula_unparse.k"
 
 		ctl_nextId = ctl_id_stack.top();
 		ctl_id_stack.pop();
@@ -790,18 +641,18 @@ impl_tFormula_StatePredicateFormula::do_unparse(printer_functor kc_printer, uvie
 		f->ctl_formula = ctl_formulas[0][0];
 		f->ctl_formula->payloadsize = ctl_dfs_id*SIZEOF_STATENUMBER_T + (2*ctl_result_cache_id+7)/8;
 
-#line  794 "ast-system-unpk.cc"
+#line  645 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 764 "Frontend/Parser/formula_unparse.k"
+#line 739 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 764 "Frontend/Parser/formula_unparse.k"
+#line 739 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 764 "Frontend/Parser/formula_unparse.k"
+#line 739 "Frontend/Parser/formula_unparse.k"
 
 
 		current.clear();
@@ -811,9 +662,9 @@ impl_tFormula_StatePredicateFormula::do_unparse(printer_functor kc_printer, uvie
 		nextId = 0;
 		id_stack.push(nextId++);
 
-#line  815 "ast-system-unpk.cc"
+#line  666 "ast-system-unpk.cc"
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 774 "Frontend/Parser/formula_unparse.k"
+#line 749 "Frontend/Parser/formula_unparse.k"
 
 		nextId = id_stack.top();
 		id_stack.pop();
@@ -822,41 +673,64 @@ impl_tFormula_StatePredicateFormula::do_unparse(printer_functor kc_printer, uvie
 		assert(formulas[0].size() == 1);
 		f->formula = formulas[0][0];
 
-#line  826 "ast-system-unpk.cc"
+#line  677 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 291 "Frontend/Parser/formula_unparse.k"
+#line 249 "Frontend/Parser/formula_unparse.k"
 		const tFormula f = this/**/;
-#line 291 "Frontend/Parser/formula_unparse.k"
+#line 249 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 292 "Frontend/Parser/formula_unparse.k"
+#line 250 "Frontend/Parser/formula_unparse.k"
 
 		f -> type = x -> type; 
 		f -> cannotcompute = x -> cannotcompute || 
 		(! x -> validLTLFormula) || (! x -> validCTLStateFormula);
 
-#line  844 "ast-system-unpk.cc"
+#line  695 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 193 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 150 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 150 "Frontend/Parser/formula_unparse.k"
+		x->fs = fs;
+#line  715 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 150 "Frontend/Parser/formula_unparse.k"
+		fs = x->fs;
+#line  719 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 84 "Frontend/Parser/formula_unparse.k"
+#line 85 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
 	    }
 	    break;
 	}
 
-#line  858 "ast-system-unpk.cc"
+#line  733 "ast-system-unpk.cc"
 	default:
-	kc_unparsing_default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
 	    {
@@ -868,35 +742,35 @@ impl_tFormula_StatePredicateFormula::do_unparse(printer_functor kc_printer, uvie
 }
 
 
-#line  872 "ast-system-unpk.cc"
+#line  746 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_DisjunctionList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2448 "Frontend/Parser/formula_unparse.k"
+#line 1998 "Frontend/Parser/formula_unparse.k"
 		const tDisjunction_list l = this->tDisjunction_list_1;
 		kc::unparse(l, kc_printer, kc_current_view);
-#line 2448 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = l -> containsDeadlock;
-#line  885 "ast-system-unpk.cc"
+#line 1998 "Frontend/Parser/formula_unparse.k"
+		containsNext = l -> containsNext;
+#line  759 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 841 "Frontend/Parser/formula_unparse.k"
+#line 816 "Frontend/Parser/formula_unparse.k"
 		const tDisjunction_list l = this->tDisjunction_list_1;
-#line 841 "Frontend/Parser/formula_unparse.k"
+#line 816 "Frontend/Parser/formula_unparse.k"
 
 		id_stack.push(nextId++);
 
-#line  898 "ast-system-unpk.cc"
+#line  772 "ast-system-unpk.cc"
 		kc::unparse(l, kc_printer, kc_current_view);
-#line 845 "Frontend/Parser/formula_unparse.k"
+#line 820 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = id_stack.top();
@@ -912,14 +786,38 @@ impl_tStatePredicate_DisjunctionList::do_unparse(printer_functor kc_printer, uvi
 
 		formulas[id_stack.top()].push_back(f);
 
-#line  916 "ast-system-unpk.cc"
+#line  790 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 227 "Frontend/Parser/formula_unparse.k"
+		const tDisjunction_list l = this->tDisjunction_list_1;
+		kc::unparse(l, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 182 "Frontend/Parser/formula_unparse.k"
+		const tDisjunction_list l = this->tDisjunction_list_1;
+#line 182 "Frontend/Parser/formula_unparse.k"
+		l->fs=fs;
+#line  810 "ast-system-unpk.cc"
+		kc::unparse(l, kc_printer, kc_current_view);
+#line 182 "Frontend/Parser/formula_unparse.k"
+		fs=l->fs;fs->tdisj++;
+#line  814 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 117 "Frontend/Parser/formula_unparse.k"
+#line 119 "Frontend/Parser/formula_unparse.k"
 		const tDisjunction_list l = this->tDisjunction_list_1;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(l, kc_printer, kc_current_view);
@@ -928,7 +826,7 @@ impl_tStatePredicate_DisjunctionList::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  932 "ast-system-unpk.cc"
+#line  830 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -941,44 +839,35 @@ impl_tStatePredicate_DisjunctionList::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  945 "ast-system-unpk.cc"
+#line  843 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_ConjunctionList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2443 "Frontend/Parser/formula_unparse.k"
+#line 1994 "Frontend/Parser/formula_unparse.k"
 		const tConjunction_list l = this->tConjunction_list_1;
 		kc::unparse(l, kc_printer, kc_current_view);
-#line 2443 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = l -> containsDeadlock;
-#line  958 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    {
-#line 1734 "Frontend/Parser/formula_unparse.k"
-		const tConjunction_list l = this->tConjunction_list_1;
-		kc::unparse(l, kc_printer, kc_current_view);
+#line 1994 "Frontend/Parser/formula_unparse.k"
+		containsNext = l -> containsNext;
+#line  856 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 802 "Frontend/Parser/formula_unparse.k"
+#line 777 "Frontend/Parser/formula_unparse.k"
 		const tConjunction_list l = this->tConjunction_list_1;
-#line 802 "Frontend/Parser/formula_unparse.k"
+#line 777 "Frontend/Parser/formula_unparse.k"
 
 		id_stack.push(nextId++);
 
-#line  980 "ast-system-unpk.cc"
+#line  869 "ast-system-unpk.cc"
 		kc::unparse(l, kc_printer, kc_current_view);
-#line 806 "Frontend/Parser/formula_unparse.k"
+#line 781 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = id_stack.top();
@@ -994,14 +883,38 @@ impl_tStatePredicate_ConjunctionList::do_unparse(printer_functor kc_printer, uvi
 
 		formulas[id_stack.top()].push_back(f);
 
-#line  998 "ast-system-unpk.cc"
+#line  887 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 223 "Frontend/Parser/formula_unparse.k"
+		const tConjunction_list l = this->tConjunction_list_1;
+		kc::unparse(l, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 178 "Frontend/Parser/formula_unparse.k"
+		const tConjunction_list l = this->tConjunction_list_1;
+#line 178 "Frontend/Parser/formula_unparse.k"
+		l->fs=fs;
+#line  907 "ast-system-unpk.cc"
+		kc::unparse(l, kc_printer, kc_current_view);
+#line 178 "Frontend/Parser/formula_unparse.k"
+		fs=l->fs;fs->tconj++;
+#line  911 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 113 "Frontend/Parser/formula_unparse.k"
+#line 115 "Frontend/Parser/formula_unparse.k"
 		const tConjunction_list l = this->tConjunction_list_1;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(l, kc_printer, kc_current_view);
@@ -1010,7 +923,7 @@ impl_tStatePredicate_ConjunctionList::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  1014 "ast-system-unpk.cc"
+#line  927 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1023,61 +936,61 @@ impl_tStatePredicate_ConjunctionList::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  1027 "ast-system-unpk.cc"
+#line  940 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_EX::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2439 "Frontend/Parser/formula_unparse.k"
+#line 1990 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2439 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  1040 "ast-system-unpk.cc"
+#line 1990 "Frontend/Parser/formula_unparse.k"
+		containsNext = true;
+#line  953 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1623 "Frontend/Parser/formula_unparse.k"
+#line 1508 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1053 "ast-system-unpk.cc"
+#line  966 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1568 "Frontend/Parser/formula_unparse.k"
+#line 1453 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1066 "ast-system-unpk.cc"
+#line  979 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
 	    {
-#line 1339 "Frontend/Parser/formula_unparse.k"
+#line 1155 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1339 "Frontend/Parser/formula_unparse.k"
+#line 1155 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 
-#line  1079 "ast-system-unpk.cc"
+#line  992 "ast-system-unpk.cc"
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1343 "Frontend/Parser/formula_unparse.k"
+#line 1159 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -1088,19 +1001,19 @@ impl_tStatePredicate_EX::do_unparse(printer_functor kc_printer, uview kc_current
 
 		ctl_formulas[ctl_id_stack.top()].push_back(exf);
 
-#line  1092 "ast-system-unpk.cc"
+#line  1005 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 696 "Frontend/Parser/formula_unparse.k"
+#line 668 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 696 "Frontend/Parser/formula_unparse.k"
+#line 668 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 697 "Frontend/Parser/formula_unparse.k"
+#line 669 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula;
@@ -1112,14 +1025,38 @@ impl_tStatePredicate_EX::do_unparse(printer_functor kc_printer, uview kc_current
 		    f->type = FORMULA_CTL;
 		} 
 
-#line  1116 "ast-system-unpk.cc"
+#line  1029 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 219 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 174 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 174 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1049 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 174 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->E++;fs->X++;
+#line  1053 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 109 "Frontend/Parser/formula_unparse.k"
+#line 111 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		{ kc_printer(kc_t("EX("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -1128,7 +1065,7 @@ impl_tStatePredicate_EX::do_unparse(printer_functor kc_printer, uview kc_current
 	    break;
 	}
 
-#line  1132 "ast-system-unpk.cc"
+#line  1069 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1141,61 +1078,62 @@ impl_tStatePredicate_EX::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  1145 "ast-system-unpk.cc"
+#line  1082 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_AX::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2438 "Frontend/Parser/formula_unparse.k"
+#line 1988 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2438 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  1158 "ast-system-unpk.cc"
+#line 1988 "Frontend/Parser/formula_unparse.k"
+
+		containsNext = true;
+#line  1096 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1622 "Frontend/Parser/formula_unparse.k"
+#line 1507 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1171 "ast-system-unpk.cc"
+#line  1109 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1567 "Frontend/Parser/formula_unparse.k"
+#line 1452 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1184 "ast-system-unpk.cc"
+#line  1122 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
 	    {
-#line 1305 "Frontend/Parser/formula_unparse.k"
+#line 1121 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1305 "Frontend/Parser/formula_unparse.k"
+#line 1121 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 
-#line  1197 "ast-system-unpk.cc"
+#line  1135 "ast-system-unpk.cc"
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1309 "Frontend/Parser/formula_unparse.k"
+#line 1125 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -1206,119 +1144,19 @@ impl_tStatePredicate_AX::do_unparse(printer_functor kc_printer, uview kc_current
 
 		ctl_formulas[ctl_id_stack.top()].push_back(axf);
 
-#line  1210 "ast-system-unpk.cc"
+#line  1148 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 709 "Frontend/Parser/formula_unparse.k"
+#line 681 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 709 "Frontend/Parser/formula_unparse.k"
+#line 681 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 710 "Frontend/Parser/formula_unparse.k"
-
-		f->containsTemporal = true;
-		f->validCTLStateFormula = x->validCTLStateFormula;
-		f->validCTLPathFormula = false;
-		f->validLTLFormula = false;
-		if (x -> validLTLFormula)
-		{
-		    f->type = FORMULA_LTL;
-		    f->cannotcompute = false;
-		}
-		else
-		{
-		    f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
-		    if(!f->cannotcompute)
-		    {
-			f->type = FORMULA_CTL;
-		    }  
-		}
-
-#line  1242 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 108 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("AX("), kc_current_view); }
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(")"), kc_current_view); }
-	    }
-	    break;
-	}
-
-#line  1258 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  1271 "ast-system-unpk.cc"
-void
-impl_tStatePredicate_EG::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2441 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 2441 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  1284 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    {
-#line 1625 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  1297 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case toplevelboolean_enum: {
-	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    {
-#line 1570 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  1310 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case temporal_enum: {
-	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
-	    {
-#line 696 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 696 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 697 "Frontend/Parser/formula_unparse.k"
+#line 682 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula;
@@ -1327,202 +1165,45 @@ impl_tStatePredicate_EG::do_unparse(printer_functor kc_printer, uview kc_current
 		f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
 		if(!f->cannotcompute)
 		{
-		    f->type = FORMULA_CTL;
-		} 
-
-#line  1334 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 111 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("EG("), kc_current_view); }
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(")"), kc_current_view); }
-	    }
-	    break;
-	}
-
-#line  1350 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  1363 "ast-system-unpk.cc"
-void
-impl_tStatePredicate_AG::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2437 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 2437 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  1376 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    {
-#line 1621 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  1389 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case toplevelboolean_enum: {
-	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    {
-#line 1566 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  1402 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case temporal_enum: {
-	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
-	    {
-#line 709 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 709 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 710 "Frontend/Parser/formula_unparse.k"
-
-		f->containsTemporal = true;
-		f->validCTLStateFormula = x->validCTLStateFormula;
-		f->validCTLPathFormula = false;
-		f->validLTLFormula = false;
-		if (x -> validLTLFormula)
+		    if(x->validLTLFormula)
+		    {
+			f->type = FORMULA_BOTH;
+		    }
+		    else
+		    { 
+			f->type = FORMULA_CTL;
+		    }
+		}  
+		if (f -> cannotcompute && x -> validLTLFormula)
 		{
 		    f->type = FORMULA_LTL;
-		    f->cannotcompute = false;
-		}
-		else
-		{
-		    f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
-		    if(!f->cannotcompute)
-		    {
-			f->type = FORMULA_CTL;
-		    }  
 		}
 
-#line  1434 "ast-system-unpk.cc"
+#line  1183 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
 	    {
-#line 107 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("AG("), kc_current_view); }
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(")"), kc_current_view); }
-	    }
-	    break;
-	}
-
-#line  1450 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  1463 "ast-system-unpk.cc"
-void
-impl_tStatePredicate_EF::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2440 "Frontend/Parser/formula_unparse.k"
+#line 218 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2440 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  1476 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
 	    {
-#line 1624 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  1489 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case toplevelboolean_enum: {
-	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    {
-#line 1569 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  1502 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case temporal_enum: {
-	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
-	    {
-#line 696 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 696 "Frontend/Parser/formula_unparse.k"
+#line 173 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
+#line 173 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1203 "ast-system-unpk.cc"
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 697 "Frontend/Parser/formula_unparse.k"
-
-		f->containsTemporal = true;
-		f->validCTLStateFormula = x->validCTLStateFormula;
-		f->validCTLPathFormula = false;
-		f->validLTLFormula = false;
-		f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
-		if(!f->cannotcompute)
-		{
-		    f->type = FORMULA_CTL;
-		} 
-
-#line  1526 "ast-system-unpk.cc"
+#line 173 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->A++;fs->X++;
+#line  1207 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
@@ -1531,14 +1212,14 @@ impl_tStatePredicate_EF::do_unparse(printer_functor kc_printer, uview kc_current
 	    {
 #line 110 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("EF("), kc_current_view); }
+		{ kc_printer(kc_t("AX("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
 		{ kc_printer(kc_t(")"), kc_current_view); }
 	    }
 	    break;
 	}
 
-#line  1542 "ast-system-unpk.cc"
+#line  1223 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1551,85 +1232,471 @@ impl_tStatePredicate_EF::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  1555 "ast-system-unpk.cc"
+#line  1236 "ast-system-unpk.cc"
 void
-impl_tStatePredicate_AF::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_tStatePredicate_EG::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2436 "Frontend/Parser/formula_unparse.k"
+#line 1992 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2436 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  1568 "ast-system-unpk.cc"
+#line 1992 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  1249 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1620 "Frontend/Parser/formula_unparse.k"
+#line 1510 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1581 "ast-system-unpk.cc"
+#line  1262 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1565 "Frontend/Parser/formula_unparse.k"
+#line 1455 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1594 "ast-system-unpk.cc"
+#line  1275 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 709 "Frontend/Parser/formula_unparse.k"
+#line 668 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 709 "Frontend/Parser/formula_unparse.k"
+#line 668 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 710 "Frontend/Parser/formula_unparse.k"
+#line 669 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula;
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = false;
-		if (x -> validLTLFormula)
+		f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
+		if(!f->cannotcompute)
 		{
-		    f->type = FORMULA_LTL;
-		    f->cannotcompute = false;
-		}
-		else
-		{
-		    f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
-		    if(!f->cannotcompute)
-		    {
-			f->type = FORMULA_CTL;
-		    }  
-		}
+		    f->type = FORMULA_CTL;
+		} 
 
-#line  1626 "ast-system-unpk.cc"
+#line  1299 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 221 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 176 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 176 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1319 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 176 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->E++;fs->G++;
+#line  1323 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 106 "Frontend/Parser/formula_unparse.k"
+#line 113 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		{ kc_printer(kc_t("EG("), kc_current_view); }
+		kc::unparse(x, kc_printer, kc_current_view);
+		{ kc_printer(kc_t(")"), kc_current_view); }
+	    }
+	    break;
+	}
+
+#line  1339 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  1352 "ast-system-unpk.cc"
+void
+impl_tStatePredicate_AG::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
+	    {
+#line 1987 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 1987 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  1365 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case compound_enum: {
+	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
+	    {
+#line 1506 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1511 "Frontend/Parser/formula_unparse.k"
+
+		f -> task = new LeafTask(f);
+
+#line  1378 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case toplevelboolean_enum: {
+	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
+	    {
+#line 1451 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1456 "Frontend/Parser/formula_unparse.k"
+
+		f -> task = new LeafTask(f);
+
+#line  1391 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case temporal_enum: {
+	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
+	    {
+#line 681 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 681 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 682 "Frontend/Parser/formula_unparse.k"
+
+		f->containsTemporal = true;
+		f->validCTLStateFormula = x->validCTLStateFormula;
+		f->validCTLPathFormula = false;
+		f->validLTLFormula = false;
+		f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
+		if(!f->cannotcompute)
+		{
+		    if(x->validLTLFormula)
+		    {
+			f->type = FORMULA_BOTH;
+		    }
+		    else
+		    { 
+			f->type = FORMULA_CTL;
+		    }
+		}  
+		if (f -> cannotcompute && x -> validLTLFormula)
+		{
+		    f->type = FORMULA_LTL;
+		}
+
+#line  1426 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 217 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 172 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 172 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1446 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 172 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->A++;fs->G++;
+#line  1450 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case out_enum: {
+	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
+	    {
+#line 109 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		{ kc_printer(kc_t("AG("), kc_current_view); }
+		kc::unparse(x, kc_printer, kc_current_view);
+		{ kc_printer(kc_t(")"), kc_current_view); }
+	    }
+	    break;
+	}
+
+#line  1466 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  1479 "ast-system-unpk.cc"
+void
+impl_tStatePredicate_EF::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
+	    {
+#line 1991 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 1991 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  1492 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case compound_enum: {
+	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
+	    {
+#line 1509 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1511 "Frontend/Parser/formula_unparse.k"
+
+		f -> task = new LeafTask(f);
+
+#line  1505 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case toplevelboolean_enum: {
+	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
+	    {
+#line 1454 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1456 "Frontend/Parser/formula_unparse.k"
+
+		f -> task = new LeafTask(f);
+
+#line  1518 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case temporal_enum: {
+	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
+	    {
+#line 668 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 668 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 669 "Frontend/Parser/formula_unparse.k"
+
+		f->containsTemporal = true;
+		f->validCTLStateFormula = x->validCTLStateFormula;
+		f->validCTLPathFormula = false;
+		f->validLTLFormula = false;
+		f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
+		if(!f->cannotcompute)
+		{
+		    f->type = FORMULA_CTL;
+		} 
+
+#line  1542 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 220 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 175 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 175 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1562 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 175 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->E++;fs->F++;
+#line  1566 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case out_enum: {
+	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
+	    {
+#line 112 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		{ kc_printer(kc_t("EF("), kc_current_view); }
+		kc::unparse(x, kc_printer, kc_current_view);
+		{ kc_printer(kc_t(")"), kc_current_view); }
+	    }
+	    break;
+	}
+
+#line  1582 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  1595 "ast-system-unpk.cc"
+void
+impl_tStatePredicate_AF::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
+	    {
+#line 1986 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 1986 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  1608 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case compound_enum: {
+	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
+	    {
+#line 1505 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1511 "Frontend/Parser/formula_unparse.k"
+
+		f -> task = new LeafTask(f);
+
+#line  1621 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case toplevelboolean_enum: {
+	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
+	    {
+#line 1450 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1456 "Frontend/Parser/formula_unparse.k"
+
+		f -> task = new LeafTask(f);
+
+#line  1634 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case temporal_enum: {
+	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
+	    {
+#line 681 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 681 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 682 "Frontend/Parser/formula_unparse.k"
+
+		f->containsTemporal = true;
+		f->validCTLStateFormula = x->validCTLStateFormula;
+		f->validCTLPathFormula = false;
+		f->validLTLFormula = false;
+		f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
+		if(!f->cannotcompute)
+		{
+		    if(x->validLTLFormula)
+		    {
+			f->type = FORMULA_BOTH;
+		    }
+		    else
+		    { 
+			f->type = FORMULA_CTL;
+		    }
+		}  
+		if (f -> cannotcompute && x -> validLTLFormula)
+		{
+		    f->type = FORMULA_LTL;
+		}
+
+#line  1669 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 216 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 171 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 171 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1689 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 171 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->A++;fs->F++;
+#line  1693 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case out_enum: {
+	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
+	    {
+#line 108 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		{ kc_printer(kc_t("AF("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -1638,7 +1705,7 @@ impl_tStatePredicate_AF::do_unparse(printer_functor kc_printer, uview kc_current
 	    break;
 	}
 
-#line  1642 "ast-system-unpk.cc"
+#line  1709 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1651,64 +1718,64 @@ impl_tStatePredicate_AF::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  1655 "ast-system-unpk.cc"
+#line  1722 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_ER::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2434 "Frontend/Parser/formula_unparse.k"
+#line 1984 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2434 "Frontend/Parser/formula_unparse.k"
+#line 1984 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2434 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  1671 "ast-system-unpk.cc"
+#line 1984 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext || y -> containsNext;
+#line  1738 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1618 "Frontend/Parser/formula_unparse.k"
+#line 1503 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1684 "ast-system-unpk.cc"
+#line  1751 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1563 "Frontend/Parser/formula_unparse.k"
+#line 1448 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1697 "ast-system-unpk.cc"
+#line  1764 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 662 "Frontend/Parser/formula_unparse.k"
+#line 631 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 662 "Frontend/Parser/formula_unparse.k"
+#line 631 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 662 "Frontend/Parser/formula_unparse.k"
+#line 631 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 663 "Frontend/Parser/formula_unparse.k"
+#line 632 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula && y->validCTLStateFormula;
@@ -1720,16 +1787,49 @@ impl_tStatePredicate_ER::do_unparse(printer_functor kc_printer, uview kc_current
 		    f->type = FORMULA_CTL;
 		} 
 
-#line  1724 "ast-system-unpk.cc"
+#line  1791 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 214 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 214 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 169 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 169 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+#line 169 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1816 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 169 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  1820 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 169 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;fs->E++;fs->R++;
+#line  1824 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 104 "Frontend/Parser/formula_unparse.k"
+#line 106 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 104 "Frontend/Parser/formula_unparse.k"
+#line 106 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("E("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -1740,7 +1840,7 @@ impl_tStatePredicate_ER::do_unparse(printer_functor kc_printer, uview kc_current
 	    break;
 	}
 
-#line  1744 "ast-system-unpk.cc"
+#line  1844 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1753,93 +1853,129 @@ impl_tStatePredicate_ER::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  1757 "ast-system-unpk.cc"
+#line  1857 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_AR::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2433 "Frontend/Parser/formula_unparse.k"
+#line 1983 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2433 "Frontend/Parser/formula_unparse.k"
+#line 1983 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2433 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  1773 "ast-system-unpk.cc"
+#line 1983 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext || y -> containsNext;
+#line  1873 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1617 "Frontend/Parser/formula_unparse.k"
+#line 1502 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1786 "ast-system-unpk.cc"
+#line  1886 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1562 "Frontend/Parser/formula_unparse.k"
+#line 1447 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1799 "ast-system-unpk.cc"
+#line  1899 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 675 "Frontend/Parser/formula_unparse.k"
+#line 644 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 675 "Frontend/Parser/formula_unparse.k"
+#line 644 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 675 "Frontend/Parser/formula_unparse.k"
+#line 644 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 676 "Frontend/Parser/formula_unparse.k"
+#line 645 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula && y->validCTLStateFormula;
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = false;
-		if (x -> validLTLFormula && y -> validLTLFormula)
+		f->cannotcompute = (x->cannotcompute || y -> cannotcompute || ! x->validCTLStateFormula || ! y->validCTLStateFormula);
+		if(!f->cannotcompute)
 		{
-		    f->type = FORMULA_LTL;
-		    f->cannotcompute = false;
-		}
-		else
-		{
-		    f->cannotcompute = (x->cannotcompute || y -> cannotcompute || ! x->validCTLStateFormula || ! y->validCTLStateFormula);
-		    if(!f->cannotcompute)
+		    if(x -> validLTLFormula && y -> validLTLFormula)
+		    {
+			f->type = FORMULA_BOTH;
+		    }
+		    else
 		    {
 			f->type = FORMULA_CTL;
-		    }  
+		    }
+		}  
+		if (f -> cannotcompute && x -> validLTLFormula && y -> validLTLFormula)
+		{
+		    f->type = FORMULA_LTL;
 		}
 
-#line  1834 "ast-system-unpk.cc"
+#line  1937 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 213 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 213 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 168 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 168 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+#line 168 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  1962 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 168 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  1966 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 168 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;fs->A++;fs->R++;
+#line  1970 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 103 "Frontend/Parser/formula_unparse.k"
+#line 105 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 103 "Frontend/Parser/formula_unparse.k"
+#line 105 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("A("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -1850,7 +1986,7 @@ impl_tStatePredicate_AR::do_unparse(printer_functor kc_printer, uview kc_current
 	    break;
 	}
 
-#line  1854 "ast-system-unpk.cc"
+#line  1990 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1863,69 +1999,69 @@ impl_tStatePredicate_AR::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  1867 "ast-system-unpk.cc"
+#line  2003 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_EU::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2432 "Frontend/Parser/formula_unparse.k"
+#line 1982 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2432 "Frontend/Parser/formula_unparse.k"
+#line 1982 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2432 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  1883 "ast-system-unpk.cc"
+#line 1982 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext || y -> containsNext;
+#line  2019 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1616 "Frontend/Parser/formula_unparse.k"
+#line 1501 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1896 "ast-system-unpk.cc"
+#line  2032 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1561 "Frontend/Parser/formula_unparse.k"
+#line 1446 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  1909 "ast-system-unpk.cc"
+#line  2045 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
 	    {
-#line 1354 "Frontend/Parser/formula_unparse.k"
+#line 1170 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 1354 "Frontend/Parser/formula_unparse.k"
+#line 1170 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate b = this->tStatePredicate_2;
-#line 1354 "Frontend/Parser/formula_unparse.k"
+#line 1170 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 		const size_t myDFSId = ctl_dfs_id++;
 		const size_t myCacheId = ctl_result_cache_id++;
 
-#line  1926 "ast-system-unpk.cc"
+#line  2062 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 1360 "Frontend/Parser/formula_unparse.k"
+#line 1176 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -1938,22 +2074,22 @@ impl_tStatePredicate_EU::do_unparse(printer_functor kc_printer, uview kc_current
 
 		ctl_formulas[ctl_id_stack.top()].push_back(euf);
 
-#line  1942 "ast-system-unpk.cc"
+#line  2078 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 662 "Frontend/Parser/formula_unparse.k"
+#line 631 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 662 "Frontend/Parser/formula_unparse.k"
+#line 631 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 662 "Frontend/Parser/formula_unparse.k"
+#line 631 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 663 "Frontend/Parser/formula_unparse.k"
+#line 632 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula && y->validCTLStateFormula;
@@ -1965,16 +2101,49 @@ impl_tStatePredicate_EU::do_unparse(printer_functor kc_printer, uview kc_current
 		    f->type = FORMULA_CTL;
 		} 
 
-#line  1969 "ast-system-unpk.cc"
+#line  2105 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 212 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 212 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 167 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 167 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+#line 167 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  2130 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 167 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  2134 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 167 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;fs->E++;fs->U++;
+#line  2138 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 102 "Frontend/Parser/formula_unparse.k"
+#line 104 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 102 "Frontend/Parser/formula_unparse.k"
+#line 104 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("E("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -1985,7 +2154,7 @@ impl_tStatePredicate_EU::do_unparse(printer_functor kc_printer, uview kc_current
 	    break;
 	}
 
-#line  1989 "ast-system-unpk.cc"
+#line  2158 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -1998,69 +2167,69 @@ impl_tStatePredicate_EU::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  2002 "ast-system-unpk.cc"
+#line  2171 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_AU::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2435 "Frontend/Parser/formula_unparse.k"
+#line 1985 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2435 "Frontend/Parser/formula_unparse.k"
+#line 1985 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2435 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  2018 "ast-system-unpk.cc"
+#line 1985 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext || y -> containsNext; 
+#line  2187 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1619 "Frontend/Parser/formula_unparse.k"
+#line 1504 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2031 "ast-system-unpk.cc"
+#line  2200 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1564 "Frontend/Parser/formula_unparse.k"
+#line 1449 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2044 "ast-system-unpk.cc"
+#line  2213 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
 	    {
-#line 1320 "Frontend/Parser/formula_unparse.k"
+#line 1136 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 1320 "Frontend/Parser/formula_unparse.k"
+#line 1136 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate b = this->tStatePredicate_2;
-#line 1320 "Frontend/Parser/formula_unparse.k"
+#line 1136 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 		const size_t myDFSId = ctl_dfs_id++;
 		const size_t myCacheId = ctl_result_cache_id++;
 
-#line  2061 "ast-system-unpk.cc"
+#line  2230 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 1326 "Frontend/Parser/formula_unparse.k"
+#line 1142 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -2073,51 +2242,87 @@ impl_tStatePredicate_AU::do_unparse(printer_functor kc_printer, uview kc_current
 
 		ctl_formulas[ctl_id_stack.top()].push_back(auf);
 
-#line  2077 "ast-system-unpk.cc"
+#line  2246 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 675 "Frontend/Parser/formula_unparse.k"
+#line 644 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 675 "Frontend/Parser/formula_unparse.k"
+#line 644 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 675 "Frontend/Parser/formula_unparse.k"
+#line 644 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 676 "Frontend/Parser/formula_unparse.k"
+#line 645 "Frontend/Parser/formula_unparse.k"
 
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLStateFormula && y->validCTLStateFormula;
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = false;
-		if (x -> validLTLFormula && y -> validLTLFormula)
+		f->cannotcompute = (x->cannotcompute || y -> cannotcompute || ! x->validCTLStateFormula || ! y->validCTLStateFormula);
+		if(!f->cannotcompute)
 		{
-		    f->type = FORMULA_LTL;
-		    f->cannotcompute = false;
-		}
-		else
-		{
-		    f->cannotcompute = (x->cannotcompute || y -> cannotcompute || ! x->validCTLStateFormula || ! y->validCTLStateFormula);
-		    if(!f->cannotcompute)
+		    if(x -> validLTLFormula && y -> validLTLFormula)
+		    {
+			f->type = FORMULA_BOTH;
+		    }
+		    else
 		    {
 			f->type = FORMULA_CTL;
-		    }  
+		    }
+		}  
+		if (f -> cannotcompute && x -> validLTLFormula && y -> validLTLFormula)
+		{
+		    f->type = FORMULA_LTL;
 		}
 
-#line  2112 "ast-system-unpk.cc"
+#line  2284 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 215 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 215 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 170 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 170 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+#line 170 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  2309 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 170 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  2313 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 170 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;fs->A++;fs->U++;
+#line  2317 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 105 "Frontend/Parser/formula_unparse.k"
+#line 107 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 105 "Frontend/Parser/formula_unparse.k"
+#line 107 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("A("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -2128,7 +2333,7 @@ impl_tStatePredicate_AU::do_unparse(printer_functor kc_printer, uview kc_current
 	    break;
 	}
 
-#line  2132 "ast-system-unpk.cc"
+#line  2337 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -2141,86 +2346,62 @@ impl_tStatePredicate_AU::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  2145 "ast-system-unpk.cc"
+#line  2350 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Release::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2431 "Frontend/Parser/formula_unparse.k"
+#line 1981 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate phi = this->tStatePredicate_1;
-#line 2431 "Frontend/Parser/formula_unparse.k"
+#line 1981 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate psi = this->tStatePredicate_2;
 		kc::unparse(phi, kc_printer, kc_current_view);
 		kc::unparse(psi, kc_printer, kc_current_view);
-#line 2431 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = phi->containsDeadlock + psi -> containsDeadlock;
-#line  2161 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1965 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1965 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate l = this->tStatePredicate_1;
-#line 1965 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate r = this->tStatePredicate_2;
-		kc::unparse(l, kc_printer, kc_current_view);
-		kc::unparse(r, kc_printer, kc_current_view);
-#line 1965 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = l -> length + r -> length;
-		f -> number_of_and = l -> number_of_and + r -> number_of_and;
-		f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or );
-		f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-
-#line  2185 "ast-system-unpk.cc"
+#line 1981 "Frontend/Parser/formula_unparse.k"
+		containsNext = phi->containsNext || psi->containsNext;
+#line  2366 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1615 "Frontend/Parser/formula_unparse.k"
+#line 1500 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2198 "ast-system-unpk.cc"
+#line  2379 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1560 "Frontend/Parser/formula_unparse.k"
+#line 1445 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2211 "ast-system-unpk.cc"
+#line  2392 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1452 "Frontend/Parser/formula_unparse.k"
+#line 1362 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate phi = this->tStatePredicate_1;
-#line 1452 "Frontend/Parser/formula_unparse.k"
+#line 1362 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate psi = this->tStatePredicate_2;
 		kc::unparse(phi, kc_printer, kc_current_view);
 		kc::unparse(psi, kc_printer, kc_current_view);
-#line 1455 "Frontend/Parser/formula_unparse.k"
+#line 1365 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
@@ -2228,22 +2409,22 @@ impl_tStatePredicate_Release::do_unparse(printer_functor kc_printer, uview kc_cu
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(V_OPER, b, a)));
 
-#line  2232 "ast-system-unpk.cc"
+#line  2413 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 647 "Frontend/Parser/formula_unparse.k"
+#line 616 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 647 "Frontend/Parser/formula_unparse.k"
+#line 616 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 647 "Frontend/Parser/formula_unparse.k"
+#line 616 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 648 "Frontend/Parser/formula_unparse.k"
+#line 617 "Frontend/Parser/formula_unparse.k"
 
 		f->cannotcompute = ( x -> cannotcompute || y -> cannotcompute || !((x->validLTLFormula && y -> validLTLFormula)||(x->validCTLStateFormula && y->validCTLStateFormula)));
 		f->containsTemporal = true;
@@ -2255,16 +2436,49 @@ impl_tStatePredicate_Release::do_unparse(printer_functor kc_printer, uview kc_cu
 		    f->type = FORMULA_LTL;
 		}
 
-#line  2259 "ast-system-unpk.cc"
+#line  2440 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 211 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate phi = this->tStatePredicate_1;
+#line 211 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate psi = this->tStatePredicate_2;
+		kc::unparse(phi, kc_printer, kc_current_view);
+		kc::unparse(psi, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 166 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate phi = this->tStatePredicate_1;
+#line 166 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate psi = this->tStatePredicate_2;
+#line 166 "Frontend/Parser/formula_unparse.k"
+		phi->fs=fs;
+#line  2465 "ast-system-unpk.cc"
+		kc::unparse(phi, kc_printer, kc_current_view);
+#line 166 "Frontend/Parser/formula_unparse.k"
+		psi->fs=phi->fs;
+#line  2469 "ast-system-unpk.cc"
+		kc::unparse(psi, kc_printer, kc_current_view);
+#line 166 "Frontend/Parser/formula_unparse.k"
+		fs=psi->fs;fs->R++;
+#line  2473 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 101 "Frontend/Parser/formula_unparse.k"
+#line 103 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate phi = this->tStatePredicate_1;
-#line 101 "Frontend/Parser/formula_unparse.k"
+#line 103 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate psi = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(phi, kc_printer, kc_current_view);
@@ -2275,7 +2489,7 @@ impl_tStatePredicate_Release::do_unparse(printer_functor kc_printer, uview kc_cu
 	    break;
 	}
 
-#line  2279 "ast-system-unpk.cc"
+#line  2493 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -2288,86 +2502,62 @@ impl_tStatePredicate_Release::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  2292 "ast-system-unpk.cc"
+#line  2506 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Until::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2430 "Frontend/Parser/formula_unparse.k"
+#line 1980 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate phi = this->tStatePredicate_1;
-#line 2430 "Frontend/Parser/formula_unparse.k"
+#line 1980 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate psi = this->tStatePredicate_2;
 		kc::unparse(phi, kc_printer, kc_current_view);
 		kc::unparse(psi, kc_printer, kc_current_view);
-#line 2430 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = phi -> containsDeadlock + psi -> containsDeadlock;
-#line  2308 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1956 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1956 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate l = this->tStatePredicate_1;
-#line 1956 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate r = this->tStatePredicate_2;
-		kc::unparse(l, kc_printer, kc_current_view);
-		kc::unparse(r, kc_printer, kc_current_view);
-#line 1956 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = l -> length + r -> length;
-		f -> number_of_and = l -> number_of_and + f -> number_of_and;
-		f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or );
-		f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-
-#line  2332 "ast-system-unpk.cc"
+#line 1980 "Frontend/Parser/formula_unparse.k"
+		containsNext = phi->containsNext || psi -> containsNext;
+#line  2522 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1614 "Frontend/Parser/formula_unparse.k"
+#line 1499 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2345 "ast-system-unpk.cc"
+#line  2535 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1559 "Frontend/Parser/formula_unparse.k"
+#line 1444 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2358 "ast-system-unpk.cc"
+#line  2548 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1440 "Frontend/Parser/formula_unparse.k"
+#line 1350 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate phi = this->tStatePredicate_1;
-#line 1440 "Frontend/Parser/formula_unparse.k"
+#line 1350 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate psi = this->tStatePredicate_2;
 		kc::unparse(phi, kc_printer, kc_current_view);
 		kc::unparse(psi, kc_printer, kc_current_view);
-#line 1443 "Frontend/Parser/formula_unparse.k"
+#line 1353 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
@@ -2375,22 +2565,22 @@ impl_tStatePredicate_Until::do_unparse(printer_functor kc_printer, uview kc_curr
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(U_OPER, b, a)));
 
-#line  2379 "ast-system-unpk.cc"
+#line  2569 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 647 "Frontend/Parser/formula_unparse.k"
+#line 616 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 647 "Frontend/Parser/formula_unparse.k"
+#line 616 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 647 "Frontend/Parser/formula_unparse.k"
+#line 616 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 648 "Frontend/Parser/formula_unparse.k"
+#line 617 "Frontend/Parser/formula_unparse.k"
 
 		f->cannotcompute = ( x -> cannotcompute || y -> cannotcompute || !((x->validLTLFormula && y -> validLTLFormula)||(x->validCTLStateFormula && y->validCTLStateFormula)));
 		f->containsTemporal = true;
@@ -2402,16 +2592,49 @@ impl_tStatePredicate_Until::do_unparse(printer_functor kc_printer, uview kc_curr
 		    f->type = FORMULA_LTL;
 		}
 
-#line  2406 "ast-system-unpk.cc"
+#line  2596 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 210 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate phi = this->tStatePredicate_1;
+#line 210 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate psi = this->tStatePredicate_2;
+		kc::unparse(phi, kc_printer, kc_current_view);
+		kc::unparse(psi, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 165 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate phi = this->tStatePredicate_1;
+#line 165 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate psi = this->tStatePredicate_2;
+#line 165 "Frontend/Parser/formula_unparse.k"
+		phi->fs=fs;
+#line  2621 "ast-system-unpk.cc"
+		kc::unparse(phi, kc_printer, kc_current_view);
+#line 165 "Frontend/Parser/formula_unparse.k"
+		psi->fs=phi->fs;
+#line  2625 "ast-system-unpk.cc"
+		kc::unparse(psi, kc_printer, kc_current_view);
+#line 165 "Frontend/Parser/formula_unparse.k"
+		fs=psi->fs;fs->U++;
+#line  2629 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 100 "Frontend/Parser/formula_unparse.k"
+#line 102 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate phi = this->tStatePredicate_1;
-#line 100 "Frontend/Parser/formula_unparse.k"
+#line 102 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate psi = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(phi, kc_printer, kc_current_view);
@@ -2422,7 +2645,7 @@ impl_tStatePredicate_Until::do_unparse(printer_functor kc_printer, uview kc_curr
 	    break;
 	}
 
-#line  2426 "ast-system-unpk.cc"
+#line  2649 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -2435,95 +2658,74 @@ impl_tStatePredicate_Until::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  2439 "ast-system-unpk.cc"
+#line  2662 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_NextState::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2429 "Frontend/Parser/formula_unparse.k"
+#line 1979 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2429 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  2452 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1947 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1947 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1947 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  2473 "ast-system-unpk.cc"
+#line 1979 "Frontend/Parser/formula_unparse.k"
+		containsNext = true;
+#line  2675 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1613 "Frontend/Parser/formula_unparse.k"
+#line 1498 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2486 "ast-system-unpk.cc"
+#line  2688 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1558 "Frontend/Parser/formula_unparse.k"
+#line 1443 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2499 "ast-system-unpk.cc"
+#line  2701 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1432 "Frontend/Parser/formula_unparse.k"
+#line 1342 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1434 "Frontend/Parser/formula_unparse.k"
+#line 1344 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(NEXT, a, NULL)));
 
-#line  2515 "ast-system-unpk.cc"
+#line  2717 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 634 "Frontend/Parser/formula_unparse.k"
+#line 603 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 634 "Frontend/Parser/formula_unparse.k"
+#line 603 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 635 "Frontend/Parser/formula_unparse.k"
+#line 604 "Frontend/Parser/formula_unparse.k"
 
 		f->cannotcompute = (x -> cannotcompute || !(x->validLTLFormula || x->validCTLStateFormula));
 		if((not f->cannotcompute)&& x->validLTLFormula)
@@ -2535,14 +2737,38 @@ impl_tStatePredicate_NextState::do_unparse(printer_functor kc_printer, uview kc_
 		f->validCTLPathFormula = x->validCTLStateFormula;
 		f->validLTLFormula = x->validLTLFormula;
 
-#line  2539 "ast-system-unpk.cc"
+#line  2741 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 209 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 164 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 164 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  2761 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 164 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->X++;
+#line  2765 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 99 "Frontend/Parser/formula_unparse.k"
+#line 101 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		{ kc_printer(kc_t("X ("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -2551,7 +2777,7 @@ impl_tStatePredicate_NextState::do_unparse(printer_functor kc_printer, uview kc_
 	    break;
 	}
 
-#line  2555 "ast-system-unpk.cc"
+#line  2781 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -2564,97 +2790,76 @@ impl_tStatePredicate_NextState::do_unparse(printer_functor kc_printer, uview kc_
 }
 
 
-#line  2568 "ast-system-unpk.cc"
+#line  2794 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Eventually::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2428 "Frontend/Parser/formula_unparse.k"
+#line 1978 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2428 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  2581 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1938 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1938 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1938 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  2602 "ast-system-unpk.cc"
+#line 1978 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  2807 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1612 "Frontend/Parser/formula_unparse.k"
+#line 1497 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2615 "ast-system-unpk.cc"
+#line  2820 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1557 "Frontend/Parser/formula_unparse.k"
+#line 1442 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2628 "ast-system-unpk.cc"
+#line  2833 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1416 "Frontend/Parser/formula_unparse.k"
+#line 1326 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1418 "Frontend/Parser/formula_unparse.k"
+#line 1328 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(U_OPER, tl_nn(TRUE, NULL, NULL), a)));
 
-#line  2644 "ast-system-unpk.cc"
+#line  2849 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    if ((this->tStatePredicate_1->prod_sel() == sel_Always)) {
-#line 504 "Frontend/Parser/formula_unparse.k"
+#line 469 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 504 "Frontend/Parser/formula_unparse.k"
+#line 469 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 504 "Frontend/Parser/formula_unparse.k"
+#line 469 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 505 "Frontend/Parser/formula_unparse.k"
+#line 470 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -2676,15 +2881,15 @@ impl_tStatePredicate_Eventually::do_unparse(printer_functor kc_printer, uview kc
 		f -> containsTemporal = true;
 		g -> containsTemporal = true;
 
-#line  2680 "ast-system-unpk.cc"
+#line  2885 "ast-system-unpk.cc"
 	    } else
 	    {
-#line 527 "Frontend/Parser/formula_unparse.k"
+#line 492 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 527 "Frontend/Parser/formula_unparse.k"
+#line 492 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 528 "Frontend/Parser/formula_unparse.k"
+#line 493 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -2705,14 +2910,38 @@ impl_tStatePredicate_Eventually::do_unparse(printer_functor kc_printer, uview kc
 		f -> validCTLStateFormula = false;
 		f -> containsTemporal = true;
 
-#line  2709 "ast-system-unpk.cc"
+#line  2914 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 208 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 163 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 163 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  2934 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 163 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->F++;
+#line  2938 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 98 "Frontend/Parser/formula_unparse.k"
+#line 100 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		{ kc_printer(kc_t("F ("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -2721,7 +2950,7 @@ impl_tStatePredicate_Eventually::do_unparse(printer_functor kc_printer, uview kc
 	    break;
 	}
 
-#line  2725 "ast-system-unpk.cc"
+#line  2954 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -2734,97 +2963,76 @@ impl_tStatePredicate_Eventually::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  2738 "ast-system-unpk.cc"
+#line  2967 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Always::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2427 "Frontend/Parser/formula_unparse.k"
+#line 1977 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2427 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  2751 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1929 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1929 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1929 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  2772 "ast-system-unpk.cc"
+#line 1977 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  2980 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1611 "Frontend/Parser/formula_unparse.k"
+#line 1496 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2785 "ast-system-unpk.cc"
+#line  2993 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1556 "Frontend/Parser/formula_unparse.k"
+#line 1441 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2798 "ast-system-unpk.cc"
+#line  3006 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1424 "Frontend/Parser/formula_unparse.k"
+#line 1334 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1426 "Frontend/Parser/formula_unparse.k"
+#line 1336 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(V_OPER, tl_nn(FALSE, NULL, NULL), a)));
 
-#line  2814 "ast-system-unpk.cc"
+#line  3022 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    if ((this->tStatePredicate_1->prod_sel() == sel_Eventually)) {
-#line 481 "Frontend/Parser/formula_unparse.k"
+#line 446 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 481 "Frontend/Parser/formula_unparse.k"
+#line 446 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 481 "Frontend/Parser/formula_unparse.k"
+#line 446 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 482 "Frontend/Parser/formula_unparse.k"
+#line 447 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -2846,15 +3054,15 @@ impl_tStatePredicate_Always::do_unparse(printer_functor kc_printer, uview kc_cur
 		f -> containsTemporal = true;
 		g -> containsTemporal = true;
 
-#line  2850 "ast-system-unpk.cc"
+#line  3058 "ast-system-unpk.cc"
 	    } else
 	    {
-#line 634 "Frontend/Parser/formula_unparse.k"
+#line 603 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 634 "Frontend/Parser/formula_unparse.k"
+#line 603 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 635 "Frontend/Parser/formula_unparse.k"
+#line 604 "Frontend/Parser/formula_unparse.k"
 
 		f->cannotcompute = (x -> cannotcompute || !(x->validLTLFormula || x->validCTLStateFormula));
 		if((not f->cannotcompute)&& x->validLTLFormula)
@@ -2866,14 +3074,38 @@ impl_tStatePredicate_Always::do_unparse(printer_functor kc_printer, uview kc_cur
 		f->validCTLPathFormula = x->validCTLStateFormula;
 		f->validLTLFormula = x->validLTLFormula;
 
-#line  2870 "ast-system-unpk.cc"
+#line  3078 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 207 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 162 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 162 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  3098 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 162 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->G++;
+#line  3102 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 97 "Frontend/Parser/formula_unparse.k"
+#line 99 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		{ kc_printer(kc_t("G ("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -2882,7 +3114,7 @@ impl_tStatePredicate_Always::do_unparse(printer_functor kc_printer, uview kc_cur
 	    break;
 	}
 
-#line  2886 "ast-system-unpk.cc"
+#line  3118 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -2895,89 +3127,68 @@ impl_tStatePredicate_Always::do_unparse(printer_functor kc_printer, uview kc_cur
 }
 
 
-#line  2899 "ast-system-unpk.cc"
+#line  3131 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2426 "Frontend/Parser/formula_unparse.k"
+#line 1976 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2426 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  2912 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1920 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1920 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1920 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  2933 "ast-system-unpk.cc"
+#line 1976 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  3144 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1610 "Frontend/Parser/formula_unparse.k"
+#line 1495 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2946 "ast-system-unpk.cc"
+#line  3157 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1555 "Frontend/Parser/formula_unparse.k"
+#line 1440 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  2959 "ast-system-unpk.cc"
+#line  3170 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    if ((this->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) {
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1;
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate i = phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate j = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate k = phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 349 "Frontend/Parser/formula_unparse.k"
+#line 307 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 350 "Frontend/Parser/formula_unparse.k"
+#line 308 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -3003,16 +3214,16 @@ impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_cur
 		j -> containsTemporal = true;
 		k -> containsTemporal = true;
 
-#line  3007 "ast-system-unpk.cc"
+#line  3218 "ast-system-unpk.cc"
 	    } else
 		if ((this->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_Deadlock)) {
-#line 298 "Frontend/Parser/formula_unparse.k"
+#line 256 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 298 "Frontend/Parser/formula_unparse.k"
+#line 256 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 298 "Frontend/Parser/formula_unparse.k"
+#line 256 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1;
-#line 299 "Frontend/Parser/formula_unparse.k"
+#line 257 "Frontend/Parser/formula_unparse.k"
 
 		f -> type = FORMULA_DEADLOCK;
 		f -> cannotcompute = false;
@@ -3023,21 +3234,21 @@ impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_cur
 		g -> containsTemporal = true;
 		h -> containsTemporal = false;
 
-#line  3027 "ast-system-unpk.cc"
+#line  3238 "ast-system-unpk.cc"
 	    } else
 		if ((this->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) {
-#line 376 "Frontend/Parser/formula_unparse.k"
+#line 334 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 376 "Frontend/Parser/formula_unparse.k"
+#line 334 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 376 "Frontend/Parser/formula_unparse.k"
+#line 334 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1;
-#line 376 "Frontend/Parser/formula_unparse.k"
+#line 334 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate i = phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 376 "Frontend/Parser/formula_unparse.k"
+#line 334 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 377 "Frontend/Parser/formula_unparse.k"
+#line 335 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -3061,17 +3272,17 @@ impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_cur
 		h -> containsTemporal = true;
 		i -> containsTemporal = true;
 
-#line  3065 "ast-system-unpk.cc"
+#line  3276 "ast-system-unpk.cc"
 	    } else
 		if ((this->tStatePredicate_1->prod_sel() == sel_Eventually)) {
-#line 426 "Frontend/Parser/formula_unparse.k"
+#line 384 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 426 "Frontend/Parser/formula_unparse.k"
+#line 384 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 426 "Frontend/Parser/formula_unparse.k"
+#line 384 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(this->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 427 "Frontend/Parser/formula_unparse.k"
+#line 385 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -3093,15 +3304,15 @@ impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_cur
 		f -> containsTemporal = true;
 		g -> containsTemporal = true;
 
-#line  3097 "ast-system-unpk.cc"
+#line  3308 "ast-system-unpk.cc"
 	    } else
 	    {
-#line 621 "Frontend/Parser/formula_unparse.k"
+#line 590 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 621 "Frontend/Parser/formula_unparse.k"
+#line 590 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 622 "Frontend/Parser/formula_unparse.k"
+#line 591 "Frontend/Parser/formula_unparse.k"
 
 		f->cannotcompute = (x -> cannotcompute || !(x->validCTLPathFormula));
 		if(! f->cannotcompute)
@@ -3113,22 +3324,47 @@ impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_cur
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = false;
 
-#line  3117 "ast-system-unpk.cc"
+#line  3328 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 206 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 161 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 161 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  3348 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 161 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->E++;
+#line  3352 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 96 "Frontend/Parser/formula_unparse.k"
+#line 98 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("E"), kc_current_view); }
+		{ kc_printer(kc_t("E ("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
+		{ kc_printer(kc_t(")"), kc_current_view); }
 	    }
 	    break;
 	}
 
-#line  3132 "ast-system-unpk.cc"
+#line  3368 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -3141,89 +3377,68 @@ impl_tStatePredicate_ExPath::do_unparse(printer_functor kc_printer, uview kc_cur
 }
 
 
-#line  3145 "ast-system-unpk.cc"
+#line  3381 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_AllPath::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2425 "Frontend/Parser/formula_unparse.k"
+#line 1975 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2425 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  3158 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1911 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1911 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1911 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  3179 "ast-system-unpk.cc"
+#line 1975 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  3394 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1609 "Frontend/Parser/formula_unparse.k"
+#line 1494 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  3192 "ast-system-unpk.cc"
+#line  3407 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1554 "Frontend/Parser/formula_unparse.k"
+#line 1439 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  3205 "ast-system-unpk.cc"
+#line  3420 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    if ((this->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually) && (phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AllPath) && (phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Always)) {
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1;
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate i = phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate j = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate k = phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 322 "Frontend/Parser/formula_unparse.k"
+#line 280 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(phylum_cast<const impl_tStatePredicate_AllPath*>(phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 323 "Frontend/Parser/formula_unparse.k"
+#line 281 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -3249,16 +3464,16 @@ impl_tStatePredicate_AllPath::do_unparse(printer_functor kc_printer, uview kc_cu
 		j -> containsTemporal = true;
 		k -> containsTemporal = true;
 
-#line  3253 "ast-system-unpk.cc"
+#line  3468 "ast-system-unpk.cc"
 	    } else
 		if ((this->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_AtomicProposition) && (phylum_cast<const impl_tStatePredicate_AtomicProposition*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) {
-#line 310 "Frontend/Parser/formula_unparse.k"
+#line 268 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 310 "Frontend/Parser/formula_unparse.k"
+#line 268 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 310 "Frontend/Parser/formula_unparse.k"
+#line 268 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1;
-#line 311 "Frontend/Parser/formula_unparse.k"
+#line 269 "Frontend/Parser/formula_unparse.k"
 
 		f -> type = FORMULA_NODEADLOCK;
 		f -> cannotcompute = false;
@@ -3269,21 +3484,21 @@ impl_tStatePredicate_AllPath::do_unparse(printer_functor kc_printer, uview kc_cu
 		g -> containsTemporal = true;
 		h -> containsTemporal = false;
 
-#line  3273 "ast-system-unpk.cc"
+#line  3488 "ast-system-unpk.cc"
 	    } else
 		if ((this->tStatePredicate_1->prod_sel() == sel_Always) && (phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_ExPath) && (phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1->prod_sel() == sel_Eventually)) {
-#line 401 "Frontend/Parser/formula_unparse.k"
+#line 359 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 401 "Frontend/Parser/formula_unparse.k"
+#line 359 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 401 "Frontend/Parser/formula_unparse.k"
+#line 359 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1;
-#line 401 "Frontend/Parser/formula_unparse.k"
+#line 359 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate i = phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
-#line 401 "Frontend/Parser/formula_unparse.k"
+#line 359 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Eventually*>(phylum_cast<const impl_tStatePredicate_ExPath*>(phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 402 "Frontend/Parser/formula_unparse.k"
+#line 360 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -3307,17 +3522,17 @@ impl_tStatePredicate_AllPath::do_unparse(printer_functor kc_printer, uview kc_cu
 		h -> containsTemporal = true;
 		i -> containsTemporal = true;
 
-#line  3311 "ast-system-unpk.cc"
+#line  3526 "ast-system-unpk.cc"
 	    } else
 		if ((this->tStatePredicate_1->prod_sel() == sel_Always)) {
-#line 449 "Frontend/Parser/formula_unparse.k"
+#line 407 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 449 "Frontend/Parser/formula_unparse.k"
+#line 407 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate g = this->tStatePredicate_1;
-#line 449 "Frontend/Parser/formula_unparse.k"
+#line 407 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = phylum_cast<const impl_tStatePredicate_Always*>(this->tStatePredicate_1)->tStatePredicate_1;
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 450 "Frontend/Parser/formula_unparse.k"
+#line 408 "Frontend/Parser/formula_unparse.k"
 
 		if(not y->containsTemporal)
 		{
@@ -3328,69 +3543,105 @@ impl_tStatePredicate_AllPath::do_unparse(printer_functor kc_printer, uview kc_cu
 		}
 		else
 		{   
-		    if (y -> validLTLFormula)
+		    f -> cannotcompute = (y->cannotcompute || !y -> validCTLStateFormula);
+		    f -> validCTLStateFormula = y -> validCTLStateFormula;
+		    if(! f -> cannotcompute)
 		    {
-			f -> type = FORMULA_LTL;
-			f -> cannotcompute = false;
-		    }
-		    else
-		    {
-			f -> cannotcompute = (y->cannotcompute || !y -> validCTLStateFormula);
-			f -> validCTLStateFormula = y -> validCTLStateFormula;
-			if(! f -> cannotcompute)
+			if(y->validLTLFormula)
+			{
+			    f->type = FORMULA_BOTH;
+			}
+			else
 			{
 			    f -> type = FORMULA_CTL; 
 			}
 		    }
+		    else
+		    {
+			f -> validLTLFormula = false;
+			if (y -> validLTLFormula)
+			{
+			    f -> type = FORMULA_LTL;
+			    f -> cannotcompute = false;
+			}
+		    }
 		}
 		f -> validCTLPathFormula = false;
-		f -> validLTLFormula = false;
 		f -> containsTemporal = true;
 		g -> containsTemporal = true;
 
-#line  3352 "ast-system-unpk.cc"
+#line  3574 "ast-system-unpk.cc"
 	    } else
 	    {
-#line 601 "Frontend/Parser/formula_unparse.k"
+#line 566 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 601 "Frontend/Parser/formula_unparse.k"
+#line 566 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 602 "Frontend/Parser/formula_unparse.k"
+#line 567 "Frontend/Parser/formula_unparse.k"
 
-		if (x -> validLTLFormula)
+		f->cannotcompute = (x -> cannotcompute || !(x->validCTLPathFormula));
+		if(! f->cannotcompute)
 		{
-		    f->type = FORMULA_LTL;
-		}
-		else
-		{
-		    f->cannotcompute = (x -> cannotcompute || !(x->validCTLPathFormula));
-		    if(! f->cannotcompute)
+		    if(x->validLTLFormula)
+		    {
+			f->type = FORMULA_BOTH;
+		    }
+		    else
 		    {
 			f->type = FORMULA_CTL;
 		    }
+		}
+		if (f -> cannotcompute && x -> validLTLFormula)
+		{
+		    f->type = FORMULA_LTL;
 		}
 		f->containsTemporal = true;
 		f->validCTLStateFormula = x->validCTLPathFormula;
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = false;
 
-#line  3379 "ast-system-unpk.cc"
+#line  3605 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 205 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 160 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 160 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  3625 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 160 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->A++;
+#line  3629 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 95 "Frontend/Parser/formula_unparse.k"
+#line 97 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("A"), kc_current_view); }
+		{ kc_printer(kc_t("A ("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
+		{ kc_printer(kc_t(")"), kc_current_view); }
 	    }
 	    break;
 	}
 
-#line  3394 "ast-system-unpk.cc"
+#line  3645 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -3403,79 +3654,29 @@ impl_tStatePredicate_AllPath::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  3407 "ast-system-unpk.cc"
+#line  3658 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Equivalence::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
 	    {
-#line 2424 "Frontend/Parser/formula_unparse.k"
+#line 204 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2424 "Frontend/Parser/formula_unparse.k"
+#line 204 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2424 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  3423 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    {
-#line 1608 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3436 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case toplevelboolean_enum: {
-	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    {
-#line 1553 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3449 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case ltl_enum: {
-	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
-	    {
-#line 1505 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-#line 1505 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate y = this->tStatePredicate_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		kc::unparse(y, kc_printer, kc_current_view);
-#line 1508 "Frontend/Parser/formula_unparse.k"
-
-		LTLTree_p a = ltlstack.back();
-		ltlstack.pop_back();
-		LTLTree_p b = ltlstack.back();
-		ltlstack.pop_back();
-		ltlstack.push_back(bin_simpler(tl_nn(EQUIV, a, b)));
-
-#line  3470 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 94 "Frontend/Parser/formula_unparse.k"
+#line 96 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 94 "Frontend/Parser/formula_unparse.k"
+#line 96 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -3486,7 +3687,7 @@ impl_tStatePredicate_Equivalence::do_unparse(printer_functor kc_printer, uview k
 	    break;
 	}
 
-#line  3490 "ast-system-unpk.cc"
+#line  3691 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -3499,79 +3700,29 @@ impl_tStatePredicate_Equivalence::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  3503 "ast-system-unpk.cc"
+#line  3704 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Implication::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
 	    {
-#line 2423 "Frontend/Parser/formula_unparse.k"
+#line 203 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2423 "Frontend/Parser/formula_unparse.k"
+#line 203 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2423 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  3519 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    {
-#line 1607 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3532 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case toplevelboolean_enum: {
-	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    {
-#line 1552 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3545 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case ltl_enum: {
-	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
-	    {
-#line 1494 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-#line 1494 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate y = this->tStatePredicate_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		kc::unparse(y, kc_printer, kc_current_view);
-#line 1497 "Frontend/Parser/formula_unparse.k"
-
-		LTLTree_p a = ltlstack.back();
-		ltlstack.pop_back();
-		LTLTree_p b = ltlstack.back();
-		ltlstack.pop_back();
-		ltlstack.push_back(bin_simpler(tl_nn(IMPLIES, a, b)));
-
-#line  3566 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 93 "Frontend/Parser/formula_unparse.k"
+#line 95 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 93 "Frontend/Parser/formula_unparse.k"
+#line 95 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -3582,7 +3733,7 @@ impl_tStatePredicate_Implication::do_unparse(printer_functor kc_printer, uview k
 	    break;
 	}
 
-#line  3586 "ast-system-unpk.cc"
+#line  3737 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -3595,58 +3746,29 @@ impl_tStatePredicate_Implication::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  3599 "ast-system-unpk.cc"
+#line  3750 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_ExclusiveDisjunction::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
 	    {
-#line 2422 "Frontend/Parser/formula_unparse.k"
+#line 202 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2422 "Frontend/Parser/formula_unparse.k"
+#line 202 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2422 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  3615 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    {
-#line 1606 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3628 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case toplevelboolean_enum: {
-	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    {
-#line 1551 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3641 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 92 "Frontend/Parser/formula_unparse.k"
+#line 94 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 92 "Frontend/Parser/formula_unparse.k"
+#line 94 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -3657,7 +3779,7 @@ impl_tStatePredicate_ExclusiveDisjunction::do_unparse(printer_functor kc_printer
 	    break;
 	}
 
-#line  3661 "ast-system-unpk.cc"
+#line  3783 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -3670,90 +3792,51 @@ impl_tStatePredicate_ExclusiveDisjunction::do_unparse(printer_functor kc_printer
 }
 
 
-#line  3674 "ast-system-unpk.cc"
+#line  3796 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2421 "Frontend/Parser/formula_unparse.k"
+#line 1974 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2421 "Frontend/Parser/formula_unparse.k"
+#line 1974 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2421 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  3690 "ast-system-unpk.cc"
+#line 1974 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext || y -> containsNext;
+#line  3812 "ast-system-unpk.cc"
 	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1901 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1901 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate l = this->tStatePredicate_1;
-#line 1901 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate r = this->tStatePredicate_2;
-		kc::unparse(l, kc_printer, kc_current_view);
-		kc::unparse(r, kc_printer, kc_current_view);
-#line 1901 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = l -> length + r -> length;
-		f -> number_of_or_dnf = l -> number_of_or + r -> number_of_or + 1;
-		f -> number_of_and = l -> number_of_and + r -> number_of_and;
-		f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or ) + 1;
-		f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-
-#line  3715 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this/**/->type == FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1605, this))) {
-#line 1605 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3728 "ast-system-unpk.cc"
-	    } else
-		    goto kc_unparsing_default;
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this/**/->type != FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1542, this))) {
-#line 1542 "Frontend/Parser/formula_unparse.k"
+	    if ((KC_TRACE_PROVIDED((this/**/->type != FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1430, this))) {
+#line 1430 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1542 "Frontend/Parser/formula_unparse.k"
+#line 1430 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1542 "Frontend/Parser/formula_unparse.k"
+#line 1430 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 1543 "Frontend/Parser/formula_unparse.k"
+#line 1431 "Frontend/Parser/formula_unparse.k"
 
 		f->task = new DisjunctionTask(x->task,y->task);
 
-#line  3748 "ast-system-unpk.cc"
+#line  3831 "ast-system-unpk.cc"
 	    } else
-		if ((KC_TRACE_PROVIDED((this/**/->type == FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1550, this))) {
-#line 1550 "Frontend/Parser/formula_unparse.k"
+		if ((KC_TRACE_PROVIDED((this/**/->type == FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1438, this))) {
+#line 1438 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  3757 "ast-system-unpk.cc"
+#line  3840 "ast-system-unpk.cc"
 	    } else
 		    goto kc_unparsing_default;
 	    break;
@@ -3761,13 +3844,13 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1483 "Frontend/Parser/formula_unparse.k"
+#line 1393 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1483 "Frontend/Parser/formula_unparse.k"
+#line 1393 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 1486 "Frontend/Parser/formula_unparse.k"
+#line 1396 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
@@ -3775,60 +3858,27 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(OR, a, b)));
 
-#line  3779 "ast-system-unpk.cc"
+#line  3862 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((not this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1221, this))) {
-#line 1221 "Frontend/Parser/formula_unparse.k"
+	    if ((KC_TRACE_PROVIDED((this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1106, this))) {
+#line 1106 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1222 "Frontend/Parser/formula_unparse.k"
-
-
-
-
-
-		{
-#line 1227 "Frontend/Parser/formula_unparse.k"
-		    tFormula kc_selvar_0_1 = phylum_cast<tFormula>(StatePredicateFormula(f));
-#line 1234 "Frontend/Parser/formula_unparse.k"
-		    if ((kc_selvar_0_1->prod_sel() == sel_StatePredicateFormula)) {
-#line 1234 "Frontend/Parser/formula_unparse.k"
-#line 1233 "Frontend/Parser/formula_unparse.k"
-			const tFormula x = kc_selvar_0_1;
-#line 1234 "Frontend/Parser/formula_unparse.k"
-
-
-			x->unparse(myprinter, kc::internal);
-			AtomicFormula* af = new AtomicFormula();
-			af->inner = new StatePredicateProperty(x->formula);
-			ctl_formulas[ctl_id_stack.top()].push_back(af);
-
-#line  3810 "ast-system-unpk.cc"
-		    } else
-			kc_no_default_in_with( "", __LINE__, __FILE__ );
-		}
-#line 1242 "Frontend/Parser/formula_unparse.k"
-
-#line  3816 "ast-system-unpk.cc"
-	    } else
-		if ((KC_TRACE_PROVIDED((this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1290, this))) {
-#line 1290 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1290 "Frontend/Parser/formula_unparse.k"
+#line 1106 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 1290 "Frontend/Parser/formula_unparse.k"
+#line 1106 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate b = this->tStatePredicate_2;
-#line 1290 "Frontend/Parser/formula_unparse.k"
+#line 1106 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 
-#line  3829 "ast-system-unpk.cc"
+#line  3879 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 1294 "Frontend/Parser/formula_unparse.k"
+#line 1110 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -3837,7 +3887,7 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 		DisjunctionFormula *df = new DisjunctionFormula(ctl_formulas[myId]);
 		ctl_formulas[ctl_id_stack.top()].push_back(df);
 
-#line  3841 "ast-system-unpk.cc"
+#line  3891 "ast-system-unpk.cc"
 	    } else
 		    goto kc_unparsing_default;
 	    break;
@@ -3845,18 +3895,18 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 822 "Frontend/Parser/formula_unparse.k"
+#line 797 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 822 "Frontend/Parser/formula_unparse.k"
+#line 797 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate b = this->tStatePredicate_2;
-#line 822 "Frontend/Parser/formula_unparse.k"
+#line 797 "Frontend/Parser/formula_unparse.k"
 
 		id_stack.push(nextId++);
 
-#line  3857 "ast-system-unpk.cc"
+#line  3907 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 826 "Frontend/Parser/formula_unparse.k"
+#line 801 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t  myId = id_stack.top();
@@ -3871,22 +3921,22 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 
 		formulas[id_stack.top()].push_back(f);
 
-#line  3875 "ast-system-unpk.cc"
+#line  3925 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 580 "Frontend/Parser/formula_unparse.k"
+#line 545 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 580 "Frontend/Parser/formula_unparse.k"
+#line 545 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 580 "Frontend/Parser/formula_unparse.k"
+#line 545 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 581 "Frontend/Parser/formula_unparse.k"
+#line 546 "Frontend/Parser/formula_unparse.k"
 
 		if(not (x->containsTemporal || y->containsTemporal))
 		{
@@ -3906,16 +3956,49 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = (x->validLTLFormula && y->validLTLFormula);
 
-#line  3910 "ast-system-unpk.cc"
+#line  3960 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 201 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 201 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 159 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 159 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+#line 159 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  3985 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 159 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  3989 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 159 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;fs->tdisj++;
+#line  3993 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 91 "Frontend/Parser/formula_unparse.k"
+#line 93 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 91 "Frontend/Parser/formula_unparse.k"
+#line 93 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -3926,7 +4009,7 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 	    break;
 	}
 
-#line  3930 "ast-system-unpk.cc"
+#line  4013 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -3940,90 +4023,51 @@ impl_tStatePredicate_Disjunction::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  3944 "ast-system-unpk.cc"
+#line  4027 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2420 "Frontend/Parser/formula_unparse.k"
+#line 1973 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 2420 "Frontend/Parser/formula_unparse.k"
+#line 1973 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 2420 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;
-#line  3960 "ast-system-unpk.cc"
+#line 1973 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext || y -> containsNext;
+#line  4043 "ast-system-unpk.cc"
 	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1890 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1890 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate l = this->tStatePredicate_1;
-#line 1890 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate r = this->tStatePredicate_2;
-		kc::unparse(l, kc_printer, kc_current_view);
-		kc::unparse(r, kc_printer, kc_current_view);
-#line 1890 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = (l -> length) * (r -> number_of_or + 1) + (r -> length) * (l -> number_of_or + 1);
-		f -> number_of_or_dnf = ((l -> number_of_or + 1)*(r -> number_of_or + 1) -1);
-		f -> number_of_and = l -> number_of_and + r -> number_of_and + 1;
-		f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or );
-		f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-
-#line  3985 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case compound_enum: {
-	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this/**/->type == FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1604, this))) {
-#line 1604 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
-
-		f -> task = new LeafTask(f);
-
-#line  3998 "ast-system-unpk.cc"
-	    } else
-		    goto kc_unparsing_default;
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this/**/->type != FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1537, this))) {
-#line 1537 "Frontend/Parser/formula_unparse.k"
+	    if ((KC_TRACE_PROVIDED((this/**/->type != FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1425, this))) {
+#line 1425 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1537 "Frontend/Parser/formula_unparse.k"
+#line 1425 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1537 "Frontend/Parser/formula_unparse.k"
+#line 1425 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 1538 "Frontend/Parser/formula_unparse.k"
+#line 1426 "Frontend/Parser/formula_unparse.k"
 
 		f->task = new ConjunctionTask(x->task,y->task);
 
-#line  4018 "ast-system-unpk.cc"
+#line  4062 "ast-system-unpk.cc"
 	    } else
-		if ((KC_TRACE_PROVIDED((this/**/->type == FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1549, this))) {
-#line 1549 "Frontend/Parser/formula_unparse.k"
+		if ((KC_TRACE_PROVIDED((this/**/->type == FORMULA_INITIAL), "Frontend/Parser/formula_unparse.k", 1437, this))) {
+#line 1437 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  4027 "ast-system-unpk.cc"
+#line  4071 "ast-system-unpk.cc"
 	    } else
 		    goto kc_unparsing_default;
 	    break;
@@ -4031,13 +4075,13 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1472 "Frontend/Parser/formula_unparse.k"
+#line 1382 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 1472 "Frontend/Parser/formula_unparse.k"
+#line 1382 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 1475 "Frontend/Parser/formula_unparse.k"
+#line 1385 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
@@ -4045,60 +4089,27 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(AND, a, b)));
 
-#line  4049 "ast-system-unpk.cc"
+#line  4093 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((not this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1220, this))) {
-#line 1220 "Frontend/Parser/formula_unparse.k"
+	    if ((KC_TRACE_PROVIDED((this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1093, this))) {
+#line 1093 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1222 "Frontend/Parser/formula_unparse.k"
-
-
-
-
-
-		{
-#line 1227 "Frontend/Parser/formula_unparse.k"
-		    tFormula kc_selvar_0_1 = phylum_cast<tFormula>(StatePredicateFormula(f));
-#line 1234 "Frontend/Parser/formula_unparse.k"
-		    if ((kc_selvar_0_1->prod_sel() == sel_StatePredicateFormula)) {
-#line 1234 "Frontend/Parser/formula_unparse.k"
-#line 1233 "Frontend/Parser/formula_unparse.k"
-			const tFormula x = kc_selvar_0_1;
-#line 1234 "Frontend/Parser/formula_unparse.k"
-
-
-			x->unparse(myprinter, kc::internal);
-			AtomicFormula* af = new AtomicFormula();
-			af->inner = new StatePredicateProperty(x->formula);
-			ctl_formulas[ctl_id_stack.top()].push_back(af);
-
-#line  4080 "ast-system-unpk.cc"
-		    } else
-			kc_no_default_in_with( "", __LINE__, __FILE__ );
-		}
-#line 1242 "Frontend/Parser/formula_unparse.k"
-
-#line  4086 "ast-system-unpk.cc"
-	    } else
-		if ((KC_TRACE_PROVIDED((this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1277, this))) {
-#line 1277 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1277 "Frontend/Parser/formula_unparse.k"
+#line 1093 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 1277 "Frontend/Parser/formula_unparse.k"
+#line 1093 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate b = this->tStatePredicate_2;
-#line 1277 "Frontend/Parser/formula_unparse.k"
+#line 1093 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 
-#line  4099 "ast-system-unpk.cc"
+#line  4110 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 1281 "Frontend/Parser/formula_unparse.k"
+#line 1097 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -4107,7 +4118,7 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 		ConjunctionFormula *cf = new ConjunctionFormula(ctl_formulas[myId]);
 		ctl_formulas[ctl_id_stack.top()].push_back(cf);
 
-#line  4111 "ast-system-unpk.cc"
+#line  4122 "ast-system-unpk.cc"
 	    } else
 		    goto kc_unparsing_default;
 	    break;
@@ -4115,18 +4126,18 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 783 "Frontend/Parser/formula_unparse.k"
+#line 758 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 783 "Frontend/Parser/formula_unparse.k"
+#line 758 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate b = this->tStatePredicate_2;
-#line 783 "Frontend/Parser/formula_unparse.k"
+#line 758 "Frontend/Parser/formula_unparse.k"
 
 		id_stack.push(nextId++);
 
-#line  4127 "ast-system-unpk.cc"
+#line  4138 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 787 "Frontend/Parser/formula_unparse.k"
+#line 762 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = id_stack.top();
@@ -4141,22 +4152,22 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 
 		formulas[id_stack.top()].push_back(f);
 
-#line  4145 "ast-system-unpk.cc"
+#line  4156 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 580 "Frontend/Parser/formula_unparse.k"
+#line 545 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 580 "Frontend/Parser/formula_unparse.k"
+#line 545 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 580 "Frontend/Parser/formula_unparse.k"
+#line 545 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		kc::unparse(x, kc_printer, kc_current_view);
 		kc::unparse(y, kc_printer, kc_current_view);
-#line 581 "Frontend/Parser/formula_unparse.k"
+#line 546 "Frontend/Parser/formula_unparse.k"
 
 		if(not (x->containsTemporal || y->containsTemporal))
 		{
@@ -4176,16 +4187,49 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = (x->validLTLFormula && y->validLTLFormula);
 
-#line  4180 "ast-system-unpk.cc"
+#line  4191 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 200 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 200 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+		kc::unparse(x, kc_printer, kc_current_view);
+		kc::unparse(y, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 158 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 158 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate y = this->tStatePredicate_2;
+#line 158 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  4216 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 158 "Frontend/Parser/formula_unparse.k"
+		y->fs=x->fs;
+#line  4220 "ast-system-unpk.cc"
+		kc::unparse(y, kc_printer, kc_current_view);
+#line 158 "Frontend/Parser/formula_unparse.k"
+		fs=y->fs;fs->tconj++;
+#line  4224 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 90 "Frontend/Parser/formula_unparse.k"
+#line 92 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-#line 90 "Frontend/Parser/formula_unparse.k"
+#line 92 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate y = this->tStatePredicate_2;
 		{ kc_printer(kc_t("("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
@@ -4196,7 +4240,7 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 	    break;
 	}
 
-#line  4200 "ast-system-unpk.cc"
+#line  4244 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -4210,99 +4254,77 @@ impl_tStatePredicate_Conjunction::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  4214 "ast-system-unpk.cc"
+#line  4258 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_Negation::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2419 "Frontend/Parser/formula_unparse.k"
+#line 1972 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 2419 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  4227 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1880 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1880 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate x = this->tStatePredicate_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1880 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = x -> length;
-		f -> number_of_and = x -> number_of_and;
-		f -> number_of_or = x -> number_of_or;
-		f -> number_of_or_dnf = x -> number_of_or_dnf;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  4249 "ast-system-unpk.cc"
+#line 1972 "Frontend/Parser/formula_unparse.k"
+		containsNext = x -> containsNext;
+#line  4271 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1603 "Frontend/Parser/formula_unparse.k"
+#line 1493 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  4262 "ast-system-unpk.cc"
+#line  4284 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1548 "Frontend/Parser/formula_unparse.k"
+#line 1436 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  4275 "ast-system-unpk.cc"
+#line  4297 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
 	    {
-#line 1464 "Frontend/Parser/formula_unparse.k"
+#line 1374 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 1466 "Frontend/Parser/formula_unparse.k"
+#line 1376 "Frontend/Parser/formula_unparse.k"
 
 		LTLTree_p a = ltlstack.back();
 		ltlstack.pop_back();
 		ltlstack.push_back(bin_simpler(tl_nn(NOT, a, NULL)));
 
-#line  4291 "ast-system-unpk.cc"
+#line  4313 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
 	    {
-#line 1263 "Frontend/Parser/formula_unparse.k"
+#line 1079 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate a = this->tStatePredicate_1;
-#line 1263 "Frontend/Parser/formula_unparse.k"
+#line 1079 "Frontend/Parser/formula_unparse.k"
 
 		ctl_id_stack.push(ctl_nextId++);
 
-#line  4304 "ast-system-unpk.cc"
+#line  4326 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
-#line 1267 "Frontend/Parser/formula_unparse.k"
+#line 1083 "Frontend/Parser/formula_unparse.k"
 
 
 		const arrayindex_t myId = ctl_id_stack.top();
@@ -4312,19 +4334,19 @@ impl_tStatePredicate_Negation::do_unparse(printer_functor kc_printer, uview kc_c
 		NotFormula *nf = new NotFormula(ctl_formulas[myId][0]);
 		ctl_formulas[ctl_id_stack.top()].push_back(nf);
 
-#line  4316 "ast-system-unpk.cc"
+#line  4338 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 559 "Frontend/Parser/formula_unparse.k"
+#line 524 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 559 "Frontend/Parser/formula_unparse.k"
+#line 524 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
 		kc::unparse(x, kc_printer, kc_current_view);
-#line 560 "Frontend/Parser/formula_unparse.k"
+#line 525 "Frontend/Parser/formula_unparse.k"
 
 		if(not x->containsTemporal)
 		{
@@ -4344,23 +4366,47 @@ impl_tStatePredicate_Negation::do_unparse(printer_functor kc_printer, uview kc_c
 		f->validCTLPathFormula = false;
 		f->validLTLFormula = x->validLTLFormula;
 
-#line  4348 "ast-system-unpk.cc"
+#line  4370 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    {
+#line 199 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+		kc::unparse(x, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 157 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate x = this->tStatePredicate_1;
+#line 157 "Frontend/Parser/formula_unparse.k"
+		x->fs=fs;
+#line  4390 "ast-system-unpk.cc"
+		kc::unparse(x, kc_printer, kc_current_view);
+#line 157 "Frontend/Parser/formula_unparse.k"
+		fs=x->fs;fs->tneg++;
+#line  4394 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 89 "Frontend/Parser/formula_unparse.k"
+#line 91 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate x = this->tStatePredicate_1;
-		{ kc_printer(kc_t("!("), kc_current_view); }
+		{ kc_printer(kc_t("NOT("), kc_current_view); }
 		kc::unparse(x, kc_printer, kc_current_view);
 		{ kc_printer(kc_t(")"), kc_current_view); }
 	    }
 	    break;
 	}
 
-#line  4364 "ast-system-unpk.cc"
+#line  4410 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -4373,97 +4419,74 @@ impl_tStatePredicate_Negation::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  4377 "ast-system-unpk.cc"
+#line  4423 "ast-system-unpk.cc"
 void
 impl_tStatePredicate_AtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2418 "Frontend/Parser/formula_unparse.k"
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 1971 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 1971 "Frontend/Parser/formula_unparse.k"
+		x -> pred -> setVisible();
+#line  4435 "ast-system-unpk.cc"
+			} else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 1970 "Frontend/Parser/formula_unparse.k"
 		const tAtomicProposition x = this->tAtomicProposition_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 2418 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = x -> containsDeadlock;
-#line  4390 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1870 "Frontend/Parser/formula_unparse.k"
-		const tStatePredicate f = this/**/;
-#line 1870 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition x = this->tAtomicProposition_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 1870 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> length = 1;
-		f -> number_of_and = 0;
-		f -> number_of_or = 0;
-		f -> number_of_or_dnf = 0;
-		f -> only_fireable = x -> only_fireable;
-
-
-#line  4412 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    {
-#line 1840 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition x = this->tAtomicProposition_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-	    }
+#line 1970 "Frontend/Parser/formula_unparse.k"
+		x -> pred -> setVisible();
+#line  4442 "ast-system-unpk.cc"
+			} else
+		    goto kc_unparsing_default;
 	    break;
 	}
 	case compound_enum: {
 	    compound_class& kc_current_view=static_cast<compound_class&>(kc_current_view_base);
 	    {
-#line 1602 "Frontend/Parser/formula_unparse.k"
+#line 1492 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1626 "Frontend/Parser/formula_unparse.k"
+#line 1511 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  4434 "ast-system-unpk.cc"
+#line  4456 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case toplevelboolean_enum: {
 	    toplevelboolean_class& kc_current_view=static_cast<toplevelboolean_class&>(kc_current_view_base);
 	    {
-#line 1547 "Frontend/Parser/formula_unparse.k"
+#line 1435 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1571 "Frontend/Parser/formula_unparse.k"
+#line 1456 "Frontend/Parser/formula_unparse.k"
 
 		f -> task = new LeafTask(f);
 
-#line  4447 "ast-system-unpk.cc"
+#line  4469 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case ltl_enum: {
 	    ltl_class& kc_current_view=static_cast<ltl_class&>(kc_current_view_base);
-	    {
-#line 1395 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition x = this->tAtomicProposition_1;
-#line 1396 "Frontend/Parser/formula_unparse.k"
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 1211 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1211 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 1212 "Frontend/Parser/formula_unparse.k"
 
 
-		kc::tFormula internalFormula = StatePredicateFormula(AtomicProposition(x));
-		internalFormula->unparse(myprinter, kc::internal);
-		StatePredicate* result = internalFormula->formula;
+		StatePredicate * result = x->pred -> copy(NULL);
+		result = result -> negate();
 
 
 		int num;
 		char_p sym = produce_next_string(&num);
 
-		predicateMap[num] = (AtomicStatePredicate*)result;
+		predicateMap[num] = result;
 		LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
 		newTree->sym = tl_lookup(sym);
 		newTree = bin_simpler(newTree);
@@ -4471,63 +4494,234 @@ impl_tStatePredicate_AtomicProposition::do_unparse(printer_functor kc_printer, u
 		assert(newTree->sym);
 		ltlstack.push_back(newTree);
 
-#line  4475 "ast-system-unpk.cc"
-	    }
+#line  4498 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 1231 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1231 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = this->tAtomicProposition_1;
+#line 1232 "Frontend/Parser/formula_unparse.k"
+
+
+		StatePredicate * result = x->pred->copy(NULL);
+
+
+		int num;
+		char_p sym = produce_next_string(&num);
+
+		predicateMap[num] = result;
+		LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+		newTree->sym = tl_lookup(sym);
+		newTree = bin_simpler(newTree);
+
+		assert(newTree->sym);
+		ltlstack.push_back(newTree);
+
+#line  4522 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_True)) {
+#line 1250 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1251 "Frontend/Parser/formula_unparse.k"
+
+
+		StatePredicate * result = new TruePredicate();
+
+
+		int num;
+		char_p sym = produce_next_string(&num);
+
+		predicateMap[num] = result;
+		LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+		newTree->sym = tl_lookup(sym);
+		newTree = bin_simpler(newTree);
+
+		assert(newTree->sym);
+		ltlstack.push_back(newTree);
+
+#line  4544 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Deadlock)) {
+#line 1269 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1270 "Frontend/Parser/formula_unparse.k"
+
+
+		StatePredicate * result = new DeadlockPredicate(true);
+
+
+		int num;
+		char_p sym = produce_next_string(&num);
+
+		predicateMap[num] = result;
+		LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+		newTree->sym = tl_lookup(sym);
+		newTree = bin_simpler(newTree);
+
+		assert(newTree->sym);
+		ltlstack.push_back(newTree);
+
+#line  4566 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) {
+#line 1288 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1289 "Frontend/Parser/formula_unparse.k"
+
+
+		StatePredicate * result = new DeadlockPredicate(false);
+
+
+		int num;
+		char_p sym = produce_next_string(&num);
+
+		predicateMap[num] = result;
+		LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+		newTree->sym = tl_lookup(sym);
+		newTree = bin_simpler(newTree);
+
+		assert(newTree->sym);
+		ltlstack.push_back(newTree);
+
+#line  4588 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_False)) {
+#line 1307 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1308 "Frontend/Parser/formula_unparse.k"
+
+
+		StatePredicate * result = new FalsePredicate();
+
+
+		int num;
+		char_p sym = produce_next_string(&num);
+
+		predicateMap[num] = result;
+		LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+		newTree->sym = tl_lookup(sym);
+		newTree = bin_simpler(newTree);
+
+		assert(newTree->sym);
+		ltlstack.push_back(newTree);
+
+#line  4610 "ast-system-unpk.cc"
+	    } else
+		    goto kc_unparsing_default;
 	    break;
 	}
 	case ctl_enum: {
 	    ctl_class& kc_current_view=static_cast<ctl_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((not this/**/->containsTemporal), "Frontend/Parser/formula_unparse.k", 1222, this))) {
-#line 1222 "Frontend/Parser/formula_unparse.k"
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 1030 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 1222 "Frontend/Parser/formula_unparse.k"
+#line 1030 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 1030 "Frontend/Parser/formula_unparse.k"
 
+		AtomicFormula* af = new AtomicFormula();
+		af->inner = new StatePredicateProperty(x->pred->copy(NULL)->negate());
+		ctl_formulas[ctl_id_stack.top()].push_back(af);
 
+#line  4628 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 1025 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1025 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = this->tAtomicProposition_1;
+#line 1025 "Frontend/Parser/formula_unparse.k"
 
+		AtomicFormula* af = new AtomicFormula();
+		af->inner = new StatePredicateProperty(x->pred->copy(NULL));
+		ctl_formulas[ctl_id_stack.top()].push_back(af);
 
+#line  4641 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_True)) {
+#line 1036 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1036 "Frontend/Parser/formula_unparse.k"
 
-		{
-#line 1227 "Frontend/Parser/formula_unparse.k"
-		    tFormula kc_selvar_0_1 = phylum_cast<tFormula>(StatePredicateFormula(f));
-#line 1234 "Frontend/Parser/formula_unparse.k"
-		    if ((kc_selvar_0_1->prod_sel() == sel_StatePredicateFormula)) {
-#line 1234 "Frontend/Parser/formula_unparse.k"
-#line 1233 "Frontend/Parser/formula_unparse.k"
-			const tFormula x = kc_selvar_0_1;
-#line 1234 "Frontend/Parser/formula_unparse.k"
+		AtomicFormula* af = new AtomicFormula();
+		af->inner = new StatePredicateProperty(new TruePredicate());
+		ctl_formulas[ctl_id_stack.top()].push_back(af);
 
+#line  4652 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_False)) {
+#line 1042 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1042 "Frontend/Parser/formula_unparse.k"
 
-			x->unparse(myprinter, kc::internal);
-			AtomicFormula* af = new AtomicFormula();
-			af->inner = new StatePredicateProperty(x->formula);
-			ctl_formulas[ctl_id_stack.top()].push_back(af);
+		AtomicFormula* af = new AtomicFormula();
+		af->inner = new StatePredicateProperty(new FalsePredicate());
+		ctl_formulas[ctl_id_stack.top()].push_back(af);
 
-#line  4506 "ast-system-unpk.cc"
-		    } else
-			kc_no_default_in_with( "", __LINE__, __FILE__ );
-		}
-#line 1242 "Frontend/Parser/formula_unparse.k"
+#line  4663 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Deadlock)) {
+#line 1048 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1048 "Frontend/Parser/formula_unparse.k"
 
-#line  4512 "ast-system-unpk.cc"
+		AtomicFormula* af = new AtomicFormula();
+		af->inner = new StatePredicateProperty(new DeadlockPredicate(1));
+		ctl_formulas[ctl_id_stack.top()].push_back(af);
+
+#line  4674 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_NoDeadlock)) {
+#line 1054 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate f = this/**/;
+#line 1054 "Frontend/Parser/formula_unparse.k"
+
+		AtomicFormula* af = new AtomicFormula();
+		af->inner = new StatePredicateProperty(new DeadlockPredicate(0));
+		ctl_formulas[ctl_id_stack.top()].push_back(af);
+
+#line  4685 "ast-system-unpk.cc"
 	    } else
 		    goto kc_unparsing_default;
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    {
-#line 861 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition a = this->tAtomicProposition_1;
-		kc::unparse(a, kc_printer, kc_current_view);
-	    }
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 836 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 836 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 837 "Frontend/Parser/formula_unparse.k"
+
+		formula = x->pred -> copy(NULL);
+		formula = formula -> negate();
+
+		formulas[id_stack.top()].push_back(formula);    
+
+#line  4704 "ast-system-unpk.cc"
+	    } else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 844 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 844 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = this->tAtomicProposition_1;
+#line 845 "Frontend/Parser/formula_unparse.k"
+
+		formulas[id_stack.top()].push_back(x->pred->copy(NULL));    
+
+#line  4715 "ast-system-unpk.cc"
+	    } else
+		    goto kc_unparsing_default;
 	    break;
 	}
 	case temporal_enum: {
 	    temporal_class& kc_current_view=static_cast<temporal_class&>(kc_current_view_base);
 	    {
-#line 549 "Frontend/Parser/formula_unparse.k"
+#line 514 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate f = this/**/;
-#line 550 "Frontend/Parser/formula_unparse.k"
+#line 515 "Frontend/Parser/formula_unparse.k"
 
 		f->type = FORMULA_INITIAL;
 		f->cannotcompute=false;
@@ -4536,21 +4730,84 @@ impl_tStatePredicate_AtomicProposition::do_unparse(printer_functor kc_printer, u
 		f->validCTLStateFormula = true;
 		f->validLTLFormula = true;
 
-#line  4540 "ast-system-unpk.cc"
+#line  4734 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 198 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 198 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 198 "Frontend/Parser/formula_unparse.k"
+		x->pred=a->formula;
+#line  4747 "ast-system-unpk.cc"
+			} else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 197 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 197 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = this->tAtomicProposition_1;
+#line 197 "Frontend/Parser/formula_unparse.k"
+		x->pred = a -> formula;
+#line  4756 "ast-system-unpk.cc"
+			} else
+		    goto kc_unparsing_default;
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 155 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 155 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 155 "Frontend/Parser/formula_unparse.k"
+		fs=x->pred->count(fs);fs->aneg++;
+#line  4770 "ast-system-unpk.cc"
+			} else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 154 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 154 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = this->tAtomicProposition_1;
+#line 154 "Frontend/Parser/formula_unparse.k"
+		fs=x->pred->count(fs);
+#line  4779 "ast-system-unpk.cc"
+			} else
+	    {
+#line 156 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = this->tAtomicProposition_1;
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 88 "Frontend/Parser/formula_unparse.k"
+	    if ((this->tAtomicProposition_1->prod_sel() == sel_NNegation) && (phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 90 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 90 "Frontend/Parser/formula_unparse.k"
+		const tAtomicProposition x = phylum_cast<const impl_tAtomicProposition_NNegation*>(this->tAtomicProposition_1)->tAtomicProposition_1;
+#line 90 "Frontend/Parser/formula_unparse.k"
+		StatePredicate * t=x->pred->copy(NULL)->negate();kc_printer(t->toString(),kc_current_view);delete t;
+#line  4796 "ast-system-unpk.cc"
+			} else
+		if ((this->tAtomicProposition_1->prod_sel() == sel_Elementary)) {
+#line 89 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate a = this/**/;
+#line 89 "Frontend/Parser/formula_unparse.k"
 		const tAtomicProposition x = this->tAtomicProposition_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-	    }
+#line 89 "Frontend/Parser/formula_unparse.k"
+		kc_printer(x->pred->toString(),kc_current_view);
+#line  4805 "ast-system-unpk.cc"
+			} else
+		    goto kc_unparsing_default;
 	    break;
 	}
 
-#line  4554 "ast-system-unpk.cc"
+#line  4811 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -4570,50 +4827,89 @@ impl_tConjunction_list::do_unparse(printer_functor kc_printer, uview kc_current_
 	nil_do_unparse(kc_printer, kc_current_view_base);
     else
 	switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2446 "Frontend/Parser/formula_unparse.k"
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
+	    if ((this->tConjunction_list_1->prod_sel() == sel_NiltConjunction_list)) {
+#line 1995 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-#line 2446 "Frontend/Parser/formula_unparse.k"
+		kc::unparse(h, kc_printer, kc_current_view);
+#line 1995 "Frontend/Parser/formula_unparse.k"
+		containsNext = h -> containsNext;
+#line  4839 "ast-system-unpk.cc"
+			} else
+	    {
+#line 1996 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate h = this->tStatePredicate_1;
+#line 1996 "Frontend/Parser/formula_unparse.k"
 		const tConjunction_list l = this->tConjunction_list_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 		kc::unparse(l, kc_printer, kc_current_view);
-#line 2446 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = h -> containsDeadlock + l -> containsDeadlock;
-#line  4585 "ast-system-unpk.cc"
+#line 1996 "Frontend/Parser/formula_unparse.k"
+		containsNext = h -> containsNext || l -> containsNext;
+#line  4850 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
 	    if ((this->tConjunction_list_1->prod_sel() == sel_NiltConjunction_list)) {
-#line 1736 "Frontend/Parser/formula_unparse.k"
+#line 224 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 	    } else
 	    {
-#line 1738 "Frontend/Parser/formula_unparse.k"
+#line 225 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-#line 1738 "Frontend/Parser/formula_unparse.k"
+#line 225 "Frontend/Parser/formula_unparse.k"
 		const tConjunction_list l = this->tConjunction_list_1;
 		kc::unparse(h, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(","), kc_current_view); }
 		kc::unparse(l, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    if ((this->tConjunction_list_1->prod_sel() == sel_NiltConjunction_list)) {
+#line 179 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate h = this->tStatePredicate_1;
+#line 179 "Frontend/Parser/formula_unparse.k"
+		h->fs=fs;
+#line  4878 "ast-system-unpk.cc"
+		kc::unparse(h, kc_printer, kc_current_view);
+#line 179 "Frontend/Parser/formula_unparse.k"
+		fs=h->fs;
+#line  4882 "ast-system-unpk.cc"
+			} else
+	    {
+#line 180 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate h = this->tStatePredicate_1;
+#line 180 "Frontend/Parser/formula_unparse.k"
+		const tConjunction_list l = this->tConjunction_list_1;
+#line 180 "Frontend/Parser/formula_unparse.k"
+		h->fs=fs;
+#line  4891 "ast-system-unpk.cc"
+		kc::unparse(h, kc_printer, kc_current_view);
+#line 180 "Frontend/Parser/formula_unparse.k"
+		l->fs=h->fs;
+#line  4895 "ast-system-unpk.cc"
+		kc::unparse(l, kc_printer, kc_current_view);
+#line 180 "Frontend/Parser/formula_unparse.k"
+		fs =l->fs;
+#line  4899 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    if ((this->tConjunction_list_1->prod_sel() == sel_NiltConjunction_list)) {
-#line 114 "Frontend/Parser/formula_unparse.k"
+#line 116 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 	    } else
 	    {
-#line 115 "Frontend/Parser/formula_unparse.k"
+#line 117 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-#line 115 "Frontend/Parser/formula_unparse.k"
+#line 117 "Frontend/Parser/formula_unparse.k"
 		const tConjunction_list l = this->tConjunction_list_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 		{ kc_printer(kc_t(" AND "), kc_current_view); }
@@ -4622,7 +4918,7 @@ impl_tConjunction_list::do_unparse(printer_functor kc_printer, uview kc_current_
 	    break;
 	}
 
-#line  4626 "ast-system-unpk.cc"
+#line  4922 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -4640,17 +4936,8 @@ void
 impl_tConjunction_list::nil_do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2445 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  4649 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
 
-#line  4654 "ast-system-unpk.cc"
+#line  4941 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -4669,150 +4956,89 @@ impl_tDisjunction_list::do_unparse(printer_functor kc_printer, uview kc_current_
 	nil_do_unparse(kc_printer, kc_current_view_base);
     else
 	switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2450 "Frontend/Parser/formula_unparse.k"
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
+	    if ((this->tDisjunction_list_1->prod_sel() == sel_NiltDisjunction_list)) {
+#line 1999 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-#line 2450 "Frontend/Parser/formula_unparse.k"
+		kc::unparse(h, kc_printer, kc_current_view);
+#line 1999 "Frontend/Parser/formula_unparse.k"
+		containsNext = h -> containsNext;
+#line  4968 "ast-system-unpk.cc"
+			} else
+	    {
+#line 2000 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate h = this->tStatePredicate_1;
+#line 2000 "Frontend/Parser/formula_unparse.k"
 		const tDisjunction_list l = this->tDisjunction_list_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 		kc::unparse(l, kc_printer, kc_current_view);
-#line 2450 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = h -> containsDeadlock + l -> containsDeadlock;
-#line  4684 "ast-system-unpk.cc"
+#line 2000 "Frontend/Parser/formula_unparse.k"
+		containsNext = h -> containsNext || l -> containsNext;
+#line  4979 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
+	case elem_enum: {
+	    elem_class& kc_current_view=static_cast<elem_class&>(kc_current_view_base);
 	    if ((this->tDisjunction_list_1->prod_sel() == sel_NiltDisjunction_list)) {
-#line 1744 "Frontend/Parser/formula_unparse.k"
+#line 228 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-		{ kc_printer(kc_t("PROBLEM saraProblem:\n"), kc_current_view); }
-		{ kc_printer(kc_t("GOAL REACHABILITY;\n"), kc_current_view); }
-		{ kc_printer(kc_t("FILE "), kc_current_view); }
-#line 1748 "Frontend/Parser/formula_unparse.k"
-		kc_printer(RT::args.inputs[0], kc_current_view); 
-#line  4698 "ast-system-unpk.cc"
-			{ kc_printer(kc_t(" TYPE LOLA;\n"), kc_current_view); }
-		{ kc_printer(kc_t("INITIAL "), kc_current_view); }
-#line 1751 "Frontend/Parser/formula_unparse.k"
-
-
-
-		is_first = false;
-		for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-		{
-		    if (Marking::Initial[i] > 0)
-		    {
-			if (!is_first)
-			{
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-			    is_first = true;
-			}
-			else
-			{
-			    kc_printer(",", kc_current_view);
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-			}
-		    }
-		}
-
-#line  4737 "ast-system-unpk.cc"
-		{ kc_printer(kc_t(";\n"), kc_current_view); }
-		{ kc_printer(kc_t("FINAL COVER;\n"), kc_current_view); }
-		{ kc_printer(kc_t("CONSTRAINTS "), kc_current_view); }
 		kc::unparse(h, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(";"), kc_current_view); }
 	    } else
 	    {
-#line 1791 "Frontend/Parser/formula_unparse.k"
+#line 229 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-#line 1791 "Frontend/Parser/formula_unparse.k"
+#line 229 "Frontend/Parser/formula_unparse.k"
 		const tDisjunction_list l = this->tDisjunction_list_1;
-		{ kc_printer(kc_t("PROBLEM saraProblem:\n"), kc_current_view); }
-		{ kc_printer(kc_t("GOAL REACHABILITY;\n"), kc_current_view); }
-		{ kc_printer(kc_t("FILE "), kc_current_view); }
-#line 1795 "Frontend/Parser/formula_unparse.k"
-		kc_printer(RT::args.inputs[0], kc_current_view); 
-#line  4754 "ast-system-unpk.cc"
-			{ kc_printer(kc_t(" TYPE LOLA;\n"), kc_current_view); }
-		{ kc_printer(kc_t("INITIAL "), kc_current_view); }
-#line 1798 "Frontend/Parser/formula_unparse.k"
-
-
-		is_first = false;
-		for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-		{
-		    if (Marking::Initial[i] > 0)
-		    {
-
-			if (!is_first)
-			{
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-
-			    is_first = true;
-			}
-			else
-			{
-			    kc_printer(",", kc_current_view);
-			    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11       
-			    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#else
-			    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-				kc_current_view);
-#endif
-
-			}
-		    }
-		}
-
-#line  4795 "ast-system-unpk.cc"
-		{ kc_printer(kc_t(";\n"), kc_current_view); }
-		{ kc_printer(kc_t("FINAL COVER;\n"), kc_current_view); }
-		{ kc_printer(kc_t("CONSTRAINTS "), kc_current_view); }
 		kc::unparse(h, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(";\n\n"), kc_current_view); }
-		{ kc_printer(kc_t("RESULT OR formula;\n\n"), kc_current_view); }
 		kc::unparse(l, kc_printer, kc_current_view);
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    if ((this->tDisjunction_list_1->prod_sel() == sel_NiltDisjunction_list)) {
+#line 183 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate h = this->tStatePredicate_1;
+#line 183 "Frontend/Parser/formula_unparse.k"
+		h->fs=fs;
+#line  5007 "ast-system-unpk.cc"
+		kc::unparse(h, kc_printer, kc_current_view);
+#line 183 "Frontend/Parser/formula_unparse.k"
+		fs=h->fs;
+#line  5011 "ast-system-unpk.cc"
+			} else
+	    {
+#line 184 "Frontend/Parser/formula_unparse.k"
+		const tStatePredicate h = this->tStatePredicate_1;
+#line 184 "Frontend/Parser/formula_unparse.k"
+		const tDisjunction_list l = this->tDisjunction_list_1;
+#line 184 "Frontend/Parser/formula_unparse.k"
+		h->fs=fs;
+#line  5020 "ast-system-unpk.cc"
+		kc::unparse(h, kc_printer, kc_current_view);
+#line 184 "Frontend/Parser/formula_unparse.k"
+		l->fs=h->fs;
+#line  5024 "ast-system-unpk.cc"
+		kc::unparse(l, kc_printer, kc_current_view);
+#line 184 "Frontend/Parser/formula_unparse.k"
+		fs=l->fs;
+#line  5028 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    if ((this->tDisjunction_list_1->prod_sel() == sel_NiltDisjunction_list)) {
-#line 118 "Frontend/Parser/formula_unparse.k"
+#line 120 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 	    } else
 	    {
-#line 119 "Frontend/Parser/formula_unparse.k"
+#line 121 "Frontend/Parser/formula_unparse.k"
 		const tStatePredicate h = this->tStatePredicate_1;
-#line 119 "Frontend/Parser/formula_unparse.k"
+#line 121 "Frontend/Parser/formula_unparse.k"
 		const tDisjunction_list l = this->tDisjunction_list_1;
 		kc::unparse(h, kc_printer, kc_current_view);
 		{ kc_printer(kc_t(" OR "), kc_current_view); }
@@ -4821,7 +5047,7 @@ impl_tDisjunction_list::do_unparse(printer_functor kc_printer, uview kc_current_
 	    break;
 	}
 
-#line  4825 "ast-system-unpk.cc"
+#line  5051 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -4839,17 +5065,8 @@ void
 impl_tDisjunction_list::nil_do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2449 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  4848 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
 
-#line  4853 "ast-system-unpk.cc"
+#line  5070 "ast-system-unpk.cc"
 	default:
 	kc_unparsing_default:
 	case base_uview_enum: {
@@ -4862,210 +5079,36 @@ impl_tDisjunction_list::nil_do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  4866 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_Unfireable::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2465 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 2465 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  4878 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    {
-#line 981 "Frontend/Parser/formula_unparse.k"
-		const integer t = this->integer_1;
-#line 981 "Frontend/Parser/formula_unparse.k"
-
-		StatePredicate *f = new FireablePredicate(t->value,false);
-
-		formulas[id_stack.top()].push_back(f);    
-
-#line  4893 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 134 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		{ kc_printer(kc_t("! FIREABLE("), kc_current_view); }
-#line 134 "Frontend/Parser/formula_unparse.k"
-		kc_printer(kc_t(Net::Name[TR][x->value]), kc_current_view); 
-#line  4905 "ast-system-unpk.cc"
-			{ kc_printer(kc_t(")"), kc_current_view); }
-	    }
-	    break;
-	}
-
-#line  4911 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  4924 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_Fireable::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2464 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 2464 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  4936 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    {
-#line 975 "Frontend/Parser/formula_unparse.k"
-		const integer t = this->integer_1;
-#line 975 "Frontend/Parser/formula_unparse.k"
-
-		StatePredicate *f = new FireablePredicate(t->value,true);
-
-		formulas[id_stack.top()].push_back(f);    
-
-#line  4951 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 133 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		{ kc_printer(kc_t("FIREABLE("), kc_current_view); }
-#line 133 "Frontend/Parser/formula_unparse.k"
-		kc_printer(kc_t(Net::Name[TR][x->value]), kc_current_view); 
-#line  4963 "ast-system-unpk.cc"
-			{ kc_printer(kc_t(")"), kc_current_view); }
-	    }
-	    break;
-	}
-
-#line  4969 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  4982 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_Initial::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2461 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  4992 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1992 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition f = this/**/;
-#line 1992 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> only_fireable = false;
-
-
-#line  5007 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-		{ kc_printer(kc_t("INITIAL"), kc_current_view); }
-	    }
-	    break;
-	}
-
-#line  5019 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5031 "ast-system-unpk.cc"
+#line  5083 "ast-system-unpk.cc"
 void
 impl_tAtomicProposition_Deadlock::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2462 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 1;
-#line  5041 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1986 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition f = this/**/;
-#line 1986 "Frontend/Parser/formula_unparse.k"
+#line 2006 "Frontend/Parser/formula_unparse.k"
 
+		for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+		{
+		    Transition::Visible[i] = true;
+		}
+		containsNext = false;
 
-		f -> only_fireable = false;
-
-
-#line  5056 "ast-system-unpk.cc"
+#line  5099 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 969 "Frontend/Parser/formula_unparse.k"
+#line 862 "Frontend/Parser/formula_unparse.k"
 
 		StatePredicate *f = new DeadlockPredicate(true);
 
 		formulas[id_stack.top()].push_back(f);    
 
-#line  5069 "ast-system-unpk.cc"
+#line  5112 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
@@ -5077,7 +5120,7 @@ impl_tAtomicProposition_Deadlock::do_unparse(printer_functor kc_printer, uview k
 	    break;
 	}
 
-#line  5081 "ast-system-unpk.cc"
+#line  5124 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -5089,42 +5132,48 @@ impl_tAtomicProposition_Deadlock::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  5093 "ast-system-unpk.cc"
+#line  5136 "ast-system-unpk.cc"
 void
 impl_tAtomicProposition_NoDeadlock::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2463 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 1;
-#line  5103 "ast-system-unpk.cc"
+#line 2015 "Frontend/Parser/formula_unparse.k"
+
+		for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+		{
+		    Transition::Visible[i] = true;
+		}
+		containsNext = false;
+
+#line  5152 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 987 "Frontend/Parser/formula_unparse.k"
+#line 868 "Frontend/Parser/formula_unparse.k"
 
 		StatePredicate *f = new DeadlockPredicate(false);
 
 		formulas[id_stack.top()].push_back(f);    
 
-#line  5116 "ast-system-unpk.cc"
+#line  5165 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-		{ kc_printer(kc_t("! DEADLOCK"), kc_current_view); }
+		{ kc_printer(kc_t("NOT DEADLOCK"), kc_current_view); }
 	    }
 	    break;
 	}
 
-#line  5128 "ast-system-unpk.cc"
+#line  5177 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -5136,30 +5185,39 @@ impl_tAtomicProposition_NoDeadlock::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  5140 "ast-system-unpk.cc"
+#line  5189 "ast-system-unpk.cc"
 void
 impl_tAtomicProposition_False::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2460 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5150 "ast-system-unpk.cc"
+#line 2004 "Frontend/Parser/formula_unparse.k"
+		containsNext = false;
+#line  5199 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 963 "Frontend/Parser/formula_unparse.k"
+#line 856 "Frontend/Parser/formula_unparse.k"
 
 		StatePredicate *f = new FalsePredicate();
 
 		formulas[id_stack.top()].push_back(f);    
 
-#line  5163 "ast-system-unpk.cc"
+#line  5212 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 188 "Frontend/Parser/formula_unparse.k"
+		fs->cont++;
+#line  5221 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
@@ -5171,7 +5229,7 @@ impl_tAtomicProposition_False::do_unparse(printer_functor kc_printer, uview kc_c
 	    break;
 	}
 
-#line  5175 "ast-system-unpk.cc"
+#line  5233 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -5183,30 +5241,39 @@ impl_tAtomicProposition_False::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  5187 "ast-system-unpk.cc"
+#line  5245 "ast-system-unpk.cc"
 void
 impl_tAtomicProposition_True::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+	case visible_enum: {
+	    visible_class& kc_current_view=static_cast<visible_class&>(kc_current_view_base);
 	    {
-#line 2459 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5197 "ast-system-unpk.cc"
+#line 2003 "Frontend/Parser/formula_unparse.k"
+		containsNext = false;
+#line  5255 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case internal_enum: {
 	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
 	    {
-#line 957 "Frontend/Parser/formula_unparse.k"
+#line 850 "Frontend/Parser/formula_unparse.k"
 
 		StatePredicate *f = new TruePredicate();
 
 		formulas[id_stack.top()].push_back(f);    
 
-#line  5210 "ast-system-unpk.cc"
+#line  5268 "ast-system-unpk.cc"
+	    }
+	    break;
+	}
+	case count_enum: {
+	    count_class& kc_current_view=static_cast<count_class&>(kc_current_view_base);
+	    {
+#line 187 "Frontend/Parser/formula_unparse.k"
+		fs->taut++;
+#line  5277 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
@@ -5218,7 +5285,7 @@ impl_tAtomicProposition_True::do_unparse(printer_functor kc_printer, uview kc_cu
 	    break;
 	}
 
-#line  5222 "ast-system-unpk.cc"
+#line  5289 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -5230,893 +5297,62 @@ impl_tAtomicProposition_True::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  5234 "ast-system-unpk.cc"
+#line  5301 "ast-system-unpk.cc"
 void
-impl_tAtomicProposition_LessEqualAtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_tAtomicProposition_NNegation::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
+
+#line  5307 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
 	    {
-#line 2458 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 2458 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-#line 2458 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5248 "ast-system-unpk.cc"
+		default_unparse(kc_printer, kc_current_view );
 	    }
 	    break;
 	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
+    }
+}
+
+
+#line  5320 "ast-system-unpk.cc"
+void
+impl_tAtomicProposition_Elementary::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  5326 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
 	    {
-#line 1980 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition f = this/**/;
-#line 1980 "Frontend/Parser/formula_unparse.k"
-		const tTerm l = this->tTerm_1;
-#line 1980 "Frontend/Parser/formula_unparse.k"
-		const tTerm r = this->tTerm_2;
-#line 1980 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> only_fireable = false;
-
-
-#line  5267 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
+    }
+}
+
+
+#line  5338 "ast-system-unpk.cc"
+void
+impl_tTerm_Complex::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  5344 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
 	    {
-#line 1842 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 1842 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" < "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
 	    }
 	    break;
 	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    if ((this->tTerm_2->prod_sel() == sel_Number)) {
-#line 863 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 863 "Frontend/Parser/formula_unparse.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(this->tTerm_2)->integer_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 863 "Frontend/Parser/formula_unparse.k"
+    }
+}
 
-		arrayindex_t factors_positive = 0;
-		arrayindex_t factors_negative = 0;
-
-
-		for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-		{
-		    if (it->second > 0)
-		    {
-			factors_positive++;
-		    }
-		    else if (it->second < 0)
-		    {
-			factors_negative++;
-		    }
-		}
-
-
-		StatePredicate *f = new AtomicStatePredicate(factors_positive, factors_negative, y->value);
-		arrayindex_t position_pos = 0;
-		arrayindex_t position_neg = 0;
-
-
-		for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-		{
-		    if (it->second > 0)
-		    {
-			((AtomicStatePredicate*)f)->addPos(position_pos++, it->first, it->second);
-		    }
-		    else if (it->second < 0)
-		    {
-			((AtomicStatePredicate*)f)->addNeg(position_neg++, it->first, -it->second);
-		    }
-		}
-
-
-		((AtomicStatePredicate*)f)->reduceFactors();
-
-
-		current.clear();
-
-
-		formulas[id_stack.top()].push_back(f);
-
-#line  5337 "ast-system-unpk.cc"
-	    } else
-		    goto kc_unparsing_default;
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 127 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 127 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" <= "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
 
 #line  5356 "ast-system-unpk.cc"
-	default:
-	kc_unparsing_default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5370 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_LessAtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2457 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 2457 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-#line 2457 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5384 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 126 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 126 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" < "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5402 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5415 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_GreaterEqualAtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2456 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 2456 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-#line 2456 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5429 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 125 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 125 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" >= "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5447 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5460 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_GreaterAtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2455 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 2455 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-#line 2455 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5474 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case orsAndAndsAndLength_enum: {
-	    orsAndAndsAndLength_class& kc_current_view=static_cast<orsAndAndsAndLength_class&>(kc_current_view_base);
-	    {
-#line 1974 "Frontend/Parser/formula_unparse.k"
-		const tAtomicProposition f = this/**/;
-#line 1974 "Frontend/Parser/formula_unparse.k"
-		const tTerm l = this->tTerm_1;
-#line 1974 "Frontend/Parser/formula_unparse.k"
-		const tTerm r = this->tTerm_2;
-#line 1974 "Frontend/Parser/formula_unparse.k"
-
-
-		f -> only_fireable = false;
-
-
-#line  5493 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    if ((this->tTerm_2->prod_sel() == sel_Number)) {
-#line 1843 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 1843 "Frontend/Parser/formula_unparse.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(this->tTerm_2)->integer_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" > "), kc_current_view); }
-#line 1843 "Frontend/Parser/formula_unparse.k"
-		y -> value = y -> value + 1;
-#line  5508 "ast-system-unpk.cc"
-		kc::unparse(y, kc_printer, kc_current_view);
-#line 1843 "Frontend/Parser/formula_unparse.k"
-		y -> value = y -> value - 1;
-#line  5512 "ast-system-unpk.cc"
-			} else
-		    goto kc_unparsing_default;
-	    break;
-	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    if ((this->tTerm_2->prod_sel() == sel_Number)) {
-#line 908 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 908 "Frontend/Parser/formula_unparse.k"
-		const integer y = phylum_cast<const impl_tTerm_Number*>(this->tTerm_2)->integer_1;
-#line 909 "Frontend/Parser/formula_unparse.k"
-
-
-#line  5527 "ast-system-unpk.cc"
-		kc::unparse(x, kc_printer, kc_current_view);
-#line 912 "Frontend/Parser/formula_unparse.k"
-
-		arrayindex_t factors_positive = 0;
-		arrayindex_t factors_negative = 0;
-
-
-		for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-		{
-		    if (it->second > 0)
-		    {
-			factors_positive++;
-		    }
-		    else if (it->second < 0)
-		    {
-			factors_negative++;
-		    }
-		}
-
-
-		StatePredicate *f = new AtomicStatePredicate(factors_negative, factors_positive, (- y->value) -1);
-		arrayindex_t position_pos = 0;
-		arrayindex_t position_neg = 0;
-
-
-		for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-		{
-		    if (it->second < 0) 
-		    {
-			((AtomicStatePredicate*)f)->addPos(position_pos++, it->first, -it->second);
-		    }
-		    else if (it->second > 0) 
-		    {
-			((AtomicStatePredicate*)f)->addNeg(position_neg++, it->first, it->second);
-		    }
-		}
-
-
-		((AtomicStatePredicate*)f)->reduceFactors();
-
-
-		current.clear();
-
-
-		formulas[id_stack.top()].push_back(f);
-
-#line  5574 "ast-system-unpk.cc"
-	    } else
-		    goto kc_unparsing_default;
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 124 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 124 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" > "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5593 "ast-system-unpk.cc"
-	default:
-	kc_unparsing_default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5607 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_NotEqualsAtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2454 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 2454 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-#line 2454 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5621 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 123 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 123 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" != "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5639 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5652 "ast-system-unpk.cc"
-void
-impl_tAtomicProposition_EqualsAtomicProposition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-#line 2453 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 2453 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-#line 2453 "Frontend/Parser/formula_unparse.k"
-		containsDeadlock = 0;
-#line  5666 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 122 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 122 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" = "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5684 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5697 "ast-system-unpk.cc"
-void
-impl_tTerm_ProductList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  5703 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5716 "ast-system-unpk.cc"
-void
-impl_tTerm_Product::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this->integer_1->value == 1), "Frontend/Parser/formula_unparse.k", 1847, this))) {
-#line 1847 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 1847 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_1;
-		kc::unparse(y, kc_printer, kc_current_view);
-	    } else
-		if ((KC_TRACE_PROVIDED((this->integer_1->value == -1), "Frontend/Parser/formula_unparse.k", 1848, this))) {
-#line 1848 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 1848 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_1;
-		{ kc_printer(kc_t("-1"), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    } else
-	    {
-#line 1849 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 1849 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    if ((this->tTerm_1->prod_sel() == sel_Node)) {
-#line 993 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 993 "Frontend/Parser/formula_unparse.k"
-		const integer p = phylum_cast<const impl_tTerm_Node*>(this->tTerm_1)->integer_1;
-#line 993 "Frontend/Parser/formula_unparse.k"
-
-		current[p->value] += x->value;
-
-
-		if (place_in_formula[p->value] == false)
-		{
-		    unique_places_mentioned++;
-		    place_in_formula[p->value] = true;
-		}
-		places_mentioned++;
-
-#line  5773 "ast-system-unpk.cc"
-	    } else
-		    goto kc_unparsing_default;
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this->integer_1->value == 1), "Frontend/Parser/formula_unparse.k", 144, this))) {
-#line 144 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 144 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_1;
-		kc::unparse(y, kc_printer, kc_current_view);
-	    } else
-		if ((KC_TRACE_PROVIDED((this->integer_1->value == -1), "Frontend/Parser/formula_unparse.k", 145, this))) {
-#line 145 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 145 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_1;
-		{ kc_printer(kc_t("-"), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    } else
-	    {
-#line 146 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 146 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t("*"), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5807 "ast-system-unpk.cc"
-	default:
-	kc_unparsing_default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5821 "ast-system-unpk.cc"
-void
-impl_tTerm_Difference::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 143 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 143 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" - "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5846 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5859 "ast-system-unpk.cc"
-void
-impl_tTerm_Sum::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 142 "Frontend/Parser/formula_unparse.k"
-		const tTerm x = this->tTerm_1;
-#line 142 "Frontend/Parser/formula_unparse.k"
-		const tTerm y = this->tTerm_2;
-		kc::unparse(x, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" + "), kc_current_view); }
-		kc::unparse(y, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5884 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5897 "ast-system-unpk.cc"
-void
-impl_tTerm_Number::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    {
-#line 1846 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-	case internal_enum: {
-	    internal_class& kc_current_view=static_cast<internal_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    if ((KC_TRACE_PROVIDED((this->integer_1->value == -FINITE), "Frontend/Parser/formula_unparse.k", 137, this))) {
-#line 137 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		{ kc_printer(kc_t("-finite"), kc_current_view); }
-	    } else
-		if ((KC_TRACE_PROVIDED((this->integer_1->value == FINITE), "Frontend/Parser/formula_unparse.k", 138, this))) {
-#line 138 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		{ kc_printer(kc_t("finite"), kc_current_view); }
-	    } else
-		if ((KC_TRACE_PROVIDED((this->integer_1->value == -OMEGA), "Frontend/Parser/formula_unparse.k", 139, this))) {
-#line 139 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		{ kc_printer(kc_t("-oo"), kc_current_view); }
-	    } else
-		if ((KC_TRACE_PROVIDED((this->integer_1->value == OMEGA), "Frontend/Parser/formula_unparse.k", 140, this))) {
-#line 140 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		{ kc_printer(kc_t("oo"), kc_current_view); }
-	    } else
-	    {
-#line 141 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-		kc::unparse(x, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  5953 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  5966 "ast-system-unpk.cc"
-void
-impl_tTerm_Node::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    {
-#line 1844 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 1844 "Frontend/Parser/formula_unparse.k"
-		kc_printer(kc_t(Net::Name[PL][x->value]), kc_current_view); 
-#line  5984 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    {
-#line 136 "Frontend/Parser/formula_unparse.k"
-		const integer x = this->integer_1;
-#line 136 "Frontend/Parser/formula_unparse.k"
-		kc_printer(kc_t(Net::Name[PL][x->value]), kc_current_view); 
-#line  5995 "ast-system-unpk.cc"
-	    }
-	    break;
-	}
-
-#line  6000 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-void
-impl_tProduct_list::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    if(is_nil())
-	nil_do_unparse(kc_printer, kc_current_view_base);
-    else
-	switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-	case problemwriter_enum: {
-	    problemwriter_class& kc_current_view=static_cast<problemwriter_class&>(kc_current_view_base);
-	    if ((this->tTerm_1->prod_sel() == sel_Product) && (this->tProduct_list_1->prod_sel() == sel_ConstProduct_list) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Product*>(this->tTerm_1)->integer_1->value < 0), "Frontend/Parser/formula_unparse.k", 1851, this))) {
-#line 1851 "Frontend/Parser/formula_unparse.k"
-		const tTerm h = this->tTerm_1;
-#line 1851 "Frontend/Parser/formula_unparse.k"
-		const integer x = phylum_cast<const impl_tTerm_Product*>(this->tTerm_1)->integer_1;
-#line 1851 "Frontend/Parser/formula_unparse.k"
-		const tProduct_list l = this->tProduct_list_1;
-		kc::unparse(l, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" + "), kc_current_view); }
-		kc::unparse(h, kc_printer, kc_current_view);
-	    } else
-		if ((this->tProduct_list_1->prod_sel() == sel_NiltProduct_list)) {
-#line 1850 "Frontend/Parser/formula_unparse.k"
-		const tTerm h = this->tTerm_1;
-		kc::unparse(h, kc_printer, kc_current_view);
-	    } else
-	    {
-#line 1852 "Frontend/Parser/formula_unparse.k"
-		const tTerm h = this->tTerm_1;
-#line 1852 "Frontend/Parser/formula_unparse.k"
-		const tProduct_list l = this->tProduct_list_1;
-		kc::unparse(l, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" + "), kc_current_view); }
-		kc::unparse(h, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-	case out_enum: {
-	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
-	    if ((this->tTerm_1->prod_sel() == sel_Product) && (this->tProduct_list_1->prod_sel() == sel_ConstProduct_list) && (KC_TRACE_PROVIDED((phylum_cast<const impl_tTerm_Product*>(this->tTerm_1)->integer_1->value < 0), "Frontend/Parser/formula_unparse.k", 148, this))) {
-#line 148 "Frontend/Parser/formula_unparse.k"
-		const tTerm h = this->tTerm_1;
-#line 148 "Frontend/Parser/formula_unparse.k"
-		const integer x = phylum_cast<const impl_tTerm_Product*>(this->tTerm_1)->integer_1;
-#line 148 "Frontend/Parser/formula_unparse.k"
-		const tProduct_list l = this->tProduct_list_1;
-		kc::unparse(l, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" + "), kc_current_view); }
-		kc::unparse(h, kc_printer, kc_current_view);
-	    } else
-		if ((this->tProduct_list_1->prod_sel() == sel_NiltProduct_list)) {
-#line 147 "Frontend/Parser/formula_unparse.k"
-		const tTerm h = this->tTerm_1;
-		kc::unparse(h, kc_printer, kc_current_view);
-	    } else
-	    {
-#line 149 "Frontend/Parser/formula_unparse.k"
-		const tTerm h = this->tTerm_1;
-#line 149 "Frontend/Parser/formula_unparse.k"
-		const tProduct_list l = this->tProduct_list_1;
-		kc::unparse(l, kc_printer, kc_current_view);
-		{ kc_printer(kc_t(" + "), kc_current_view); }
-		kc::unparse(h, kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-
-#line  6084 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		for (tProduct_list iterator_ = this; iterator_->tProduct_list_1 != 0; iterator_ = iterator_->tProduct_list_1)
-		    iterator_->tTerm_1->unparse(kc_printer, kc_current_view);
-	    }
-	    break;
-	}
-    }
-}
-
-void
-impl_tProduct_list::nil_do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-	case countdeadlock_enum: {
-	    countdeadlock_class& kc_current_view=static_cast<countdeadlock_class&>(kc_current_view_base);
-	    {
-	    }
-	    break;
-	}
-
-#line  6108 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  6120 "ast-system-unpk.cc"
 void
 impl_tBuechiAutomata_BuechiNull::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6124,11 +5360,11 @@ impl_tBuechiAutomata_BuechiNull::do_unparse(printer_functor kc_printer, uview kc
 	case buechi_enum: {
 	    buechi_class& kc_current_view=static_cast<buechi_class&>(kc_current_view_base);
 	    {
-#line 1083 "Frontend/Parser/formula_unparse.k"
+#line 896 "Frontend/Parser/formula_unparse.k"
 		const tBuechiAutomata b = this/**/;
-#line 1083 "Frontend/Parser/formula_unparse.k"
+#line 896 "Frontend/Parser/formula_unparse.k"
 		RT::rep->message("NULL BUECHI"); b->automata = 0; 
-#line  6132 "ast-system-unpk.cc"
+#line  5368 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
@@ -6139,7 +5375,7 @@ impl_tBuechiAutomata_BuechiNull::do_unparse(printer_functor kc_printer, uview kc
 	    break;
 	}
 
-#line  6143 "ast-system-unpk.cc"
+#line  5379 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6151,7 +5387,7 @@ impl_tBuechiAutomata_BuechiNull::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  6155 "ast-system-unpk.cc"
+#line  5391 "ast-system-unpk.cc"
 void
 impl_tBuechiAutomata_BuechiAutomaton::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6159,15 +5395,15 @@ impl_tBuechiAutomata_BuechiAutomaton::do_unparse(printer_functor kc_printer, uvi
 	case buechi_enum: {
 	    buechi_class& kc_current_view=static_cast<buechi_class&>(kc_current_view_base);
 	    {
-#line 1084 "Frontend/Parser/formula_unparse.k"
+#line 897 "Frontend/Parser/formula_unparse.k"
 		const tBuechiAutomata b = this/**/;
-#line 1084 "Frontend/Parser/formula_unparse.k"
+#line 897 "Frontend/Parser/formula_unparse.k"
 		const tBuechiRules trans = this->tBuechiRules_1;
-#line 1084 "Frontend/Parser/formula_unparse.k"
+#line 897 "Frontend/Parser/formula_unparse.k"
 		const tAcceptingSet accept = this->tAcceptingSet_1;
 		kc::unparse(trans, kc_printer, kc_current_view);
 		kc::unparse(accept, kc_printer, kc_current_view);
-#line 1087 "Frontend/Parser/formula_unparse.k"
+#line 900 "Frontend/Parser/formula_unparse.k"
 
 
 
@@ -6180,27 +5416,19 @@ impl_tBuechiAutomata_BuechiAutomaton::do_unparse(printer_functor kc_printer, uvi
 
 
 
-		b->automata->cardAtomicPropositions = predicates.size();
-		b->automata->atomicPropositions = new StatePredicateProperty*[predicates.size()]();
-		b->automata->atomicPropotions_backlist = new arrayindex_t[predicates.size()]();
-		for (uint32_t i = 0; i < predicates.size(); i++)
-		b->automata->atomicPropositions[i] = new StatePredicateProperty(predicates[i]);	
-
 
 
 
 		b->automata->cardTransitions = new uint32_t[number_of_states]();
-		b->automata->transitions = new uint32_t**[number_of_states]();
-		b->automata->cardEnabled = new arrayindex_t[number_of_states]();
+		b->automata->nextstate = new uint32_t*[number_of_states]();
+		b->automata->guard = new StatePredicate**[number_of_states]();
 		for (uint32_t i = 0; i < number_of_states; i++){
 		    b->automata->cardTransitions[i] = transitions[i].size();
-		    b->automata->transitions[i] = new uint32_t*[transitions[i].size()]();
+		    b->automata->nextstate[i] = new uint32_t[transitions[i].size()]();
+		    b->automata->guard[i] = new StatePredicate*[transitions[i].size()]();
 		    for (uint32_t j = 0; j < transitions[i].size(); j++){
-
-			b->automata->transitions[i][j] = new uint32_t[2]();
-			b->automata->transitions[i][j][0] = transitions[i][j].first;
-			b->automata->transitions[i][j][1] = transitions[i][j].second;
-			b->automata->atomicPropotions_backlist[transitions[i][j].first] = i;
+			b->automata->guard[i][j] = predicates[transitions[i][j].first];
+			b->automata->nextstate[i][j] = transitions[i][j].second;
 		    }
 		}
 
@@ -6210,16 +5438,16 @@ impl_tBuechiAutomata_BuechiAutomaton::do_unparse(printer_functor kc_printer, uvi
 		for (__typeof__(acceptingset.begin()) i = acceptingset.begin(); i != acceptingset.end(); i++)
 		b->automata->isStateAccepting[*i] = true;
 
-#line  6214 "ast-system-unpk.cc"
+#line  5442 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 152 "Frontend/Parser/formula_unparse.k"
+#line 129 "Frontend/Parser/formula_unparse.k"
 		const tBuechiRules trans = this->tBuechiRules_1;
-#line 152 "Frontend/Parser/formula_unparse.k"
+#line 129 "Frontend/Parser/formula_unparse.k"
 		const tAcceptingSet accept = this->tAcceptingSet_1;
 		kc::unparse(trans, kc_printer, kc_current_view);
 		{ kc_printer(kc_t("\n"), kc_current_view); }
@@ -6228,7 +5456,7 @@ impl_tBuechiAutomata_BuechiAutomaton::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  6232 "ast-system-unpk.cc"
+#line  5460 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6241,7 +5469,7 @@ impl_tBuechiAutomata_BuechiAutomaton::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  6245 "ast-system-unpk.cc"
+#line  5473 "ast-system-unpk.cc"
 void
 impl_tBuechiRules_BuechiRules::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6249,9 +5477,9 @@ impl_tBuechiRules_BuechiRules::do_unparse(printer_functor kc_printer, uview kc_c
 	case buechi_enum: {
 	    buechi_class& kc_current_view=static_cast<buechi_class&>(kc_current_view_base);
 	    {
-#line 1155 "Frontend/Parser/formula_unparse.k"
+#line 960 "Frontend/Parser/formula_unparse.k"
 		const tBuechiRules lrules = this->tBuechiRules_1;
-#line 1155 "Frontend/Parser/formula_unparse.k"
+#line 960 "Frontend/Parser/formula_unparse.k"
 		const tBuechiRules rrules = this->tBuechiRules_2;
 		kc::unparse(lrules, kc_printer, kc_current_view);
 		kc::unparse(rrules, kc_printer, kc_current_view);
@@ -6261,9 +5489,9 @@ impl_tBuechiRules_BuechiRules::do_unparse(printer_functor kc_printer, uview kc_c
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 158 "Frontend/Parser/formula_unparse.k"
+#line 135 "Frontend/Parser/formula_unparse.k"
 		const tBuechiRules a = this->tBuechiRules_1;
-#line 158 "Frontend/Parser/formula_unparse.k"
+#line 135 "Frontend/Parser/formula_unparse.k"
 		const tBuechiRules b = this->tBuechiRules_2;
 		kc::unparse(a, kc_printer, kc_current_view);
 		{ kc_printer(kc_t("&"), kc_current_view); }
@@ -6272,7 +5500,7 @@ impl_tBuechiRules_BuechiRules::do_unparse(printer_functor kc_printer, uview kc_c
 	    break;
 	}
 
-#line  6276 "ast-system-unpk.cc"
+#line  5504 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6285,7 +5513,7 @@ impl_tBuechiRules_BuechiRules::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  6289 "ast-system-unpk.cc"
+#line  5517 "ast-system-unpk.cc"
 void
 impl_tBuechiRules_ExpandedBuechiRule::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6293,13 +5521,13 @@ impl_tBuechiRules_ExpandedBuechiRule::do_unparse(printer_functor kc_printer, uvi
 	case buechi_enum: {
 	    buechi_class& kc_current_view=static_cast<buechi_class&>(kc_current_view_base);
 	    {
-#line 1132 "Frontend/Parser/formula_unparse.k"
+#line 937 "Frontend/Parser/formula_unparse.k"
 		const integer from = this->integer_1;
-#line 1132 "Frontend/Parser/formula_unparse.k"
+#line 937 "Frontend/Parser/formula_unparse.k"
 		const tFormula formula = this->tFormula_1;
-#line 1132 "Frontend/Parser/formula_unparse.k"
+#line 937 "Frontend/Parser/formula_unparse.k"
 		const integer to = this->integer_2;
-#line 1133 "Frontend/Parser/formula_unparse.k"
+#line 938 "Frontend/Parser/formula_unparse.k"
 
 
 		formula->unparse(myprinter, kc::internal);
@@ -6318,18 +5546,18 @@ impl_tBuechiRules_ExpandedBuechiRule::do_unparse(printer_functor kc_printer, uvi
 
 		transitions[from_number].push_back(std::make_pair(formula_number, to_number));
 
-#line  6322 "ast-system-unpk.cc"
+#line  5550 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 157 "Frontend/Parser/formula_unparse.k"
+#line 134 "Frontend/Parser/formula_unparse.k"
 		const integer from = this->integer_1;
-#line 157 "Frontend/Parser/formula_unparse.k"
+#line 134 "Frontend/Parser/formula_unparse.k"
 		const tFormula formula = this->tFormula_1;
-#line 157 "Frontend/Parser/formula_unparse.k"
+#line 134 "Frontend/Parser/formula_unparse.k"
 		const integer to = this->integer_2;
 		kc::unparse(from, kc_printer, kc_current_view);
 		{ kc_printer(kc_t("("), kc_current_view); }
@@ -6341,7 +5569,7 @@ impl_tBuechiRules_ExpandedBuechiRule::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  6345 "ast-system-unpk.cc"
+#line  5573 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6354,7 +5582,7 @@ impl_tBuechiRules_ExpandedBuechiRule::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  6358 "ast-system-unpk.cc"
+#line  5586 "ast-system-unpk.cc"
 void
 impl_tBuechiRules_BuechiRule::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6362,9 +5590,9 @@ impl_tBuechiRules_BuechiRule::do_unparse(printer_functor kc_printer, uview kc_cu
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 156 "Frontend/Parser/formula_unparse.k"
+#line 133 "Frontend/Parser/formula_unparse.k"
 		const integer i = this->integer_1;
-#line 156 "Frontend/Parser/formula_unparse.k"
+#line 133 "Frontend/Parser/formula_unparse.k"
 		const tTransitionRules t = this->tTransitionRules_1;
 		{ kc_printer(kc_t("STATE"), kc_current_view); }
 		kc::unparse(i, kc_printer, kc_current_view);
@@ -6373,7 +5601,7 @@ impl_tBuechiRules_BuechiRule::do_unparse(printer_functor kc_printer, uview kc_cu
 	    break;
 	}
 
-#line  6377 "ast-system-unpk.cc"
+#line  5605 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6386,7 +5614,7 @@ impl_tBuechiRules_BuechiRule::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  6390 "ast-system-unpk.cc"
+#line  5618 "ast-system-unpk.cc"
 void
 impl_tBuechiRules_EmptyBuechiRules::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6404,7 +5632,7 @@ impl_tBuechiRules_EmptyBuechiRules::do_unparse(printer_functor kc_printer, uview
 	    break;
 	}
 
-#line  6408 "ast-system-unpk.cc"
+#line  5636 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6416,7 +5644,7 @@ impl_tBuechiRules_EmptyBuechiRules::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  6420 "ast-system-unpk.cc"
+#line  5648 "ast-system-unpk.cc"
 void
 impl_tTransitionRules_TransitionRules::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6424,9 +5652,9 @@ impl_tTransitionRules_TransitionRules::do_unparse(printer_functor kc_printer, uv
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 162 "Frontend/Parser/formula_unparse.k"
+#line 139 "Frontend/Parser/formula_unparse.k"
 		const tTransitionRules a = this->tTransitionRules_1;
-#line 162 "Frontend/Parser/formula_unparse.k"
+#line 139 "Frontend/Parser/formula_unparse.k"
 		const tTransitionRules b = this->tTransitionRules_2;
 		kc::unparse(a, kc_printer, kc_current_view);
 		{ kc_printer(kc_t("&"), kc_current_view); }
@@ -6435,7 +5663,7 @@ impl_tTransitionRules_TransitionRules::do_unparse(printer_functor kc_printer, uv
 	    break;
 	}
 
-#line  6439 "ast-system-unpk.cc"
+#line  5667 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6448,7 +5676,7 @@ impl_tTransitionRules_TransitionRules::do_unparse(printer_functor kc_printer, uv
 }
 
 
-#line  6452 "ast-system-unpk.cc"
+#line  5680 "ast-system-unpk.cc"
 void
 impl_tTransitionRules_TransitionRule::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6456,9 +5684,9 @@ impl_tTransitionRules_TransitionRule::do_unparse(printer_functor kc_printer, uvi
 	case out_enum: {
 	    out_class& kc_current_view=static_cast<out_class&>(kc_current_view_base);
 	    {
-#line 161 "Frontend/Parser/formula_unparse.k"
+#line 138 "Frontend/Parser/formula_unparse.k"
 		const tFormula formu = this->tFormula_1;
-#line 161 "Frontend/Parser/formula_unparse.k"
+#line 138 "Frontend/Parser/formula_unparse.k"
 		const integer i = this->integer_1;
 		kc::unparse(formu, kc_printer, kc_current_view);
 		{ kc_printer(kc_t("->"), kc_current_view); }
@@ -6467,7 +5695,7 @@ impl_tTransitionRules_TransitionRule::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  6471 "ast-system-unpk.cc"
+#line  5699 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6480,7 +5708,7 @@ impl_tTransitionRules_TransitionRule::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  6484 "ast-system-unpk.cc"
+#line  5712 "ast-system-unpk.cc"
 void
 impl_tTransitionRules_EmptyTransitionRules::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6492,7 +5720,7 @@ impl_tTransitionRules_EmptyTransitionRules::do_unparse(printer_functor kc_printe
 	    break;
 	}
 
-#line  6496 "ast-system-unpk.cc"
+#line  5724 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6504,7 +5732,7 @@ impl_tTransitionRules_EmptyTransitionRules::do_unparse(printer_functor kc_printe
 }
 
 
-#line  6508 "ast-system-unpk.cc"
+#line  5736 "ast-system-unpk.cc"
 void
 impl_tAcceptingSet_AcceptingSet::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6512,9 +5740,9 @@ impl_tAcceptingSet_AcceptingSet::do_unparse(printer_functor kc_printer, uview kc
 	case buechi_enum: {
 	    buechi_class& kc_current_view=static_cast<buechi_class&>(kc_current_view_base);
 	    {
-#line 1166 "Frontend/Parser/formula_unparse.k"
+#line 971 "Frontend/Parser/formula_unparse.k"
 		const tAcceptingSet set1 = this->tAcceptingSet_1;
-#line 1166 "Frontend/Parser/formula_unparse.k"
+#line 971 "Frontend/Parser/formula_unparse.k"
 		const tAcceptingSet set2 = this->tAcceptingSet_2;
 		kc::unparse(set1, kc_printer, kc_current_view);
 		kc::unparse(set2, kc_printer, kc_current_view);
@@ -6528,7 +5756,7 @@ impl_tAcceptingSet_AcceptingSet::do_unparse(printer_functor kc_printer, uview kc
 	    break;
 	}
 
-#line  6532 "ast-system-unpk.cc"
+#line  5760 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6541,7 +5769,7 @@ impl_tAcceptingSet_AcceptingSet::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  6545 "ast-system-unpk.cc"
+#line  5773 "ast-system-unpk.cc"
 void
 impl_tAcceptingSet_AcceptingState::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6549,13 +5777,13 @@ impl_tAcceptingSet_AcceptingState::do_unparse(printer_functor kc_printer, uview 
 	case buechi_enum: {
 	    buechi_class& kc_current_view=static_cast<buechi_class&>(kc_current_view_base);
 	    {
-#line 1160 "Frontend/Parser/formula_unparse.k"
+#line 965 "Frontend/Parser/formula_unparse.k"
 		const integer state = this->integer_1;
-#line 1161 "Frontend/Parser/formula_unparse.k"
+#line 966 "Frontend/Parser/formula_unparse.k"
 
 		acceptingset.insert(get_state_number(state->value));
 
-#line  6559 "ast-system-unpk.cc"
+#line  5787 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
@@ -6566,7 +5794,7 @@ impl_tAcceptingSet_AcceptingState::do_unparse(printer_functor kc_printer, uview 
 	    break;
 	}
 
-#line  6570 "ast-system-unpk.cc"
+#line  5798 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6579,7 +5807,7 @@ impl_tAcceptingSet_AcceptingState::do_unparse(printer_functor kc_printer, uview 
 }
 
 
-#line  6583 "ast-system-unpk.cc"
+#line  5811 "ast-system-unpk.cc"
 void
 impl_tAcceptingSet_EmptyAcceptingSet::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6597,7 +5825,7 @@ impl_tAcceptingSet_EmptyAcceptingSet::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  6601 "ast-system-unpk.cc"
+#line  5829 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6609,7 +5837,7 @@ impl_tAcceptingSet_EmptyAcceptingSet::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  6613 "ast-system-unpk.cc"
+#line  5841 "ast-system-unpk.cc"
 void
 impl_net_Net::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6617,15 +5845,15 @@ impl_net_Net::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2004 "Frontend/Parser/formula_unparse.k"
+#line 1541 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2004 "Frontend/Parser/formula_unparse.k"
+#line 1541 "Frontend/Parser/formula_unparse.k"
 		const definitionsList d = this->definitionsList_1;
-#line 2004 "Frontend/Parser/formula_unparse.k"
+#line 1541 "Frontend/Parser/formula_unparse.k"
 		const placeblocklist p = this->placeblocklist_1;
-#line 2004 "Frontend/Parser/formula_unparse.k"
+#line 1541 "Frontend/Parser/formula_unparse.k"
 		const marking m = this->marking_1;
-#line 2004 "Frontend/Parser/formula_unparse.k"
+#line 1541 "Frontend/Parser/formula_unparse.k"
 		const transition t = this->transition_1;
 		kc::unparse(c, kc_printer, kc_current_view);
 		kc::unparse(d, kc_printer, kc_current_view);
@@ -6636,7 +5864,7 @@ impl_net_Net::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 	    break;
 	}
 
-#line  6640 "ast-system-unpk.cc"
+#line  5868 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6649,7 +5877,7 @@ impl_net_Net::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 }
 
 
-#line  6653 "ast-system-unpk.cc"
+#line  5881 "ast-system-unpk.cc"
 void
 impl_definitionsList_DefinitionsList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6657,9 +5885,9 @@ impl_definitionsList_DefinitionsList::do_unparse(printer_functor kc_printer, uvi
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2007 "Frontend/Parser/formula_unparse.k"
+#line 1544 "Frontend/Parser/formula_unparse.k"
 		const definitionsList l = this->definitionsList_1;
-#line 2007 "Frontend/Parser/formula_unparse.k"
+#line 1544 "Frontend/Parser/formula_unparse.k"
 		const definitions d = this->definitions_1;
 		kc::unparse(l, kc_printer, kc_current_view);
 		kc::unparse(d, kc_printer, kc_current_view);
@@ -6667,7 +5895,7 @@ impl_definitionsList_DefinitionsList::do_unparse(printer_functor kc_printer, uvi
 	    break;
 	}
 
-#line  6671 "ast-system-unpk.cc"
+#line  5899 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6680,7 +5908,7 @@ impl_definitionsList_DefinitionsList::do_unparse(printer_functor kc_printer, uvi
 }
 
 
-#line  6684 "ast-system-unpk.cc"
+#line  5912 "ast-system-unpk.cc"
 void
 impl_definitionsList_EmptyDefinitionsList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6692,7 +5920,7 @@ impl_definitionsList_EmptyDefinitionsList::do_unparse(printer_functor kc_printer
 	    break;
 	}
 
-#line  6696 "ast-system-unpk.cc"
+#line  5924 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6704,7 +5932,7 @@ impl_definitionsList_EmptyDefinitionsList::do_unparse(printer_functor kc_printer
 }
 
 
-#line  6708 "ast-system-unpk.cc"
+#line  5936 "ast-system-unpk.cc"
 void
 impl_definitions_Function::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6712,38 +5940,38 @@ impl_definitions_Function::do_unparse(printer_functor kc_printer, uview kc_curre
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2032 "Frontend/Parser/formula_unparse.k"
+#line 1569 "Frontend/Parser/formula_unparse.k"
 		const type t = this->type_1;
-#line 2032 "Frontend/Parser/formula_unparse.k"
+#line 1569 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2032 "Frontend/Parser/formula_unparse.k"
+#line 1569 "Frontend/Parser/formula_unparse.k"
 		const arrayList a = this->arrayList_1;
-#line 2032 "Frontend/Parser/formula_unparse.k"
+#line 1569 "Frontend/Parser/formula_unparse.k"
 		const functionParametersList f = this->functionParametersList_1;
-#line 2032 "Frontend/Parser/formula_unparse.k"
+#line 1569 "Frontend/Parser/formula_unparse.k"
 		const block b = this->block_1;
 		kc::unparse(t, kc_printer, kc_current_view);
 		kc::unparse(c, kc_printer, kc_current_view);
-#line 2033 "Frontend/Parser/formula_unparse.k"
+#line 1570 "Frontend/Parser/formula_unparse.k"
 
 		a -> inherited_type = t;
 
-#line  6732 "ast-system-unpk.cc"
+#line  5960 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(f, kc_printer, kc_current_view);
 		kc::unparse(b, kc_printer, kc_current_view);
-#line 2037 "Frontend/Parser/formula_unparse.k"
+#line 1574 "Frontend/Parser/formula_unparse.k"
 
 
 
 
 
-#line  6742 "ast-system-unpk.cc"
+#line  5970 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6747 "ast-system-unpk.cc"
+#line  5975 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6756,7 +5984,7 @@ impl_definitions_Function::do_unparse(printer_functor kc_printer, uview kc_curre
 }
 
 
-#line  6760 "ast-system-unpk.cc"
+#line  5988 "ast-system-unpk.cc"
 void
 impl_definitions_Sort::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6764,30 +5992,30 @@ impl_definitions_Sort::do_unparse(printer_functor kc_printer, uview kc_current_v
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2023 "Frontend/Parser/formula_unparse.k"
+#line 1560 "Frontend/Parser/formula_unparse.k"
 		const type t = this->type_1;
-#line 2023 "Frontend/Parser/formula_unparse.k"
+#line 1560 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2023 "Frontend/Parser/formula_unparse.k"
+#line 1560 "Frontend/Parser/formula_unparse.k"
 		const arrayList a = this->arrayList_1;
 		kc::unparse(t, kc_printer, kc_current_view);
 		kc::unparse(c, kc_printer, kc_current_view);
-#line 2024 "Frontend/Parser/formula_unparse.k"
+#line 1561 "Frontend/Parser/formula_unparse.k"
 
 		a -> inherited_type = t;
 
-#line  6780 "ast-system-unpk.cc"
+#line  6008 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
-#line 2028 "Frontend/Parser/formula_unparse.k"
+#line 1565 "Frontend/Parser/formula_unparse.k"
 
 
 
-#line  6786 "ast-system-unpk.cc"
+#line  6014 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6791 "ast-system-unpk.cc"
+#line  6019 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6800,7 +6028,7 @@ impl_definitions_Sort::do_unparse(printer_functor kc_printer, uview kc_current_v
 }
 
 
-#line  6804 "ast-system-unpk.cc"
+#line  6032 "ast-system-unpk.cc"
 void
 impl_definitions_Constant::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6808,19 +6036,19 @@ impl_definitions_Constant::do_unparse(printer_functor kc_printer, uview kc_curre
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2009 "Frontend/Parser/formula_unparse.k"
+#line 1546 "Frontend/Parser/formula_unparse.k"
 		const type t = this->type_1;
-#line 2009 "Frontend/Parser/formula_unparse.k"
+#line 1546 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2009 "Frontend/Parser/formula_unparse.k"
+#line 1546 "Frontend/Parser/formula_unparse.k"
 		const arrayList a = this->arrayList_1;
-#line 2009 "Frontend/Parser/formula_unparse.k"
+#line 1546 "Frontend/Parser/formula_unparse.k"
 		const expression e = this->expression_1;
 		kc::unparse(t, kc_printer, kc_current_view);
 		kc::unparse(c, kc_printer, kc_current_view);
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(e, kc_printer, kc_current_view);
-#line 2010 "Frontend/Parser/formula_unparse.k"
+#line 1547 "Frontend/Parser/formula_unparse.k"
 
 
 		if(! (e->is_constant))
@@ -6833,12 +6061,12 @@ impl_definitions_Constant::do_unparse(printer_functor kc_printer, uview kc_curre
 
 
 
-#line  6837 "ast-system-unpk.cc"
+#line  6065 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6842 "ast-system-unpk.cc"
+#line  6070 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6851,7 +6079,7 @@ impl_definitions_Constant::do_unparse(printer_functor kc_printer, uview kc_curre
 }
 
 
-#line  6855 "ast-system-unpk.cc"
+#line  6083 "ast-system-unpk.cc"
 void
 impl_type_TypeBlack::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6859,18 +6087,18 @@ impl_type_TypeBlack::do_unparse(printer_functor kc_printer, uview kc_current_vie
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2120 "Frontend/Parser/formula_unparse.k"
+#line 1657 "Frontend/Parser/formula_unparse.k"
 
 		is_finite = true;
 		is_scalar = true;
 		size = 1;
 
-#line  6869 "ast-system-unpk.cc"
+#line  6097 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6874 "ast-system-unpk.cc"
+#line  6102 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6882,13 +6110,13 @@ impl_type_TypeBlack::do_unparse(printer_functor kc_printer, uview kc_current_vie
 }
 
 
-#line  6886 "ast-system-unpk.cc"
+#line  6114 "ast-system-unpk.cc"
 void
 impl_type_TypeArray::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  6892 "ast-system-unpk.cc"
+#line  6120 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6901,7 +6129,7 @@ impl_type_TypeArray::do_unparse(printer_functor kc_printer, uview kc_current_vie
 }
 
 
-#line  6905 "ast-system-unpk.cc"
+#line  6133 "ast-system-unpk.cc"
 void
 impl_type_TypeMultiset::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6909,10 +6137,10 @@ impl_type_TypeMultiset::do_unparse(printer_functor kc_printer, uview kc_current_
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2108 "Frontend/Parser/formula_unparse.k"
+#line 1645 "Frontend/Parser/formula_unparse.k"
 		const type t = this->type_1;
 		kc::unparse(t, kc_printer, kc_current_view);
-#line 2109 "Frontend/Parser/formula_unparse.k"
+#line 1646 "Frontend/Parser/formula_unparse.k"
 
 		if(! (t->is_finite))
 		{
@@ -6922,12 +6150,12 @@ impl_type_TypeMultiset::do_unparse(printer_functor kc_printer, uview kc_current_
 		is_scalar = false;
 		size = 0; 
 
-#line  6926 "ast-system-unpk.cc"
+#line  6154 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6931 "ast-system-unpk.cc"
+#line  6159 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6940,7 +6168,7 @@ impl_type_TypeMultiset::do_unparse(printer_functor kc_printer, uview kc_current_
 }
 
 
-#line  6944 "ast-system-unpk.cc"
+#line  6172 "ast-system-unpk.cc"
 void
 impl_type_TypeInt::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6948,18 +6176,18 @@ impl_type_TypeInt::do_unparse(printer_functor kc_printer, uview kc_current_view_
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2102 "Frontend/Parser/formula_unparse.k"
+#line 1639 "Frontend/Parser/formula_unparse.k"
 
 		is_finite = false;
 		is_scalar = true;
 		size = 0; 
 
-#line  6958 "ast-system-unpk.cc"
+#line  6186 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6963 "ast-system-unpk.cc"
+#line  6191 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -6971,7 +6199,7 @@ impl_type_TypeInt::do_unparse(printer_functor kc_printer, uview kc_current_view_
 }
 
 
-#line  6975 "ast-system-unpk.cc"
+#line  6203 "ast-system-unpk.cc"
 void
 impl_type_TypeStruct::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -6979,21 +6207,21 @@ impl_type_TypeStruct::do_unparse(printer_functor kc_printer, uview kc_current_vi
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2094 "Frontend/Parser/formula_unparse.k"
+#line 1631 "Frontend/Parser/formula_unparse.k"
 		const structTypeList s = this->structTypeList_1;
 		kc::unparse(s, kc_printer, kc_current_view);
-#line 2095 "Frontend/Parser/formula_unparse.k"
+#line 1632 "Frontend/Parser/formula_unparse.k"
 
 		size = s -> size;
 		is_finite = s -> is_finite;
 		is_scalar = false;
 
-#line  6992 "ast-system-unpk.cc"
+#line  6220 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  6997 "ast-system-unpk.cc"
+#line  6225 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7006,7 +6234,7 @@ impl_type_TypeStruct::do_unparse(printer_functor kc_printer, uview kc_current_vi
 }
 
 
-#line  7010 "ast-system-unpk.cc"
+#line  6238 "ast-system-unpk.cc"
 void
 impl_type_TypeIntInterval::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7014,13 +6242,13 @@ impl_type_TypeIntInterval::do_unparse(printer_functor kc_printer, uview kc_curre
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2073 "Frontend/Parser/formula_unparse.k"
+#line 1610 "Frontend/Parser/formula_unparse.k"
 		const expression e = this->expression_1;
-#line 2073 "Frontend/Parser/formula_unparse.k"
+#line 1610 "Frontend/Parser/formula_unparse.k"
 		const expression f = this->expression_2;
 		kc::unparse(e, kc_printer, kc_current_view);
 		kc::unparse(f, kc_printer, kc_current_view);
-#line 2074 "Frontend/Parser/formula_unparse.k"
+#line 1611 "Frontend/Parser/formula_unparse.k"
 
 		if(!(e->is_constant && f->is_constant))
 		{
@@ -7040,12 +6268,12 @@ impl_type_TypeIntInterval::do_unparse(printer_functor kc_printer, uview kc_curre
 		is_scalar = true;
 		size = right - left +1;
 
-#line  7044 "ast-system-unpk.cc"
+#line  6272 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7049 "ast-system-unpk.cc"
+#line  6277 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7058,7 +6286,7 @@ impl_type_TypeIntInterval::do_unparse(printer_functor kc_printer, uview kc_curre
 }
 
 
-#line  7062 "ast-system-unpk.cc"
+#line  6290 "ast-system-unpk.cc"
 void
 impl_type_TypeIdent::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7066,19 +6294,19 @@ impl_type_TypeIdent::do_unparse(printer_functor kc_printer, uview kc_current_vie
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2066 "Frontend/Parser/formula_unparse.k"
+#line 1603 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2067 "Frontend/Parser/formula_unparse.k"
+#line 1604 "Frontend/Parser/formula_unparse.k"
 
 
 
 
-#line  7077 "ast-system-unpk.cc"
+#line  6305 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7082 "ast-system-unpk.cc"
+#line  6310 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7091,7 +6319,7 @@ impl_type_TypeIdent::do_unparse(printer_functor kc_printer, uview kc_current_vie
 }
 
 
-#line  7095 "ast-system-unpk.cc"
+#line  6323 "ast-system-unpk.cc"
 void
 impl_type_TypeEnum::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7099,10 +6327,10 @@ impl_type_TypeEnum::do_unparse(printer_functor kc_printer, uview kc_current_view
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2053 "Frontend/Parser/formula_unparse.k"
+#line 1590 "Frontend/Parser/formula_unparse.k"
 		const identList i = this->identList_1;
 		kc::unparse(i, kc_printer, kc_current_view);
-#line 2054 "Frontend/Parser/formula_unparse.k"
+#line 1591 "Frontend/Parser/formula_unparse.k"
 
 		size = i -> nrvalues;
 		if(size == 0)
@@ -7113,12 +6341,12 @@ impl_type_TypeEnum::do_unparse(printer_functor kc_printer, uview kc_current_view
 		is_scalar = true;
 
 
-#line  7117 "ast-system-unpk.cc"
+#line  6345 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7122 "ast-system-unpk.cc"
+#line  6350 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7131,7 +6359,7 @@ impl_type_TypeEnum::do_unparse(printer_functor kc_printer, uview kc_current_view
 }
 
 
-#line  7135 "ast-system-unpk.cc"
+#line  6363 "ast-system-unpk.cc"
 void
 impl_type_TypeBool::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7139,19 +6367,19 @@ impl_type_TypeBool::do_unparse(printer_functor kc_printer, uview kc_current_view
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2045 "Frontend/Parser/formula_unparse.k"
+#line 1582 "Frontend/Parser/formula_unparse.k"
 
 		size = 2;
 		is_finite = true;
 		is_scalar = true;
 
 
-#line  7150 "ast-system-unpk.cc"
+#line  6378 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7155 "ast-system-unpk.cc"
+#line  6383 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7163,7 +6391,7 @@ impl_type_TypeBool::do_unparse(printer_functor kc_printer, uview kc_current_view
 }
 
 
-#line  7167 "ast-system-unpk.cc"
+#line  6395 "ast-system-unpk.cc"
 void
 impl_optionalNumber_OptNumber::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7171,19 +6399,19 @@ impl_optionalNumber_OptNumber::do_unparse(printer_functor kc_printer, uview kc_c
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2134 "Frontend/Parser/formula_unparse.k"
+#line 1671 "Frontend/Parser/formula_unparse.k"
 		const integer i = this->integer_1;
-#line 2135 "Frontend/Parser/formula_unparse.k"
+#line 1672 "Frontend/Parser/formula_unparse.k"
 
 		value = i-> value;
 		set = true;
 
-#line  7182 "ast-system-unpk.cc"
+#line  6410 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7187 "ast-system-unpk.cc"
+#line  6415 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7196,7 +6424,7 @@ impl_optionalNumber_OptNumber::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  7200 "ast-system-unpk.cc"
+#line  6428 "ast-system-unpk.cc"
 void
 impl_optionalNumber_EmptyOptNumber::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7204,17 +6432,17 @@ impl_optionalNumber_EmptyOptNumber::do_unparse(printer_functor kc_printer, uview
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2128 "Frontend/Parser/formula_unparse.k"
+#line 1665 "Frontend/Parser/formula_unparse.k"
 
 		value = ARRAYINDEX_T_MAX;
 		set = false;
 
-#line  7213 "ast-system-unpk.cc"
+#line  6441 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7218 "ast-system-unpk.cc"
+#line  6446 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7226,7 +6454,7 @@ impl_optionalNumber_EmptyOptNumber::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  7230 "ast-system-unpk.cc"
+#line  6458 "ast-system-unpk.cc"
 void
 impl_identList_IdentList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7234,13 +6462,13 @@ impl_identList_IdentList::do_unparse(printer_functor kc_printer, uview kc_curren
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2148 "Frontend/Parser/formula_unparse.k"
+#line 1685 "Frontend/Parser/formula_unparse.k"
 		const identList i = this->identList_1;
-#line 2148 "Frontend/Parser/formula_unparse.k"
+#line 1685 "Frontend/Parser/formula_unparse.k"
 		const idents d = this->idents_1;
 		kc::unparse(i, kc_printer, kc_current_view);
 		kc::unparse(d, kc_printer, kc_current_view);
-#line 2149 "Frontend/Parser/formula_unparse.k"
+#line 1686 "Frontend/Parser/formula_unparse.k"
 
 		nrvalues = i -> nrvalues + 1;
 		if(d -> value <= i -> maxvalue)
@@ -7255,12 +6483,12 @@ impl_identList_IdentList::do_unparse(printer_functor kc_printer, uview kc_curren
 		maxvalue = d -> value;
 
 
-#line  7259 "ast-system-unpk.cc"
+#line  6487 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7264 "ast-system-unpk.cc"
+#line  6492 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7273,7 +6501,7 @@ impl_identList_IdentList::do_unparse(printer_functor kc_printer, uview kc_curren
 }
 
 
-#line  7277 "ast-system-unpk.cc"
+#line  6505 "ast-system-unpk.cc"
 void
 impl_identList_EmptyIdentList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7281,17 +6509,17 @@ impl_identList_EmptyIdentList::do_unparse(printer_functor kc_printer, uview kc_c
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2142 "Frontend/Parser/formula_unparse.k"
+#line 1679 "Frontend/Parser/formula_unparse.k"
 
 		maxvalue = 0;
 		nrvalues = 0;
 
-#line  7290 "ast-system-unpk.cc"
+#line  6518 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7295 "ast-system-unpk.cc"
+#line  6523 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7303,7 +6531,7 @@ impl_identList_EmptyIdentList::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  7307 "ast-system-unpk.cc"
+#line  6535 "ast-system-unpk.cc"
 void
 impl_idents_Idents::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7311,23 +6539,23 @@ impl_idents_Idents::do_unparse(printer_functor kc_printer, uview kc_current_view
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2165 "Frontend/Parser/formula_unparse.k"
+#line 1702 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2165 "Frontend/Parser/formula_unparse.k"
+#line 1702 "Frontend/Parser/formula_unparse.k"
 		const optionalNumber o = this->optionalNumber_1;
 		kc::unparse(c, kc_printer, kc_current_view);
 		kc::unparse(o, kc_printer, kc_current_view);
-#line 2166 "Frontend/Parser/formula_unparse.k"
+#line 1703 "Frontend/Parser/formula_unparse.k"
 
 		value = o -> value;
 		set = o -> set;
 
-#line  7326 "ast-system-unpk.cc"
+#line  6554 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7331 "ast-system-unpk.cc"
+#line  6559 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7340,7 +6568,7 @@ impl_idents_Idents::do_unparse(printer_functor kc_printer, uview kc_current_view
 }
 
 
-#line  7344 "ast-system-unpk.cc"
+#line  6572 "ast-system-unpk.cc"
 void
 impl_structTypeList_StructTypeList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7348,24 +6576,24 @@ impl_structTypeList_StructTypeList::do_unparse(printer_functor kc_printer, uview
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2179 "Frontend/Parser/formula_unparse.k"
+#line 1716 "Frontend/Parser/formula_unparse.k"
 		const structTypeList l = this->structTypeList_1;
-#line 2179 "Frontend/Parser/formula_unparse.k"
+#line 1716 "Frontend/Parser/formula_unparse.k"
 		const structType s = this->structType_1;
 		kc::unparse(l, kc_printer, kc_current_view);
 		kc::unparse(s, kc_printer, kc_current_view);
-#line 2180 "Frontend/Parser/formula_unparse.k"
+#line 1717 "Frontend/Parser/formula_unparse.k"
 
 		size = l -> size * s -> size;
 		nrcomponents = l -> nrcomponents + 1;
 		is_finite = (l -> is_finite) && (s -> is_finite);
 
-#line  7364 "ast-system-unpk.cc"
+#line  6592 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7369 "ast-system-unpk.cc"
+#line  6597 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7378,7 +6606,7 @@ impl_structTypeList_StructTypeList::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  7382 "ast-system-unpk.cc"
+#line  6610 "ast-system-unpk.cc"
 void
 impl_structTypeList_EmptyStructTypeList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7386,18 +6614,18 @@ impl_structTypeList_EmptyStructTypeList::do_unparse(printer_functor kc_printer, 
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2173 "Frontend/Parser/formula_unparse.k"
+#line 1710 "Frontend/Parser/formula_unparse.k"
 
 		size = 0;
 		nrcomponents = 0;
 		is_finite = true;
 
-#line  7396 "ast-system-unpk.cc"
+#line  6624 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7401 "ast-system-unpk.cc"
+#line  6629 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7409,7 +6637,7 @@ impl_structTypeList_EmptyStructTypeList::do_unparse(printer_functor kc_printer, 
 }
 
 
-#line  7413 "ast-system-unpk.cc"
+#line  6641 "ast-system-unpk.cc"
 void
 impl_structType_StructType::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7417,32 +6645,32 @@ impl_structType_StructType::do_unparse(printer_functor kc_printer, uview kc_curr
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2187 "Frontend/Parser/formula_unparse.k"
+#line 1724 "Frontend/Parser/formula_unparse.k"
 		const type t = this->type_1;
-#line 2187 "Frontend/Parser/formula_unparse.k"
+#line 1724 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2187 "Frontend/Parser/formula_unparse.k"
+#line 1724 "Frontend/Parser/formula_unparse.k"
 		const arrayList a = this->arrayList_1;
 		kc::unparse(t, kc_printer, kc_current_view);
 		kc::unparse(c, kc_printer, kc_current_view);
-#line 2188 "Frontend/Parser/formula_unparse.k"
+#line 1725 "Frontend/Parser/formula_unparse.k"
 
 		a -> inherited_type = t;
 
-#line  7433 "ast-system-unpk.cc"
+#line  6661 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
-#line 2192 "Frontend/Parser/formula_unparse.k"
+#line 1729 "Frontend/Parser/formula_unparse.k"
 
 		size = t -> size * a -> nrelements;
 		is_finite = t -> is_finite;
 		is_scalar = false;
 
-#line  7441 "ast-system-unpk.cc"
+#line  6669 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7446 "ast-system-unpk.cc"
+#line  6674 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7455,7 +6683,7 @@ impl_structType_StructType::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  7459 "ast-system-unpk.cc"
+#line  6687 "ast-system-unpk.cc"
 void
 impl_varOrArray_VarOrArray::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7463,27 +6691,27 @@ impl_varOrArray_VarOrArray::do_unparse(printer_functor kc_printer, uview kc_curr
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2199 "Frontend/Parser/formula_unparse.k"
+#line 1736 "Frontend/Parser/formula_unparse.k"
 		const casestring c = this->casestring_1;
-#line 2199 "Frontend/Parser/formula_unparse.k"
+#line 1736 "Frontend/Parser/formula_unparse.k"
 		const arrayList a = this->arrayList_1;
-#line 2200 "Frontend/Parser/formula_unparse.k"
+#line 1737 "Frontend/Parser/formula_unparse.k"
 
 		a -> inherited_type = inherited_type;
 
-#line  7475 "ast-system-unpk.cc"
+#line  6703 "ast-system-unpk.cc"
 		kc::unparse(c, kc_printer, kc_current_view);
 		kc::unparse(a, kc_printer, kc_current_view);
-#line 2204 "Frontend/Parser/formula_unparse.k"
+#line 1741 "Frontend/Parser/formula_unparse.k"
 
 		type = a -> type;
 
-#line  7482 "ast-system-unpk.cc"
+#line  6710 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7487 "ast-system-unpk.cc"
+#line  6715 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7496,7 +6724,7 @@ impl_varOrArray_VarOrArray::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  7500 "ast-system-unpk.cc"
+#line  6728 "ast-system-unpk.cc"
 void
 impl_arrayList_ArrayList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7504,18 +6732,18 @@ impl_arrayList_ArrayList::do_unparse(printer_functor kc_printer, uview kc_curren
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2217 "Frontend/Parser/formula_unparse.k"
+#line 1754 "Frontend/Parser/formula_unparse.k"
 		const arrayList a = this->arrayList_1;
-#line 2217 "Frontend/Parser/formula_unparse.k"
+#line 1754 "Frontend/Parser/formula_unparse.k"
 		const expression e = this->expression_1;
-#line 2218 "Frontend/Parser/formula_unparse.k"
+#line 1755 "Frontend/Parser/formula_unparse.k"
 
 		a -> inherited_type = inherited_type;
 
-#line  7516 "ast-system-unpk.cc"
+#line  6744 "ast-system-unpk.cc"
 		kc::unparse(a, kc_printer, kc_current_view);
 		kc::unparse(e, kc_printer, kc_current_view);
-#line 2222 "Frontend/Parser/formula_unparse.k"
+#line 1759 "Frontend/Parser/formula_unparse.k"
 
 		if(!(e -> is_constant))
 		{
@@ -7533,12 +6761,12 @@ impl_arrayList_ArrayList::do_unparse(printer_functor kc_printer, uview kc_curren
 		type -> is_scalar = false;
 
 
-#line  7537 "ast-system-unpk.cc"
+#line  6765 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7542 "ast-system-unpk.cc"
+#line  6770 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7551,7 +6779,7 @@ impl_arrayList_ArrayList::do_unparse(printer_functor kc_printer, uview kc_curren
 }
 
 
-#line  7555 "ast-system-unpk.cc"
+#line  6783 "ast-system-unpk.cc"
 void
 impl_arrayList_EmptyArrayList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
@@ -7559,18 +6787,18 @@ impl_arrayList_EmptyArrayList::do_unparse(printer_functor kc_printer, uview kc_c
 	case hl_staticanalysis_enum: {
 	    hl_staticanalysis_class& kc_current_view=static_cast<hl_staticanalysis_class&>(kc_current_view_base);
 	    {
-#line 2211 "Frontend/Parser/formula_unparse.k"
+#line 1748 "Frontend/Parser/formula_unparse.k"
 
 		nrdimensions = 0;
 		nrelements = 1;
 		type = inherited_type;
 
-#line  7569 "ast-system-unpk.cc"
+#line  6797 "ast-system-unpk.cc"
 	    }
 	    break;
 	}
 
-#line  7574 "ast-system-unpk.cc"
+#line  6802 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7582,13 +6810,13 @@ impl_arrayList_EmptyArrayList::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  7586 "ast-system-unpk.cc"
+#line  6814 "ast-system-unpk.cc"
 void
 impl_functionParametersList_FunctionParametersList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7592 "ast-system-unpk.cc"
+#line  6820 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7601,13 +6829,13 @@ impl_functionParametersList_FunctionParametersList::do_unparse(printer_functor k
 }
 
 
-#line  7605 "ast-system-unpk.cc"
+#line  6833 "ast-system-unpk.cc"
 void
 impl_functionParametersList_EmptyFunctionParametersList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7611 "ast-system-unpk.cc"
+#line  6839 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7619,13 +6847,13 @@ impl_functionParametersList_EmptyFunctionParametersList::do_unparse(printer_func
 }
 
 
-#line  7623 "ast-system-unpk.cc"
+#line  6851 "ast-system-unpk.cc"
 void
 impl_functionParameters_FunctionParameters::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7629 "ast-system-unpk.cc"
+#line  6857 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7638,13 +6866,13 @@ impl_functionParameters_FunctionParameters::do_unparse(printer_functor kc_printe
 }
 
 
-#line  7642 "ast-system-unpk.cc"
+#line  6870 "ast-system-unpk.cc"
 void
 impl_expression_ExprAll::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7648 "ast-system-unpk.cc"
+#line  6876 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7657,13 +6885,13 @@ impl_expression_ExprAll::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  7661 "ast-system-unpk.cc"
+#line  6889 "ast-system-unpk.cc"
 void
 impl_expression_ExprOtherIf::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7667 "ast-system-unpk.cc"
+#line  6895 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7676,13 +6904,13 @@ impl_expression_ExprOtherIf::do_unparse(printer_functor kc_printer, uview kc_cur
 }
 
 
-#line  7680 "ast-system-unpk.cc"
+#line  6908 "ast-system-unpk.cc"
 void
 impl_expression_ExprCommaSeparated::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7686 "ast-system-unpk.cc"
+#line  6914 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7695,13 +6923,13 @@ impl_expression_ExprCommaSeparated::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  7699 "ast-system-unpk.cc"
+#line  6927 "ast-system-unpk.cc"
 void
 impl_expression_FunctionCall::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7705 "ast-system-unpk.cc"
+#line  6933 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7714,13 +6942,13 @@ impl_expression_FunctionCall::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  7718 "ast-system-unpk.cc"
+#line  6946 "ast-system-unpk.cc"
 void
 impl_expression_ExprGreaterOrEqual::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7724 "ast-system-unpk.cc"
+#line  6952 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7733,13 +6961,13 @@ impl_expression_ExprGreaterOrEqual::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  7737 "ast-system-unpk.cc"
+#line  6965 "ast-system-unpk.cc"
 void
 impl_expression_ExprLessOrEqual::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7743 "ast-system-unpk.cc"
+#line  6971 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7752,13 +6980,13 @@ impl_expression_ExprLessOrEqual::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  7756 "ast-system-unpk.cc"
+#line  6984 "ast-system-unpk.cc"
 void
 impl_expression_ExprGreaterThan::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7762 "ast-system-unpk.cc"
+#line  6990 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7771,13 +6999,13 @@ impl_expression_ExprGreaterThan::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  7775 "ast-system-unpk.cc"
+#line  7003 "ast-system-unpk.cc"
 void
 impl_expression_ExprLessThan::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7781 "ast-system-unpk.cc"
+#line  7009 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7790,13 +7018,13 @@ impl_expression_ExprLessThan::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  7794 "ast-system-unpk.cc"
+#line  7022 "ast-system-unpk.cc"
 void
 impl_expression_ExprNotEqual::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7800 "ast-system-unpk.cc"
+#line  7028 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7809,18 +7037,790 @@ impl_expression_ExprNotEqual::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  7813 "ast-system-unpk.cc"
+#line  7041 "ast-system-unpk.cc"
 void
 impl_expression_ExprEquivalent::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7819 "ast-system-unpk.cc"
+#line  7047 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
 	    {
 		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7060 "ast-system-unpk.cc"
+void
+impl_expression_ExprFalse::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7066 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7078 "ast-system-unpk.cc"
+void
+impl_expression_ExprTrue::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7084 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7096 "ast-system-unpk.cc"
+void
+impl_expression_ExprOr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7102 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7115 "ast-system-unpk.cc"
+void
+impl_expression_ExprAnd::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7121 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7134 "ast-system-unpk.cc"
+void
+impl_expression_NotExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7140 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7153 "ast-system-unpk.cc"
+void
+impl_expression_ExprNumber::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7159 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7172 "ast-system-unpk.cc"
+void
+impl_expression_ExprModulo::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7178 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7191 "ast-system-unpk.cc"
+void
+impl_expression_ExprDivision::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7197 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7210 "ast-system-unpk.cc"
+void
+impl_expression_ExprMultiplication::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7216 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7229 "ast-system-unpk.cc"
+void
+impl_expression_ExprSubtraction::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7235 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7248 "ast-system-unpk.cc"
+void
+impl_expression_ExprAddition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7254 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7267 "ast-system-unpk.cc"
+void
+impl_expression_NegativeExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7273 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7286 "ast-system-unpk.cc"
+void
+impl_expression_PositiveExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7292 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7305 "ast-system-unpk.cc"
+void
+impl_expression_ValDecrement::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7311 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7324 "ast-system-unpk.cc"
+void
+impl_expression_ValIncrement::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7330 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7343 "ast-system-unpk.cc"
+void
+impl_expression_DecrementVal::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7349 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7362 "ast-system-unpk.cc"
+void
+impl_expression_IncrementVal::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7368 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7381 "ast-system-unpk.cc"
+void
+impl_expression_AssignMod::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7387 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7400 "ast-system-unpk.cc"
+void
+impl_expression_AssignDivide::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7406 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7419 "ast-system-unpk.cc"
+void
+impl_expression_AssignTimes::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7425 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7438 "ast-system-unpk.cc"
+void
+impl_expression_AssignMinus::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7444 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7457 "ast-system-unpk.cc"
+void
+impl_expression_AssignPlus::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7463 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7476 "ast-system-unpk.cc"
+void
+impl_expression_AssignEqual::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7482 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7495 "ast-system-unpk.cc"
+void
+impl_expression_ExprInitializerList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7501 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7514 "ast-system-unpk.cc"
+void
+impl_expression_ExprLeftvalue::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7520 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7533 "ast-system-unpk.cc"
+void
+impl_leftvalue_LeftValDot::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7539 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7552 "ast-system-unpk.cc"
+void
+impl_leftvalue_LeftValBrackets::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7558 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7571 "ast-system-unpk.cc"
+void
+impl_leftvalue_LeftValIdent::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7577 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7590 "ast-system-unpk.cc"
+void
+impl_expressionlist_ExpressionList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7596 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7609 "ast-system-unpk.cc"
+void
+impl_expressionlist_EmptyExpressionList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7615 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7627 "ast-system-unpk.cc"
+void
+impl_initializerList_ExprInBracesColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7633 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7646 "ast-system-unpk.cc"
+void
+impl_initializerList_ExprInBraces::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7652 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7665 "ast-system-unpk.cc"
+void
+impl_expressionListColon_ExpressionListColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7671 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7684 "ast-system-unpk.cc"
+void
+impl_expressionListColon_EmptyExpressionListColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7690 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7702 "ast-system-unpk.cc"
+void
+impl_placeblocklist_PlaceBlockList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7708 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7721 "ast-system-unpk.cc"
+void
+impl_placeblocklist_EmptyPlaceBlockList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7727 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7739 "ast-system-unpk.cc"
+void
+impl_optSafe_Safe::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7745 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7758 "ast-system-unpk.cc"
+void
+impl_optSafe_EmptySafe::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7764 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7776 "ast-system-unpk.cc"
+void
+impl_place_Place::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7782 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7795 "ast-system-unpk.cc"
+void
+impl_placelist_PlaceList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7801 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+		default_unparse(kc_printer, kc_current_view );
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7814 "ast-system-unpk.cc"
+void
+impl_placelist_EmptyPlaceList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7820 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
 	    }
 	    break;
 	}
@@ -7830,7 +7830,7 @@ impl_expression_ExprEquivalent::do_unparse(printer_functor kc_printer, uview kc_
 
 #line  7832 "ast-system-unpk.cc"
 void
-impl_expression_ExprFalse::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_placeblock_PlaceBlock::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
@@ -7839,6 +7839,7 @@ impl_expression_ExprFalse::do_unparse(printer_functor kc_printer, uview kc_curre
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
 	    {
+		default_unparse(kc_printer, kc_current_view );
 	    }
 	    break;
 	}
@@ -7846,31 +7847,13 @@ impl_expression_ExprFalse::do_unparse(printer_functor kc_printer, uview kc_curre
 }
 
 
-#line  7850 "ast-system-unpk.cc"
+#line  7851 "ast-system-unpk.cc"
 void
-impl_expression_ExprTrue::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_marking_Marking::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7856 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  7868 "ast-system-unpk.cc"
-void
-impl_expression_ExprOr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  7874 "ast-system-unpk.cc"
+#line  7857 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7883,13 +7866,31 @@ impl_expression_ExprOr::do_unparse(printer_functor kc_printer, uview kc_current_
 }
 
 
-#line  7887 "ast-system-unpk.cc"
+#line  7870 "ast-system-unpk.cc"
 void
-impl_expression_ExprAnd::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_marking_EmptyMarking::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7893 "ast-system-unpk.cc"
+#line  7876 "ast-system-unpk.cc"
+	default:
+	case base_uview_enum: {
+	    uview kc_current_view=kc_current_view_base;
+	    {
+	    }
+	    break;
+	}
+    }
+}
+
+
+#line  7888 "ast-system-unpk.cc"
+void
+impl_transition_Transition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+{
+    switch(kc_current_view_base) {
+
+#line  7894 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -7902,18 +7903,17 @@ impl_expression_ExprAnd::do_unparse(printer_functor kc_printer, uview kc_current
 }
 
 
-#line  7906 "ast-system-unpk.cc"
+#line  7907 "ast-system-unpk.cc"
 void
-impl_expression_NotExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_transition_EmptyTransition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  7912 "ast-system-unpk.cc"
+#line  7913 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
 	    {
-		default_unparse(kc_printer, kc_current_view );
 	    }
 	    break;
 	}
@@ -7923,7 +7923,7 @@ impl_expression_NotExpr::do_unparse(printer_functor kc_printer, uview kc_current
 
 #line  7925 "ast-system-unpk.cc"
 void
-impl_expression_ExprNumber::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
+impl_fairness_StrongFair::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
@@ -7932,7 +7932,6 @@ impl_expression_ExprNumber::do_unparse(printer_functor kc_printer, uview kc_curr
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
 	    {
-		default_unparse(kc_printer, kc_current_view );
 	    }
 	    break;
 	}
@@ -7940,784 +7939,13 @@ impl_expression_ExprNumber::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  7944 "ast-system-unpk.cc"
-void
-impl_expression_ExprModulo::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  7950 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  7963 "ast-system-unpk.cc"
-void
-impl_expression_ExprDivision::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  7969 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  7982 "ast-system-unpk.cc"
-void
-impl_expression_ExprMultiplication::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  7988 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8001 "ast-system-unpk.cc"
-void
-impl_expression_ExprSubtraction::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8007 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8020 "ast-system-unpk.cc"
-void
-impl_expression_ExprAddition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8026 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8039 "ast-system-unpk.cc"
-void
-impl_expression_NegativeExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8045 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8058 "ast-system-unpk.cc"
-void
-impl_expression_PositiveExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8064 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8077 "ast-system-unpk.cc"
-void
-impl_expression_ValDecrement::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8083 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8096 "ast-system-unpk.cc"
-void
-impl_expression_ValIncrement::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8102 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8115 "ast-system-unpk.cc"
-void
-impl_expression_DecrementVal::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8121 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8134 "ast-system-unpk.cc"
-void
-impl_expression_IncrementVal::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8140 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8153 "ast-system-unpk.cc"
-void
-impl_expression_AssignMod::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8159 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8172 "ast-system-unpk.cc"
-void
-impl_expression_AssignDivide::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8178 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8191 "ast-system-unpk.cc"
-void
-impl_expression_AssignTimes::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8197 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8210 "ast-system-unpk.cc"
-void
-impl_expression_AssignMinus::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8216 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8229 "ast-system-unpk.cc"
-void
-impl_expression_AssignPlus::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8235 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8248 "ast-system-unpk.cc"
-void
-impl_expression_AssignEqual::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8254 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8267 "ast-system-unpk.cc"
-void
-impl_expression_ExprInitializerList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8273 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8286 "ast-system-unpk.cc"
-void
-impl_expression_ExprLeftvalue::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8292 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8305 "ast-system-unpk.cc"
-void
-impl_leftvalue_LeftValDot::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8311 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8324 "ast-system-unpk.cc"
-void
-impl_leftvalue_LeftValBrackets::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8330 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8343 "ast-system-unpk.cc"
-void
-impl_leftvalue_LeftValIdent::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8349 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8362 "ast-system-unpk.cc"
-void
-impl_expressionlist_ExpressionList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8368 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8381 "ast-system-unpk.cc"
-void
-impl_expressionlist_EmptyExpressionList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8387 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8399 "ast-system-unpk.cc"
-void
-impl_initializerList_ExprInBracesColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8405 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8418 "ast-system-unpk.cc"
-void
-impl_initializerList_ExprInBraces::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8424 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8437 "ast-system-unpk.cc"
-void
-impl_expressionListColon_ExpressionListColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8443 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8456 "ast-system-unpk.cc"
-void
-impl_expressionListColon_EmptyExpressionListColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8462 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8474 "ast-system-unpk.cc"
-void
-impl_placeblocklist_PlaceBlockList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8480 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8493 "ast-system-unpk.cc"
-void
-impl_placeblocklist_EmptyPlaceBlockList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8499 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8511 "ast-system-unpk.cc"
-void
-impl_optSafe_Safe::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8517 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8530 "ast-system-unpk.cc"
-void
-impl_optSafe_EmptySafe::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8536 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8548 "ast-system-unpk.cc"
-void
-impl_place_Place::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8554 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8567 "ast-system-unpk.cc"
-void
-impl_placelist_PlaceList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8573 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8586 "ast-system-unpk.cc"
-void
-impl_placelist_EmptyPlaceList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8592 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8604 "ast-system-unpk.cc"
-void
-impl_placeblock_PlaceBlock::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8610 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8623 "ast-system-unpk.cc"
-void
-impl_marking_Marking::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8629 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8642 "ast-system-unpk.cc"
-void
-impl_marking_EmptyMarking::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8648 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8660 "ast-system-unpk.cc"
-void
-impl_transition_Transition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8666 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-		default_unparse(kc_printer, kc_current_view );
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8679 "ast-system-unpk.cc"
-void
-impl_transition_EmptyTransition::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8685 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8697 "ast-system-unpk.cc"
-void
-impl_fairness_StrongFair::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
-{
-    switch(kc_current_view_base) {
-
-#line  8703 "ast-system-unpk.cc"
-	default:
-	case base_uview_enum: {
-	    uview kc_current_view=kc_current_view_base;
-	    {
-	    }
-	    break;
-	}
-    }
-}
-
-
-#line  8715 "ast-system-unpk.cc"
+#line  7943 "ast-system-unpk.cc"
 void
 impl_fairness_WeakFair::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8721 "ast-system-unpk.cc"
+#line  7949 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8729,13 +7957,13 @@ impl_fairness_WeakFair::do_unparse(printer_functor kc_printer, uview kc_current_
 }
 
 
-#line  8733 "ast-system-unpk.cc"
+#line  7961 "ast-system-unpk.cc"
 void
 impl_fairness_EmptyFairness::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8739 "ast-system-unpk.cc"
+#line  7967 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8747,13 +7975,13 @@ impl_fairness_EmptyFairness::do_unparse(printer_functor kc_printer, uview kc_cur
 }
 
 
-#line  8751 "ast-system-unpk.cc"
+#line  7979 "ast-system-unpk.cc"
 void
 impl_variable_Variable::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8757 "ast-system-unpk.cc"
+#line  7985 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8766,13 +7994,13 @@ impl_variable_Variable::do_unparse(printer_functor kc_printer, uview kc_current_
 }
 
 
-#line  8770 "ast-system-unpk.cc"
+#line  7998 "ast-system-unpk.cc"
 void
 impl_variable_EmptyVariable::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8776 "ast-system-unpk.cc"
+#line  8004 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8784,13 +8012,13 @@ impl_variable_EmptyVariable::do_unparse(printer_functor kc_printer, uview kc_cur
 }
 
 
-#line  8788 "ast-system-unpk.cc"
+#line  8016 "ast-system-unpk.cc"
 void
 impl_varOrArrayList_VarOrArrayList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8794 "ast-system-unpk.cc"
+#line  8022 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8803,13 +8031,13 @@ impl_varOrArrayList_VarOrArrayList::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  8807 "ast-system-unpk.cc"
+#line  8035 "ast-system-unpk.cc"
 void
 impl_varOrArrayList_EmptyVarOrArrayList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8813 "ast-system-unpk.cc"
+#line  8041 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8821,13 +8049,13 @@ impl_varOrArrayList_EmptyVarOrArrayList::do_unparse(printer_functor kc_printer, 
 }
 
 
-#line  8825 "ast-system-unpk.cc"
+#line  8053 "ast-system-unpk.cc"
 void
 impl_guard_Guard::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8831 "ast-system-unpk.cc"
+#line  8059 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8840,13 +8068,13 @@ impl_guard_Guard::do_unparse(printer_functor kc_printer, uview kc_current_view_b
 }
 
 
-#line  8844 "ast-system-unpk.cc"
+#line  8072 "ast-system-unpk.cc"
 void
 impl_identExprList_IdentExprList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8850 "ast-system-unpk.cc"
+#line  8078 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8859,13 +8087,13 @@ impl_identExprList_IdentExprList::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  8863 "ast-system-unpk.cc"
+#line  8091 "ast-system-unpk.cc"
 void
 impl_identExprList_EmptyIdentExprList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8869 "ast-system-unpk.cc"
+#line  8097 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8877,13 +8105,13 @@ impl_identExprList_EmptyIdentExprList::do_unparse(printer_functor kc_printer, uv
 }
 
 
-#line  8881 "ast-system-unpk.cc"
+#line  8109 "ast-system-unpk.cc"
 void
 impl_block_Block::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8887 "ast-system-unpk.cc"
+#line  8115 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8896,13 +8124,13 @@ impl_block_Block::do_unparse(printer_functor kc_printer, uview kc_current_view_b
 }
 
 
-#line  8900 "ast-system-unpk.cc"
+#line  8128 "ast-system-unpk.cc"
 void
 impl_declarationOrStatement_DeclOrStatemStatement::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8906 "ast-system-unpk.cc"
+#line  8134 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8915,13 +8143,13 @@ impl_declarationOrStatement_DeclOrStatemStatement::do_unparse(printer_functor kc
 }
 
 
-#line  8919 "ast-system-unpk.cc"
+#line  8147 "ast-system-unpk.cc"
 void
 impl_declarationOrStatement_DeclOrStatemDeclaration::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8925 "ast-system-unpk.cc"
+#line  8153 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8934,13 +8162,13 @@ impl_declarationOrStatement_DeclOrStatemDeclaration::do_unparse(printer_functor 
 }
 
 
-#line  8938 "ast-system-unpk.cc"
+#line  8166 "ast-system-unpk.cc"
 void
 impl_declarationOrStatement_EmptyDeclarationOrStatement::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8944 "ast-system-unpk.cc"
+#line  8172 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8952,13 +8180,13 @@ impl_declarationOrStatement_EmptyDeclarationOrStatement::do_unparse(printer_func
 }
 
 
-#line  8956 "ast-system-unpk.cc"
+#line  8184 "ast-system-unpk.cc"
 void
 impl_declaration_Declaration::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8962 "ast-system-unpk.cc"
+#line  8190 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8971,13 +8199,13 @@ impl_declaration_Declaration::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  8975 "ast-system-unpk.cc"
+#line  8203 "ast-system-unpk.cc"
 void
 impl_statement_StatementSkip::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8981 "ast-system-unpk.cc"
+#line  8209 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -8989,13 +8217,13 @@ impl_statement_StatementSkip::do_unparse(printer_functor kc_printer, uview kc_cu
 }
 
 
-#line  8993 "ast-system-unpk.cc"
+#line  8221 "ast-system-unpk.cc"
 void
 impl_statement_StatementReturn::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  8999 "ast-system-unpk.cc"
+#line  8227 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9008,13 +8236,13 @@ impl_statement_StatementReturn::do_unparse(printer_functor kc_printer, uview kc_
 }
 
 
-#line  9012 "ast-system-unpk.cc"
+#line  8240 "ast-system-unpk.cc"
 void
 impl_statement_StatementContinue::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9018 "ast-system-unpk.cc"
+#line  8246 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9026,13 +8254,13 @@ impl_statement_StatementContinue::do_unparse(printer_functor kc_printer, uview k
 }
 
 
-#line  9030 "ast-system-unpk.cc"
+#line  8258 "ast-system-unpk.cc"
 void
 impl_statement_StatementBreak::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9036 "ast-system-unpk.cc"
+#line  8264 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9044,13 +8272,13 @@ impl_statement_StatementBreak::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  9048 "ast-system-unpk.cc"
+#line  8276 "ast-system-unpk.cc"
 void
 impl_statement_StatementSwitch::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9054 "ast-system-unpk.cc"
+#line  8282 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9063,13 +8291,13 @@ impl_statement_StatementSwitch::do_unparse(printer_functor kc_printer, uview kc_
 }
 
 
-#line  9067 "ast-system-unpk.cc"
+#line  8295 "ast-system-unpk.cc"
 void
 impl_statement_StatementForAll::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9073 "ast-system-unpk.cc"
+#line  8301 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9082,13 +8310,13 @@ impl_statement_StatementForAll::do_unparse(printer_functor kc_printer, uview kc_
 }
 
 
-#line  9086 "ast-system-unpk.cc"
+#line  8314 "ast-system-unpk.cc"
 void
 impl_statement_StatementForIdentColon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9092 "ast-system-unpk.cc"
+#line  8320 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9101,13 +8329,13 @@ impl_statement_StatementForIdentColon::do_unparse(printer_functor kc_printer, uv
 }
 
 
-#line  9105 "ast-system-unpk.cc"
+#line  8333 "ast-system-unpk.cc"
 void
 impl_statement_StatementForTypeExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9111 "ast-system-unpk.cc"
+#line  8339 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9120,13 +8348,13 @@ impl_statement_StatementForTypeExpr::do_unparse(printer_functor kc_printer, uvie
 }
 
 
-#line  9124 "ast-system-unpk.cc"
+#line  8352 "ast-system-unpk.cc"
 void
 impl_statement_StatementForExpr::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9130 "ast-system-unpk.cc"
+#line  8358 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9139,13 +8367,13 @@ impl_statement_StatementForExpr::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  9143 "ast-system-unpk.cc"
+#line  8371 "ast-system-unpk.cc"
 void
 impl_statement_StatementDoWhile::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9149 "ast-system-unpk.cc"
+#line  8377 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9158,13 +8386,13 @@ impl_statement_StatementDoWhile::do_unparse(printer_functor kc_printer, uview kc
 }
 
 
-#line  9162 "ast-system-unpk.cc"
+#line  8390 "ast-system-unpk.cc"
 void
 impl_statement_StatementWhile::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9168 "ast-system-unpk.cc"
+#line  8396 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9177,13 +8405,13 @@ impl_statement_StatementWhile::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  9181 "ast-system-unpk.cc"
+#line  8409 "ast-system-unpk.cc"
 void
 impl_statement_StatementIf::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9187 "ast-system-unpk.cc"
+#line  8415 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9196,13 +8424,13 @@ impl_statement_StatementIf::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  9200 "ast-system-unpk.cc"
+#line  8428 "ast-system-unpk.cc"
 void
 impl_statement_StatementExprSemicolon::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9206 "ast-system-unpk.cc"
+#line  8434 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9215,13 +8443,13 @@ impl_statement_StatementExprSemicolon::do_unparse(printer_functor kc_printer, uv
 }
 
 
-#line  9219 "ast-system-unpk.cc"
+#line  8447 "ast-system-unpk.cc"
 void
 impl_statement_StatementBlock::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9225 "ast-system-unpk.cc"
+#line  8453 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9234,13 +8462,13 @@ impl_statement_StatementBlock::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  9238 "ast-system-unpk.cc"
+#line  8466 "ast-system-unpk.cc"
 void
 impl_switchCase_SwitchDefault::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9244 "ast-system-unpk.cc"
+#line  8472 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9253,13 +8481,13 @@ impl_switchCase_SwitchDefault::do_unparse(printer_functor kc_printer, uview kc_c
 }
 
 
-#line  9257 "ast-system-unpk.cc"
+#line  8485 "ast-system-unpk.cc"
 void
 impl_switchCase_SwitchCase::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9263 "ast-system-unpk.cc"
+#line  8491 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9272,13 +8500,13 @@ impl_switchCase_SwitchCase::do_unparse(printer_functor kc_printer, uview kc_curr
 }
 
 
-#line  9276 "ast-system-unpk.cc"
+#line  8504 "ast-system-unpk.cc"
 void
 impl_switchCaseList_SwitchCaseList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9282 "ast-system-unpk.cc"
+#line  8510 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;
@@ -9291,13 +8519,13 @@ impl_switchCaseList_SwitchCaseList::do_unparse(printer_functor kc_printer, uview
 }
 
 
-#line  9295 "ast-system-unpk.cc"
+#line  8523 "ast-system-unpk.cc"
 void
 impl_switchCaseList_EmptySwitchCaseList::do_unparse(printer_functor kc_printer, uview kc_current_view_base)
 {
     switch(kc_current_view_base) {
 
-#line  9301 "ast-system-unpk.cc"
+#line  8529 "ast-system-unpk.cc"
 	default:
 	case base_uview_enum: {
 	    uview kc_current_view=kc_current_view_base;

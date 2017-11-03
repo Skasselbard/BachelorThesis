@@ -68,6 +68,7 @@ unsigned int unique_places_mentioned = 0;
 #include <Formula/StatePredicate/DeadlockPredicate.h>
 #include <Formula/StatePredicate/FireablePredicate.h>
 #include <Net/Net.h>
+#include <Net/Transition.h>
 #include <string>
 
 extern std::string unparsed;
@@ -82,19 +83,20 @@ void stringprinter(const char *s, kc::uview v);
 %uview out;
 
 StatePredicateFormula(x) -> [out: x];
-Compound(x,y) -> [out: x " : " y];
-ComputeBound(LessEqualAtomicProposition(x,y)) -> [out:  "MAX(" x " - " y ")"];
+Compound(x,y) -> [out:  x " : " y ];
+c=CompBound() -> [out:  "MAX(" {kc_printer(((AtomicStatePredicate *)(c->formula))->toCompString(),kc_current_view);} ")"];
 
-AtomicProposition(x) -> [out: x];
-Negation(x) -> [out: "!(" x ")"];
-Conjunction(x, y) -> [out: "(" x " AND " y ")"];
-Disjunction(x, y) -> [out:  "(" x " OR " y ")"];
+a=AtomicProposition(x=Elementary()) -> [out:  {kc_printer(x->pred->toString(),kc_current_view);}];
+a=AtomicProposition(NNegation(x=Elementary())) -> [out: {StatePredicate * t=x->pred->copy(NULL)->negate();kc_printer(t->toString(),kc_current_view);delete t;}];
+Negation(x) -> [out: "NOT(" x ")"];
+Conjunction(x, y) -> [out:  "(" x " AND " y ")"];
+Disjunction(x, y) -> [out:   "(" x " OR " y ")" ];
 ExclusiveDisjunction(x, y) -> [out: "(" x " XOR " y ")"];
 Implication(x, y) -> [out: "(" x " -> " y ")"];
 Equivalence(x, y) -> [out: "(" x " <-> " y ")"];
-AllPath(x) -> [out: "A" x];
-ExPath(x)  -> [out: "E" x];
-Always(x)     -> [out: "G (" x ")"];
+AllPath(x) -> [out: "A (" x ")"];
+ExPath(x)  -> [out: "E (" x ")"];
+Always(x)     -> [out: "G ("  x  ")"];
 Eventually(x) -> [out: "F (" x ")"];
 NextState(x) -> [out: "X (" x ")"];
 Until(phi,psi) -> [out: "(" phi " U " psi ")"];
@@ -104,7 +106,7 @@ AR(x,y) -> [out: "A(" x " R " y ")"];
 ER(x,y) -> [out: "E(" x " R " y ")"];
 AU(x,y) -> [out: "A(" x " U " y ")"];
 AF(x)   -> [out: "AF(" x ")"];
-AG(x)   -> [out: "AG(" x ")"];
+AG(x)   -> [out: "AG("  x  ")"];
 AX(x)   -> [out: "AX(" x ")"];
 EX(x)   -> [out: "EX(" x ")"];
 EF(x)   -> [out: "EF(" x ")"];
@@ -119,35 +121,10 @@ ConstDisjunction_list(h, NiltDisjunction_list()) -> [out: h];
 ConstDisjunction_list(h, l) -> [out: h " OR " l];
 
 
-EqualsAtomicProposition(x, y) -> [out: x " = " y];
-NotEqualsAtomicProposition(x, y) -> [out: x " != " y];
-GreaterAtomicProposition(x, y) -> [out: x " > " y];
-GreaterEqualAtomicProposition(x, y) -> [out: x " >= " y];
-LessAtomicProposition(x, y) -> [out: x " < " y];
-LessEqualAtomicProposition(x, y) -> [out: x " <= " y];
 True() -> [out: "TRUE"];
 False() -> [out: "FALSE"];
-Initial() -> [out: "INITIAL"];
 Deadlock() -> [out: "DEADLOCK"];
-NoDeadlock() -> [out: "! DEADLOCK"];
-Fireable(x)   -> [out: "FIREABLE(" { kc_printer(kc_t(Net::Name[TR][x->value]), kc_current_view); } ")"];
-Unfireable(x)   -> [out: "! FIREABLE(" { kc_printer(kc_t(Net::Name[TR][x->value]), kc_current_view); } ")"];
-
-Node(x) -> [out: { kc_printer(kc_t(Net::Name[PL][x->value]), kc_current_view); }];
-Number(x) provided (x->value == -FINITE) -> [out: "-finite"];
-Number(x) provided (x->value == FINITE) -> [out: "finite"];
-Number(x) provided (x->value == -OMEGA) -> [out: "-oo"];
-Number(x) provided (x->value == OMEGA) -> [out: "oo"];
-Number(x) -> [out: x];
-Sum(x,y) -> [out: x " + " y];
-Difference(x,y) -> [out: x " - " y];
-Product(x,y) provided (x->value == 1) -> [out: y];
-Product(x,y) provided (x->value == -1) -> [out: "-" y];
-Product(x,y) -> [out: x "*" y];
-ConstProduct_list(h, NiltProduct_list()) -> [out: h];
-ConstProduct_list(h=Product(x,*), l=ConstProduct_list(*,*)) provided(x->value < 0) -> [out: l " + " h];
-ConstProduct_list(h, l) -> [out: l " + " h];
-
+NoDeadlock() -> [out: "NOT DEADLOCK"];
 
 BuechiAutomaton(trans,accept) -> [out: trans "\n" accept];
 BuechiNull() -> [out:];
@@ -166,109 +143,90 @@ AcceptingState(*) -> [out:];
 AcceptingSet(*,*) -> [out:];
 
 
-// The following commented block is the formula classification
-// before insertion of FORMULA_BOOLEAN which requires correct
-// clasification of (some) subformulas
-//////////////////////////////////////////////////////////////////////////
-//%uview temporal;
-//
-//// assumption: ExclusiveDisjunction, Implication, and Equivalence are gone.
-//
-//f=ComputeBound(x) -> [temporal: {f->type = FORMULA_BOUND;}];
-//
-//f=StatePredicateFormula(x) -> [temporal: x {
-    //with(x) {
-        //ExPath(Eventually(AtomicProposition(Deadlock()))) :
-            //{ f->type = FORMULA_DEADLOCK; }
-        //AllPath(Always(AtomicProposition(NoDeadlock()))) :
-            //{ f->type = FORMULA_NODEADLOCK; }
-        //ExPath(Eventually(y)) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_REACHABLE; }
-        //AllPath(Always(y)) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_INVARIANT; }
-        //AllPath(Always(ExPath(Eventually(y)))) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_LIVENESS; }
-        //ExPath(Eventually(AllPath(Always(y)))) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_EFAG; }
-        //AllPath(Always(ExPath(Eventually(AllPath(Always(y)))))) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_AGEFAG; }
-        //ExPath(Eventually(AllPath(Always(ExPath(Eventually(y)))))) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_EGAGEF; }
-        //Always(Eventually(y)) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_FAIRNESS; }
-        //Eventually(Always(y)) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_STABILIZATION; }
-        //Eventually(y) provided (not y->containsTemporal) :
-            //{ f->type = FORMULA_EVENTUALLY; }
-        //default provided (not x->containsTemporal) :
-            //{ f->type = FORMULA_INITIAL; }
-        //default provided (x->containsTemporal && x->validLTLFormula) :
-            //{ f->type = FORMULA_LTL; }
-        //default provided (x->containsTemporal && x->validCTLStateFormula) :
-            //{ f->type = FORMULA_CTL; }
-        //default :
-            //{ f->type = FORMULA_MODELCHECKING; }
-    //}
-//}];
-//
-//f=AtomicProposition(*) -> [temporal: {
-    //f->containsTemporal = false;
-    //f->validCTLPathFormula = false;
-    //f->validCTLStateFormula = true;
-    //f->validLTLFormula = true;
-//}];
-//
-//f=Negation(x) -> [temporal: x {
-    //f->containsTemporal = x->containsTemporal;
-    //f->validCTLStateFormula = x->validCTLStateFormula;
-    //f->validCTLPathFormula = false;
-    //f->validLTLFormula = x->validLTLFormula;
-//}];
-//
-//f=Conjunction(x,y), f=Disjunction(x,y) -> [temporal: x y {
-    //f->containsTemporal = (x->containsTemporal || y->containsTemporal);
-    //f->validCTLStateFormula = (x->validCTLStateFormula && y->validCTLStateFormula);
-    //f->validCTLPathFormula = false;
-    //f->validLTLFormula = (x->validLTLFormula && y->validLTLFormula);
-//}];
-//
-//f=AllPath(x), f=ExPath(x) -> [temporal: x {
-    //f->containsTemporal = true;
-    //f->validCTLStateFormula = x->validCTLPathFormula;
-    //f->validCTLPathFormula = false;
-    //f->validLTLFormula = false;
-//}];
-//
-//f=Always(x), f=Eventually(x), f=NextState(x) -> [temporal: x {
-    //f->containsTemporal = true;
-    //f->validCTLStateFormula = false;
-    //f->validCTLPathFormula = x->validCTLStateFormula;
-    //f->validLTLFormula = x->validLTLFormula;
-//}];
-//
-//f=Until(x,y), f=Release(x,y) -> [temporal: x y {
-    //f->containsTemporal = true;
-    //f->validCTLStateFormula = false;
-    //f->validCTLPathFormula = (x->validCTLStateFormula && y->validCTLStateFormula);
-    //f->validLTLFormula = (x->validLTLFormula && y->validLTLFormula);
-//}];
-//
-//
-//// \todo: next ones redundant: have no pairs when this view is applied
-//f=AU(x,y), f=EU(x,y) , f=ER(x,y), f=AR(x,y) -> [temporal: x y {
-    //f->containsTemporal = true;
-    //f->validCTLStateFormula = x->validCTLStateFormula && y->validCTLStateFormula;
-    //f->validCTLPathFormula = false;
-    //f->validLTLFormula = false;
-//}];
-//
-//f=AX(x), f=EX(x), f=EF(x), f=EG(x), f=AF(x), f=AG(x) -> [temporal: x {
-    //f->containsTemporal = true;
-    //f->validCTLStateFormula = x->validCTLPathFormula;
-    //f->validCTLPathFormula = false;
-    //f->validLTLFormula = false;
-//}];
 
+//////////////////////////////////////////////////////////////////////////
+%uview count;
+
+StatePredicateFormula(x) -> [count: {x->fs = fs;} x {fs = x->fs;}];
+Compound(x,y) -> [count: {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;}];
+c=CompBound() -> [count: {fs=c->formula->count(fs);fs->comp--;}];
+
+a=AtomicProposition(x=Elementary()) -> [count: {fs=x->pred->count(fs);}];
+a=AtomicProposition(NNegation(x=Elementary())) -> [count: {fs=x->pred->count(fs);fs->aneg++;}];
+AtomicProposition(x) -> [count:  ];
+Negation(x) -> [count: {x->fs=fs;} x {fs=x->fs;fs->tneg++;}];
+Conjunction(x, y) -> [count:  {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;fs->tconj++;}];
+Disjunction(x, y) -> [count:  {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;fs->tdisj++;}];
+AllPath(x) -> [count: {x->fs=fs;} x {fs=x->fs;fs->A++;}];
+ExPath(x)  -> [count: {x->fs=fs;} x {fs=x->fs;fs->E++;}];
+Always(x)     -> [count: {x->fs=fs;}  x  {fs=x->fs;fs->G++;}];
+Eventually(x) -> [count: {x->fs=fs;} x {fs=x->fs;fs->F++;}];
+NextState(x) -> [count: {x->fs=fs;} x {fs=x->fs;fs->X++;}];
+Until(phi,psi) -> [count: {phi->fs=fs;} phi {psi->fs=phi->fs;} psi {fs=psi->fs;fs->U++;}];
+Release(phi,psi) -> [count: {phi->fs=fs;} phi {psi->fs=phi->fs;} psi {fs=psi->fs;fs->R++;}];
+EU(x,y) -> [count: {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;fs->E++;fs->U++;}];
+AR(x,y) -> [count: {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;fs->A++;fs->R++;}];
+ER(x,y) -> [count: {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;fs->E++;fs->R++;}];
+AU(x,y) -> [count: {x->fs=fs;} x {y->fs=x->fs;} y {fs=y->fs;fs->A++;fs->U++;}];
+AF(x)   -> [count: {x->fs=fs;} x {fs=x->fs;fs->A++;fs->F++;}];
+AG(x)   -> [count: {x->fs=fs;} x {fs=x->fs;fs->A++;fs->G++;}];
+AX(x)   -> [count: {x->fs=fs;} x {fs=x->fs;fs->A++;fs->X++;}];
+EX(x)   -> [count: {x->fs=fs;} x {fs=x->fs;fs->E++;fs->X++;}];
+EF(x)   -> [count: {x->fs=fs;} x {fs=x->fs;fs->E++;fs->F++;}];
+EG(x)   -> [count: {x->fs=fs;} x {fs=x->fs;fs->E++;fs->G++;}];
+
+ConjunctionList(l) -> [count: {l->fs=fs;} l {fs=l->fs;fs->tconj++;}];
+ConstConjunction_list(h, NiltConjunction_list()) -> [count: {h->fs=fs;} h {fs=h->fs;}];
+ConstConjunction_list(h, l) -> [count: {h->fs=fs;} h {l->fs=h->fs;} l {fs =l->fs;}];
+
+DisjunctionList(l) -> [count: {l->fs=fs;} l {fs=l->fs;fs->tdisj++;}];
+ConstDisjunction_list(h, NiltDisjunction_list()) -> [count: {h->fs=fs;} h {fs=h->fs;}];
+ConstDisjunction_list(h, l) -> [count: {h->fs=fs;} h {l->fs=h->fs;} l {fs=l->fs;}];
+
+
+True() -> [count: {fs->taut++;}];
+False() -> [count: {fs->cont++;}];
+
+//////////////////////////////////////////////////////////////////////////
+%uview elem;
+
+StatePredicateFormula(x) -> [elem: x];
+Compound(x,y) -> [elem:  x  y ];
+c=CompBound() -> [elem: ];
+
+a=AtomicProposition(x=Elementary()) -> [elem:  {x->pred = a -> formula;}];
+a=AtomicProposition(NNegation(x=Elementary())) -> [elem:  {x->pred=a->formula;}];
+Negation(x) -> [elem:  x];
+Conjunction(x, y) -> [elem: x y];
+Disjunction(x, y) -> [elem: x y];
+ExclusiveDisjunction(x, y) -> [elem: x y];
+Implication(x, y) -> [elem: x  y];
+Equivalence(x, y) -> [elem: x y];
+AllPath(x) -> [elem:  x ];
+ExPath(x)  -> [elem:  x];
+Always(x)     -> [elem:  x ];
+Eventually(x) -> [elem:  x ];
+NextState(x) -> [elem: x];
+Until(phi,psi) -> [elem: phi  psi];
+Release(phi,psi) -> [elem: phi  psi ];
+EU(x,y) -> [elem: x  y ];
+AR(x,y) -> [elem:  x y ];
+ER(x,y) -> [elem: x y ];
+AU(x,y) -> [elem: x y ];
+AF(x)   -> [elem: x ];
+AG(x)   -> [elem: x];
+AX(x)   -> [elem: x];
+EX(x)   -> [elem: x];
+EF(x)   -> [elem: x];
+EG(x)   -> [elem:  x];
+
+ConjunctionList(l) -> [elem: l];
+ConstConjunction_list(h, NiltConjunction_list()) -> [elem: h];
+ConstConjunction_list(h, l) -> [elem: h  l];
+
+DisjunctionList(l) -> [elem: l ];
+ConstDisjunction_list(h, NiltDisjunction_list()) -> [elem: h];
+ConstDisjunction_list(h, l) -> [elem: h l];
 
 //////////////////////////////////////////////////////////////////////////
 %uview temporal;
@@ -281,7 +239,7 @@ f=Compound(x,y) -> [temporal: x y
 	f -> cannotcompute = x -> cannotcompute || y -> cannotcompute;
     }];
 
-f=ComputeBound(x) -> [temporal: 
+f=CompBound() -> [temporal: 
     {
 	f -> type = FORMULA_BOUND; 
 	f -> cannotcompute = false;
@@ -457,23 +415,30 @@ f=AllPath(g=Always(y)) -> [temporal: y
 	}
 	else
 	{   
-            if (y -> validLTLFormula)
-            {
-                f -> type = FORMULA_LTL;
-                f -> cannotcompute = false;
-            }
-            else
-            {
 		f -> cannotcompute = (y->cannotcompute || !y -> validCTLStateFormula);
 		f -> validCTLStateFormula = y -> validCTLStateFormula;
 		if(! f -> cannotcompute)
 		{
-			f -> type = FORMULA_CTL; 
+			if(y->validLTLFormula)
+			{
+				f->type = FORMULA_BOTH;
+			}
+			else
+			{
+				f -> type = FORMULA_CTL; 
+			}
 		}
-            }
+                else
+                {
+                    f -> validLTLFormula = false;
+                    if (y -> validLTLFormula)
+                    {
+                        f -> type = FORMULA_LTL;
+                        f -> cannotcompute = false;
+                    }
+                }
 	}
 	f -> validCTLPathFormula = false;
-        f -> validLTLFormula = false;
         f -> containsTemporal = true;
         g -> containsTemporal = true;
     }];
@@ -600,17 +565,21 @@ f=Conjunction(x,y), f=Disjunction(x,y) -> [temporal: x y
 
 f=AllPath(x) -> [temporal: x 
     {
-        if (x -> validLTLFormula)
+        f->cannotcompute = (x -> cannotcompute || !(x->validCTLPathFormula));
+        if(! f->cannotcompute)
+        {
+	    if(x->validLTLFormula)
+	    {
+		f->type = FORMULA_BOTH;
+            }
+	    else
+	    {
+		    f->type = FORMULA_CTL;
+	    }
+        }
+        if (f -> cannotcompute && x -> validLTLFormula)
         {
             f->type = FORMULA_LTL;
-        }
-        else
-        {
-            f->cannotcompute = (x -> cannotcompute || !(x->validCTLPathFormula));
-            if(! f->cannotcompute)
-            {
-                    f->type = FORMULA_CTL;
-            }
         }
     	f->containsTemporal = true;
     	f->validCTLStateFormula = x->validCTLPathFormula;
@@ -678,18 +647,21 @@ f=AU(x,y), f=AR(x,y) -> [temporal: x y
         f->validCTLStateFormula = x->validCTLStateFormula && y->validCTLStateFormula;
         f->validCTLPathFormula = false;
         f->validLTLFormula = false;
-        if (x -> validLTLFormula && y -> validLTLFormula)
+        f->cannotcompute = (x->cannotcompute || y -> cannotcompute || ! x->validCTLStateFormula || ! y->validCTLStateFormula);
+        if(!f->cannotcompute)
+        {
+            if(x -> validLTLFormula && y -> validLTLFormula)
+ 	    {
+		f->type = FORMULA_BOTH;
+            }
+	    else
+	    {
+		    f->type = FORMULA_CTL;
+	    }
+        }  
+        if (f -> cannotcompute && x -> validLTLFormula && y -> validLTLFormula)
         {
             f->type = FORMULA_LTL;
-            f->cannotcompute = false;
-        }
-        else
-        {
-            f->cannotcompute = (x->cannotcompute || y -> cannotcompute || ! x->validCTLStateFormula || ! y->validCTLStateFormula);
-            if(!f->cannotcompute)
-            {
-                f->type = FORMULA_CTL;
-            }  
         }
     }];
 
@@ -712,18 +684,21 @@ f=AX(x), f=AF(x), f=AG(x) -> [temporal: x
         f->validCTLStateFormula = x->validCTLStateFormula;
         f->validCTLPathFormula = false;
         f->validLTLFormula = false;
-        if (x -> validLTLFormula)
+        f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
+        if(!f->cannotcompute)
+        {
+            if(x->validLTLFormula)
+            {
+		f->type = FORMULA_BOTH;
+            }
+            else
+            { 
+		    f->type = FORMULA_CTL;
+            }
+        }  
+        if (f -> cannotcompute && x -> validLTLFormula)
         {
             f->type = FORMULA_LTL;
-            f->cannotcompute = false;
-        }
-        else
-        {
-            f->cannotcompute = (x->cannotcompute || ! x->validCTLStateFormula);
-            if(!f->cannotcompute)
-            {
-                f->type = FORMULA_CTL;
-            }  
         }
     }];
 
@@ -858,101 +833,19 @@ l
     formulas[id_stack.top()].push_back(f);
 }];
 
-AtomicProposition(a) -> [internal: a];
-
-LessEqualAtomicProposition(x, Number(y)) -> [internal: x {
-    arrayindex_t factors_positive = 0;
-    arrayindex_t factors_negative = 0;
-
-    // count positive and negative entries
-    for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-    {
-        if (it->second > 0)
-        {
-            factors_positive++;
-        }
-        else if (it->second < 0)
-        {
-            factors_negative++;
-        }
-    }
-
-    // create formula object
-    StatePredicate *f = new AtomicStatePredicate(factors_positive, factors_negative, y->value);
-    arrayindex_t position_pos = 0;
-    arrayindex_t position_neg = 0;
-
-    // add positive and negative entries
-    for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-    {
-        if (it->second > 0)
-        {
-            ((AtomicStatePredicate*)f)->addPos(position_pos++, it->first, it->second);
-        }
-        else if (it->second < 0)
-        {
-            ((AtomicStatePredicate*)f)->addNeg(position_neg++, it->first, -it->second);
-        }
-    }
-
-    // reduce with respect to the gcd
-    ((AtomicStatePredicate*)f)->reduceFactors();
-
-    // reset current
-    current.clear();
-
-    // register formula at parent
-    formulas[id_stack.top()].push_back(f);
+a=AtomicProposition(NNegation(x=Elementary())) -> [internal: 
+{
+    formula = x->pred -> copy(NULL);
+    formula = formula -> negate();
+	
+    formulas[id_stack.top()].push_back(formula);    
 }];
 
-GreaterAtomicProposition(x, Number(y)) -> [internal: 
-     {   
-     }
-     x 
-     {
-    arrayindex_t factors_positive = 0;
-    arrayindex_t factors_negative = 0;
-
-    // count positive and negative entries
-    for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-    {
-        if (it->second > 0)
-        {
-            factors_positive++;
-        }
-        else if (it->second < 0)
-        {
-            factors_negative++;
-        }
-    }
-
-    // create formula object: but need to transform from > to <=
-    StatePredicate *f = new AtomicStatePredicate(factors_negative, factors_positive, (- y->value) -1);
-    arrayindex_t position_pos = 0;
-    arrayindex_t position_neg = 0;
-
-    // add positive and negative entries
-    for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-    {
-        if (it->second < 0) // add negatives as positive (due to > to <=)
-        {
-            ((AtomicStatePredicate*)f)->addPos(position_pos++, it->first, -it->second);
-        }
-        else if (it->second > 0) // add negatives as positive (due to > to <=))
-        {
-            ((AtomicStatePredicate*)f)->addNeg(position_neg++, it->first, it->second);
-        }
-    }
-
-    // reduce with respect to the gcd
-    ((AtomicStatePredicate*)f)->reduceFactors();
-
-    // reset current
-    current.clear();
-
-    // register formula at parent
-    formulas[id_stack.top()].push_back(f);
+a=AtomicProposition(x=Elementary()) -> [internal: 
+{
+    formulas[id_stack.top()].push_back(x->pred->copy(NULL));    
 }];
+
 
 True() -> [internal: {
     StatePredicate *f = new TruePredicate();
@@ -972,91 +865,11 @@ Deadlock() -> [internal: {
     formulas[id_stack.top()].push_back(f);    
 }];
 
-Fireable(t) -> [internal: {
-    StatePredicate *f = new FireablePredicate(t->value,true);
-    // register formula at parent
-    formulas[id_stack.top()].push_back(f);    
-}];
-
-Unfireable(t) -> [internal: {
-    StatePredicate *f = new FireablePredicate(t->value,false);
-    // register formula at parent
-    formulas[id_stack.top()].push_back(f);    
-}];
-
 NoDeadlock() -> [internal: {
     StatePredicate *f = new DeadlockPredicate(false);
     // register formula at parent
     formulas[id_stack.top()].push_back(f);    
 }];
-
-Product(x, Node(p)) -> [internal: {
-    current[p->value] += x->value;
-
-    // count this place as mentioned
-    if (place_in_formula[p->value] == false)
-    {
-        unique_places_mentioned++;
-        place_in_formula[p->value] = true;
-    }
-    places_mentioned++;
-}];
-
-Number(*) -> [internal: /* do not print values */];
-
-f = ComputeBound(LessEqualAtomicProposition(x,Number(y))) -> [internal: 
-    {
-	// clear all data-structures
-	current.clear();
-	formulas.clear();
-	while (not id_stack.empty())
-		id_stack.pop();
-	nextId = 0;
-    id_stack.push(nextId++);
-    }
-    x
-    {
-    arrayindex_t factors_positive = 0;
-    arrayindex_t factors_negative = 0;
-
-    // count positive and negative entries
-    for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-    {
-        if (it->second > 0)
-        {
-            factors_positive++;
-        }
-        else if (it->second < 0)
-        {
-            factors_negative++;
-        }
-    }
-
-    // create formula object
-    StatePredicate *g = new AtomicStatePredicate(factors_positive, factors_negative, y->value);
-    arrayindex_t position_pos = 0;
-    arrayindex_t position_neg = 0;
-
-    // add positive and negative entries
-    for (std::map<int, int>::const_iterator it = current.begin(); it != current.end(); ++it)
-    {
-        if (it->second > 0)
-        {
-            ((AtomicStatePredicate*)g)->addPos(position_pos++, it->first, it->second);
-        }
-        else if (it->second < 0)
-        {
-            ((AtomicStatePredicate*)g)->addNeg(position_neg++, it->first, -it->second);
-        }
-    }
-
-    // reset current
-    current.clear();
-
-    // register formula at parent
-    f -> formula = g;
-}];
-
 
 //////////////////////////////////////////////////////////////////////////
 %uview buechi;
@@ -1096,27 +909,19 @@ b=BuechiAutomaton(trans,accept) -> [buechi:
 
 		//RT::rep->message("transfer predicates");
     	// transfer all state predicates
-    	b->automata->cardAtomicPropositions = predicates.size();
-    	b->automata->atomicPropositions = new StatePredicateProperty*[predicates.size()]();
-    	b->automata->atomicPropotions_backlist = new arrayindex_t[predicates.size()]();
-    	for (uint32_t i = 0; i < predicates.size(); i++)
-    		b->automata->atomicPropositions[i] = new StatePredicateProperty(predicates[i]);	
-    	
     	
     	//RT::rep->message("transfer transitions");
     	// build the transition-data-structure
     	b->automata->cardTransitions = new uint32_t[number_of_states]();
-    	b->automata->transitions = new uint32_t**[number_of_states]();
-    	b->automata->cardEnabled = new arrayindex_t[number_of_states]();
+    	b->automata->nextstate = new uint32_t*[number_of_states]();
+    	b->automata->guard = new StatePredicate**[number_of_states]();
     	for (uint32_t i = 0; i < number_of_states; i++){
     		b->automata->cardTransitions[i] = transitions[i].size();
-    		b->automata->transitions[i] = new uint32_t*[transitions[i].size()]();
+    		b->automata->nextstate[i] = new uint32_t[transitions[i].size()]();
+    		b->automata->guard[i] = new StatePredicate*[transitions[i].size()]();
     		for (uint32_t j = 0; j < transitions[i].size(); j++){
-    			//RT::rep->message("TRANSITION %d %d %d", i,j,transitions[i][j].second);
-    			b->automata->transitions[i][j] = new uint32_t[2]();
-    			b->automata->transitions[i][j][0] = transitions[i][j].first;
-    			b->automata->transitions[i][j][1] = transitions[i][j].second;
-    			b->automata->atomicPropotions_backlist[transitions[i][j].first] = i;
+    			b->automata->guard[i][j] = predicates[transitions[i][j].first];
+    			b->automata->nextstate[i][j] = transitions[i][j].second;
     		}
     	}
     	
@@ -1217,28 +1022,39 @@ StatePredicateProperty* spp;
 
 //EINSTIEG
 
-f=Conjunction provided (not f->containsTemporal) , 
-f=Disjunction provided (not f->containsTemporal) , 
-f=AtomicProposition provided (not f->containsTemporal) -> [ctl: {
-	// We call the unparse process again to avoid unneccessary code
-    // replication. Furthermore this may decrease evaluation time, since now
-    // some parts of some formula can be checked without taking care of
-    // temporal operators.
-    with(StatePredicateFormula(f))
-        // Here a little memory leak may occurs. A new object
-        // "StatePredicateFormula" is created but never deconstructed. Since
-        // Kimwitu++ has memory leaks nonetheless and this one is very small,
-        // we considered it to be acceptable.
-    {
-        x=StatePredicateFormula(*) :
-        {
-            // unparse using code of different goal to reuse existing code
-            x->unparse(myprinter, kc::internal);
+f=AtomicProposition(x=Elementary()) -> [ctl: {
             AtomicFormula* af = new AtomicFormula();
-            af->inner = new StatePredicateProperty(x->formula);
-	        ctl_formulas[ctl_id_stack.top()].push_back(af);
-	    }
-	}
+            af->inner = new StatePredicateProperty(x->pred->copy(NULL));
+	  ctl_formulas[ctl_id_stack.top()].push_back(af);
+}];
+f=AtomicProposition(NNegation(x=Elementary())) -> [ctl: {
+            AtomicFormula* af = new AtomicFormula();
+            af->inner = new StatePredicateProperty(x->pred->copy(NULL)->negate());
+	  ctl_formulas[ctl_id_stack.top()].push_back(af);
+}];
+
+f=AtomicProposition(True()) -> [ctl: {
+ AtomicFormula* af = new AtomicFormula();
+            af->inner = new StatePredicateProperty(new TruePredicate());
+          ctl_formulas[ctl_id_stack.top()].push_back(af);
+}];
+
+f=AtomicProposition(False()) -> [ctl: {
+ AtomicFormula* af = new AtomicFormula();
+            af->inner = new StatePredicateProperty(new FalsePredicate());
+          ctl_formulas[ctl_id_stack.top()].push_back(af);
+}];
+
+f=AtomicProposition(Deadlock()) -> [ctl: {
+ AtomicFormula* af = new AtomicFormula();
+            af->inner = new StatePredicateProperty(new DeadlockPredicate(1));
+          ctl_formulas[ctl_id_stack.top()].push_back(af);
+}];
+
+f=AtomicProposition(NoDeadlock()) -> [ctl: {
+ AtomicFormula* af = new AtomicFormula();
+            af->inner = new StatePredicateProperty(new DeadlockPredicate(0));
+          ctl_formulas[ctl_id_stack.top()].push_back(af);
 }];
 
 f=StatePredicateFormula(x) -> [ctl: {
@@ -1392,18 +1208,112 @@ f=StatePredicateFormula(x) -> [ltl:
 		//f->ltl_tree = ltlstack.back();
 	}];
 
-AtomicProposition(x) -> [ltl:
+f=AtomicProposition(NNegation(x=Elementary()))  -> [ltl:
 	{
-		// parse atomic propostion with internal
-		kc::tFormula internalFormula = StatePredicateFormula(AtomicProposition(x));
-		internalFormula->unparse(myprinter, kc::internal);
-        StatePredicate* result = internalFormula->formula;
+		// treat this as atomic in Buchi automaton
+        StatePredicate * result = x->pred -> copy(NULL);
+	result = result -> negate();
         
         // produce a new string
         int num;
         char_p sym = produce_next_string(&num);
         // I know what i am doing, the current sub-tree is an atomic propositon
-        predicateMap[num] = (AtomicStatePredicate*)result;
+        predicateMap[num] = result;
+        LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+        newTree->sym = tl_lookup(sym);
+        newTree = bin_simpler(newTree);
+        //RT::rep->message("SYM %x %x",newTree,newTree->sym);
+        assert(newTree->sym);
+        ltlstack.push_back(newTree);
+	}
+];
+
+f=AtomicProposition(x=Elementary())  -> [ltl:
+	{
+		// treat this as atomic in Buchi automaton
+        StatePredicate * result = x->pred->copy(NULL);
+        
+        // produce a new string
+        int num;
+        char_p sym = produce_next_string(&num);
+        // I know what i am doing, the current sub-tree is an atomic propositon
+        predicateMap[num] = result;
+        LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+        newTree->sym = tl_lookup(sym);
+        newTree = bin_simpler(newTree);
+        //RT::rep->message("SYM %x %x",newTree,newTree->sym);
+        assert(newTree->sym);
+        ltlstack.push_back(newTree);
+	}
+];
+
+f=AtomicProposition(True())  -> [ltl:
+	{
+		// treat this as atomic in Buchi automaton
+        StatePredicate * result = new TruePredicate();
+        
+        // produce a new string
+        int num;
+        char_p sym = produce_next_string(&num);
+        // I know what i am doing, the current sub-tree is an atomic propositon
+        predicateMap[num] = result;
+        LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+        newTree->sym = tl_lookup(sym);
+        newTree = bin_simpler(newTree);
+        //RT::rep->message("SYM %x %x",newTree,newTree->sym);
+        assert(newTree->sym);
+        ltlstack.push_back(newTree);
+	}
+];
+
+f=AtomicProposition(Deadlock())  -> [ltl:
+	{
+		// treat this as atomic in Buchi automaton
+        StatePredicate * result = new DeadlockPredicate(true);
+        
+        // produce a new string
+        int num;
+        char_p sym = produce_next_string(&num);
+        // I know what i am doing, the current sub-tree is an atomic propositon
+        predicateMap[num] = result;
+        LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+        newTree->sym = tl_lookup(sym);
+        newTree = bin_simpler(newTree);
+        //RT::rep->message("SYM %x %x",newTree,newTree->sym);
+        assert(newTree->sym);
+        ltlstack.push_back(newTree);
+	}
+];
+
+f=AtomicProposition(NoDeadlock())  -> [ltl:
+	{
+		// treat this as atomic in Buchi automaton
+        StatePredicate * result = new DeadlockPredicate(false);
+        
+        // produce a new string
+        int num;
+        char_p sym = produce_next_string(&num);
+        // I know what i am doing, the current sub-tree is an atomic propositon
+        predicateMap[num] = result;
+        LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
+        newTree->sym = tl_lookup(sym);
+        newTree = bin_simpler(newTree);
+        //RT::rep->message("SYM %x %x",newTree,newTree->sym);
+        assert(newTree->sym);
+        ltlstack.push_back(newTree);
+	}
+];
+
+f=AtomicProposition(False())  -> [ltl:
+	{
+		// treat this as atomic in Buchi automaton
+        StatePredicate * result = new FalsePredicate();
+        
+        // produce a new string
+        int num;
+        char_p sym = produce_next_string(&num);
+        // I know what i am doing, the current sub-tree is an atomic propositon
+        predicateMap[num] = result;
         LTLTree_p newTree = tl_nn(PREDICATE, NULL, NULL);
         newTree->sym = tl_lookup(sym);
         newTree = bin_simpler(newTree);
@@ -1491,28 +1401,6 @@ Disjunction(x, y) -> [ltl:
 		ltlstack.push_back(bin_simpler(tl_nn(OR, a, b)));
 	}
 ];
-Implication(x, y) -> [ltl:
- 	x
-	y
-	{
-		LTLTree_p a = ltlstack.back();
-		ltlstack.pop_back();
-		LTLTree_p b = ltlstack.back();
-		ltlstack.pop_back();
-		ltlstack.push_back(bin_simpler(tl_nn(IMPLIES, a, b)));
-	}
-];
-Equivalence(x, y) -> [ltl:
-	x
-	y
-	{
-		LTLTree_p a = ltlstack.back();
-		ltlstack.pop_back();
-		LTLTree_p b = ltlstack.back();
-		ltlstack.pop_back();
-		ltlstack.push_back(bin_simpler(tl_nn(EQUIV, a, b)));
-	}
-];
 
 //////////////////////////////////////////////////////////////////////////
 %uview toplevelboolean;
@@ -1548,9 +1436,6 @@ f=AtomicProposition(*) ,
 f=Negation(*),
 f=Conjunction(*, *) provided(f->type == FORMULA_INITIAL),
 f=Disjunction(*, *) provided(f->type == FORMULA_INITIAL) ,
-f=ExclusiveDisjunction(*, *) ,
-f=Implication(*, *) ,
-f=Equivalence(*, *),
 f=AllPath(*) ,
 f=ExPath(*) ,
 f=Always(*),
@@ -1593,19 +1478,19 @@ f=Compound(x,y) -> [compound: x y
 	f->task = new CompoundTask(x->task,y->task);
 }];
 
-f=StatePredicateFormula(*),
-f=ComputeBound(*) -> [compound:
+f=CompBound() -> [compound:
 	{
 		f -> task = new LeafTask(f);
 	}];
 
+f=StatePredicateFormula(*) -> [compound:
+	{
+		f -> task = new LeafTask(f);
+	}];
+
+
 f=AtomicProposition(*) ,
 f=Negation(*),
-f=Conjunction(*, *) provided(f->type == FORMULA_INITIAL),
-f=Disjunction(*, *) provided(f->type == FORMULA_INITIAL) ,
-f=ExclusiveDisjunction(*, *) ,
-f=Implication(*, *) ,
-f=Equivalence(*, *),
 f=AllPath(*) ,
 f=ExPath(*) ,
 f=Always(*),
@@ -1628,371 +1513,23 @@ f=EG(*) -> [compound:
 	}];
 
 //////////////////////////////////////////////////////////////////////////
-%uview problemwriter;
+%uview detectcompound;
+
+// This view is for separating a compound formula into
+// its constituents
 
 %{ KC_UNPARSE
 #include <Core/Runtime.h>
-#include <Net/Net.h>
-
-#ifndef __cplusplus11
-inline std::string int_to_string(int i) {
-    std::stringstream s;
-    s << i;
-    return s.str();
-}
-#endif
-
-bool is_first = false;
+#include <Frontend/Parser/ast-system-rk.h>
+#include <vector>
+#include <Planning/Task.h>
+#include <Planning/CompoundTask.h>
 %}
 
-StatePredicateFormula(AtomicProposition(x)) -> [problemwriter:
-    "PROBLEM saraProblem:\n"
-    "GOAL REACHABILITY;\n"
-    "FILE "
-    { kc_printer(RT::args.inputs[0], kc_current_view); }
-    " TYPE LOLA;\n"
-    "INITIAL "
-    {
- 	is_first = false;
-        for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-        {
-            if (Marking::Initial[i] > 0)
-            {
-                if (!is_first)
-                {
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-                    is_first = true;
-                }
-                else
-                {
-                    kc_printer(",", kc_current_view);
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-                }
-            }
-        }
-    }
-    ";\n"
-    "FINAL COVER;\n"
-    "CONSTRAINTS " x ";"];
 
-StatePredicateFormula(ConjunctionList(l)) -> [problemwriter:
-    "PROBLEM saraProblem:\n"
-    "GOAL REACHABILITY;\n"
-    "FILE "
-    { kc_printer(RT::args.inputs[0], kc_current_view); }
-    " TYPE LOLA;\n"
-    "INITIAL "
-    {
-        for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-        {
-            if (Marking::Initial[i] > 0)
-            {
-                if (!is_first)
-                {
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-                    is_first = true;
-                }
-                else
-                {
-                    kc_printer(",", kc_current_view);
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-                }
-            }
-        }
-    }
-    ";\n"
-    "FINAL COVER;\n"
-    "CONSTRAINTS " l ";"];
-ConjunctionList(l) -> [problemwriter: l
-];
-ConstConjunction_list(h, NiltConjunction_list()) -> [problemwriter: h
-]; 
-ConstConjunction_list(h, l) -> [problemwriter: h "," l
-];
-
-StatePredicateFormula(DisjunctionList(l)) -> [problemwriter: l
-];
-
-ConstDisjunction_list(h, NiltDisjunction_list()) -> [problemwriter:
-    "PROBLEM saraProblem:\n"
-    "GOAL REACHABILITY;\n"
-    "FILE "
-    { kc_printer(RT::args.inputs[0], kc_current_view); }
-    " TYPE LOLA;\n"
-    "INITIAL "
-    {
-        
-        // needs to be reseted first
-        is_first = false;
-        for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-        {
-            if (Marking::Initial[i] > 0)
-            {
-                if (!is_first)
-                {
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-                    is_first = true;
-                }
-                else
-                {
-                    kc_printer(",", kc_current_view);
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-                }
-            }
-        }
-    }
-    ";\n"
-    "FINAL COVER;\n"
-    "CONSTRAINTS " h ";"];
-  
-
-ConstDisjunction_list(h, l) -> [problemwriter:
-    "PROBLEM saraProblem:\n"
-    "GOAL REACHABILITY;\n"
-    "FILE "
-    { kc_printer(RT::args.inputs[0], kc_current_view); }
-    " TYPE LOLA;\n"
-    "INITIAL "
-    {
-        // needs to be reseted first
-        is_first = false;
-        for (arrayindex_t i = 0; i < Net::Card[PL]; i++)
-        {
-            if (Marking::Initial[i] > 0)
-            {
-                
-                if (!is_first)
-                {
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11                    
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-
-                    is_first = true;
-                }
-                else
-                {
-                    kc_printer(",", kc_current_view);
-                    kc_printer(kc_t(Net::Name[PL][i]), kc_current_view);
-#ifdef __cplusplus11       
-                    kc_printer((":" + std::to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#else
-                    kc_printer((":" + int_to_string(Marking::Initial[i])).c_str(), 
-                            kc_current_view);
-#endif
-
-                }
-            }
-        }
-    }
-    ";\n"
-    "FINAL COVER;\n"
-    "CONSTRAINTS " h ";\n\n"
-    "RESULT OR formula;\n\n" l];
-
-AtomicProposition(x) -> [problemwriter: x
-];
-LessEqualAtomicProposition(x,y) -> [problemwriter: x " < " y ];
-GreaterAtomicProposition(x, Number(y)) -> [problemwriter: x " > " {y -> value = y -> value + 1;} y {y -> value = y -> value - 1;}];
-Node(x) -> [problemwriter: { kc_printer(kc_t(Net::Name[PL][x->value]), kc_current_view); }];
-
-Number(x) -> [problemwriter: x];
-Product(x,y) provided (x->value == 1) -> [problemwriter: y];
-Product(x,y) provided (x->value == -1) -> [problemwriter: "-1" y];
-Product(x,y) -> [problemwriter: x y];
-ConstProduct_list(h, NiltProduct_list()) -> [problemwriter: h];
-ConstProduct_list(h=Product(x,*), l=ConstProduct_list(*,*)) provided(x->value < 0) -> [problemwriter: l " + " h];
-ConstProduct_list(h, l) -> [problemwriter: l " + " h];
-
-%uview orsAndAndsAndLength;
-
-%{ KC_UNPARSE
-%}
-
-f=StatePredicateFormula(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> number_of_or_dnf = x -> number_of_or_dnf;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-
-f=AtomicProposition(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = 1;
-    f -> number_of_and = 0;
-    f -> number_of_or = 0;
-    f -> number_of_or_dnf = 0;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=Negation(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> number_of_or_dnf = x -> number_of_or_dnf;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=Conjunction(l,r) ->[orsAndAndsAndLength: l r {
-
-    f -> length = (l -> length) * (r -> number_of_or + 1) + (r -> length) * (l -> number_of_or + 1);
-    f -> number_of_or_dnf = ((l -> number_of_or + 1)*(r -> number_of_or + 1) -1);
-    f -> number_of_and = l -> number_of_and + r -> number_of_and + 1;
-    f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or );
-    f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-}];
-
-
-f=Disjunction(l,r) -> [orsAndAndsAndLength: l r {
-
-    f -> length = l -> length + r -> length;
-    f -> number_of_or_dnf = l -> number_of_or + r -> number_of_or + 1;
-    f -> number_of_and = l -> number_of_and + r -> number_of_and;
-    f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or ) + 1;
-    f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-}];
-
-f=AllPath(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=ExPath(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=Always(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=Eventually(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=NextState(x) -> [orsAndAndsAndLength: x {
-
-    f -> length = x -> length;
-    f -> number_of_and = x -> number_of_and;
-    f -> number_of_or = x -> number_of_or;
-    f -> only_fireable = x -> only_fireable;
-
-}];
-
-f=Until(l,r) -> [orsAndAndsAndLength: l r {
-
-    f -> length = l -> length + r -> length;
-    f -> number_of_and = l -> number_of_and + f -> number_of_and;
-    f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or );
-    f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-}];
-
-f=Release(l,r) -> [orsAndAndsAndLength: l r {
-
-    f -> length = l -> length + r -> length;
-    f -> number_of_and = l -> number_of_and + r -> number_of_and;
-    f -> number_of_or = (l -> number_of_or ) + (r -> number_of_or );
-    f -> only_fireable = l -> only_fireable && r -> only_fireable;
-
-}];
-
-f=GreaterAtomicProposition(l , r) -> [orsAndAndsAndLength: {
-
-    f -> only_fireable = false;
-
-}];
-
-f=LessEqualAtomicProposition(l,r) -> [orsAndAndsAndLength: {
-
-    f -> only_fireable = false;
-
-}];
-
-f=Deadlock() -> [orsAndAndsAndLength: {
-
-    f -> only_fireable = false;
-
-}];
-
-f=Initial() -> [orsAndAndsAndLength: {
-
-    f -> only_fireable = false;
-
+f=Compound(x,y) -> [detectcompound: x y 
+{
+	f->type = FORMULA_COMPOUND;
 }];
 
 /*************************************************************************/
@@ -2409,66 +1946,78 @@ switchCaseList:
 ;
 */
 
-%uview countdeadlock;
+///////////////////////////////////////////////////////////////
+%uview visible;
 
-StatePredicateFormula(x) -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-Compound(x,y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-ComputeBound(LessEqualAtomicProposition(x,y)) -> [countdeadlock: {containsDeadlock = 0;} ];
+// Marks transitions as visible that may change value of any subformula
 
-AtomicProposition(x) -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-Negation(x) -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-Conjunction(x, y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-Disjunction(x, y) -> [countdeadlock:  x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-ExclusiveDisjunction(x, y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-Implication(x, y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-Equivalence(x, y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-AllPath(x) -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-ExPath(x)  -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-Always(x)     -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-Eventually(x) -> [countdeadlock:  x {containsDeadlock = x -> containsDeadlock;}];
-NextState(x) -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-Until(phi,psi) -> [countdeadlock: phi psi {containsDeadlock = phi -> containsDeadlock + psi -> containsDeadlock;}];
-Release(phi,psi) -> [countdeadlock: phi psi {containsDeadlock = phi->containsDeadlock + psi -> containsDeadlock;}];
-EU(x,y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-AR(x,y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-ER(x,y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-AU(x,y) -> [countdeadlock: x y {containsDeadlock = x -> containsDeadlock + y -> containsDeadlock;}];
-AF(x)   -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-AG(x)   -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-AX(x)   -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-EX(x)   -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-EF(x)   -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
-EG(x)   -> [countdeadlock: x {containsDeadlock = x -> containsDeadlock;}];
+StatePredicateFormula(x) -> [visible: 
+{
+	for(arrayindex_t i = 0; i < Net::Card[TR]; i++)
+	{
+		Transition::Visible[i] = false;
+	}
+} x
+{
+	containsNext = x -> containsNext;
+}];
+Compound(x,y) -> [visible: x y
+{
+	containsNext = (x -> containsNext || y -> containsNext);
+}];
+//ComputeBound(LessEqualAtomicProposition(x,y)) -> [visible: x y {containsNext = true;}];
 
-ConjunctionList(l) -> [countdeadlock: l {containsDeadlock = l -> containsDeadlock;}];
+AtomicProposition(x=Elementary()) -> [visible: {x -> pred -> setVisible();}];
+AtomicProposition(NNegation(x=Elementary())) -> [visible: {x -> pred -> setVisible();}];
+Negation(x) -> [visible: x {containsNext = x -> containsNext;}];
+Conjunction(x, y) -> [visible:  x  y {containsNext = x -> containsNext || y -> containsNext;}];
+Disjunction(x, y) -> [visible: x y {containsNext = x -> containsNext || y -> containsNext;}];
+AllPath(x) -> [visible: x {containsNext = x -> containsNext;}];
+ExPath(x)  -> [visible: x {containsNext = x -> containsNext;}];
+Always(x)     -> [visible: x {containsNext = x -> containsNext;}];
+Eventually(x) -> [visible: x {containsNext = x -> containsNext;}];
+NextState(x) -> [visible: x {containsNext = true;}];
+Until(phi,psi) -> [visible: phi  psi {containsNext = phi->containsNext || psi -> containsNext;}];
+Release(phi,psi) -> [visible: phi psi {containsNext = phi->containsNext || psi->containsNext;}];
+EU(x,y) -> [visible: x y {containsNext = x -> containsNext || y -> containsNext;}];
+AR(x,y) -> [visible: x y {containsNext = x -> containsNext || y -> containsNext;}];
+ER(x,y) -> [visible: x y {containsNext = x -> containsNext || y -> containsNext;}];
+AU(x,y) -> [visible: x y {containsNext = x -> containsNext || y -> containsNext; }];
+AF(x)   -> [visible:  x {containsNext = x -> containsNext;}];
+AG(x)   -> [visible: x {containsNext = x -> containsNext;}];
+AX(x)   -> [visible: x {
+containsNext = true;}];
+EX(x)   -> [visible: x {containsNext = true;}];
+EF(x)   -> [visible: x {containsNext = x -> containsNext;}];
+EG(x)   -> [visible: x {containsNext = x -> containsNext;}];
 
-NiltConjunction_list() -> [countdeadlock: {containsDeadlock = 0;}];
-ConstConjunction_list(h, l) -> [countdeadlock: h l {containsDeadlock = h -> containsDeadlock + l -> containsDeadlock;}];
+ConjunctionList(l) -> [visible: l {containsNext = l -> containsNext;}];
+ConstConjunction_list(h, NiltConjunction_list()) -> [visible: h {containsNext = h -> containsNext;}];
+ConstConjunction_list(h, l) -> [visible: h l {containsNext = h -> containsNext || l -> containsNext;}];
 
-DisjunctionList(l) -> [countdeadlock: l {containsDeadlock = l -> containsDeadlock;}];
-NiltDisjunction_list() -> [countdeadlock: {containsDeadlock = 0;}];
-ConstDisjunction_list(h, l) -> [countdeadlock: h l {containsDeadlock = h -> containsDeadlock + l -> containsDeadlock;}];
+DisjunctionList(l) -> [visible: l {containsNext = l -> containsNext;}];
+ConstDisjunction_list(h, NiltDisjunction_list()) -> [visible: h {containsNext = h -> containsNext;}];
+ConstDisjunction_list(h, l) -> [visible: h l {containsNext = h -> containsNext || l -> containsNext;}];
 
 
-EqualsAtomicProposition(x, y) -> [countdeadlock: {containsDeadlock = 0;}];
-NotEqualsAtomicProposition(x, y) -> [countdeadlock: {containsDeadlock = 0;}];
-GreaterAtomicProposition(x, y) -> [countdeadlock: {containsDeadlock = 0;}];
-GreaterEqualAtomicProposition(x, y) -> [countdeadlock: {containsDeadlock = 0;}];
-LessAtomicProposition(x, y) -> [countdeadlock: {containsDeadlock = 0;}];
-LessEqualAtomicProposition(x, y) -> [countdeadlock: {containsDeadlock = 0;}];
-True() -> [countdeadlock: {containsDeadlock = 0;}];
-False() -> [countdeadlock: {containsDeadlock = 0;}];
-Initial() -> [countdeadlock: {containsDeadlock = 0;}];
-Deadlock() -> [countdeadlock: {containsDeadlock = 1;}];
-NoDeadlock() -> [countdeadlock: {containsDeadlock = 1;}];
-Fireable(x)   -> [countdeadlock: {containsDeadlock = 0;}];
-Unfireable(x)   -> [countdeadlock: {containsDeadlock = 0;}];
-
-Node(*) -> [countdeadlock: ];
-Number(*) -> [countdeadlock: ];
-Sum(*,*) -> [countdeadlock: ];
-Difference(*,*) -> [countdeadlock: ];
-Product(*,*) -> [countdeadlock: ];
-NiltProduct_list() -> [countdeadlock: ];
-ConstProduct_list(*, *) -> [countdeadlock: ];
+True() -> [visible:  {containsNext = false;}];
+False() -> [visible:  {containsNext = false;}];
+Deadlock() -> [visible: 
+{
+	for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+	{
+		Transition::Visible[i] = true;
+	}
+	containsNext = false;
+}
+];
+NoDeadlock() -> [visible: 
+{
+	for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+	{
+		Transition::Visible[i] = true;
+	}
+	containsNext = false;
+}
+];
 

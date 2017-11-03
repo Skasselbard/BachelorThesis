@@ -44,6 +44,7 @@ class Task
 {
 public:
     virtual ~Task(){}
+    const char * taskname;
 
     /// run the actual verification algorithm
     virtual ternary_t getResult() = 0;
@@ -63,5 +64,7 @@ public:
     virtual char * early_abortion() = 0;
 
  	static void setFormula();
+ 	static void parseFormula();
         static void outputFormulaAsProcessed();
+        static void outputFormula(void *);
 };

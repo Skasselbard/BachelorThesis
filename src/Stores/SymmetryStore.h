@@ -70,6 +70,7 @@ template <typename T>
 SymmetryStore<T>::SymmetryStore(threadid_t number_of_threads, Store<T> *actualStore):
     Store<T>(number_of_threads), actualStore(actualStore)
 {
+    G = NULL;
     // required to avoid an assertion error (TODO: Why?)
     Net::sortAllArcs();
 
@@ -81,6 +82,17 @@ template <typename T>
 inline bool SymmetryStore<T>::searchAndInsert(NetState &ns, T **payload, threadid_t thread,
         bool noinsert)
 {
+    if(!G)
+    {
+	    const bool ret = actualStore->searchAndInsert(ns, payload, thread, noinsert);
+	    // finish (statistics)
+	    if (!ret && !noinsert)
+	    {
+		++(this->markings[thread]);
+	    }
+	    return ret;
+
+    }
     // the statistics are queried here, so we need to keep them here as well
     ++(this->calls[thread]);
 

@@ -2,7 +2,7 @@
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
-/* Modified by Paul Gastin, LSV, France                                   */
+/* modified by Paul Gastin, LSV, France                                   */
 /* Copyright (c) 2007  Paul Gastin                                        */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
@@ -33,7 +33,7 @@ extern FILE *tl_out;
 extern int node_size, sym_size, scc_size;
 extern char **sym_table;
 
-int mod = 8 * sizeof(int);
+int mod_ = 8 * sizeof(int);
 
 
 /* type = 2 for scc set, 1 for symbol sets, 0 for nodes sets */
@@ -62,7 +62,7 @@ int *make_set(int n, int type) /* creates the set {n}, or the empty set if n = -
     {
         return l;
     }
-    l[n / mod] = 1 << (n % mod);
+    l[n / mod_] = 1 << (n % mod_);
     return l;
 }
 
@@ -115,19 +115,19 @@ int empty_intersect_sets(int *l1, int *l2, int type) /* tests intersection of tw
 
 void add_set(int *l, int n) /* adds an element to a set */
 {
-    l[n / mod] |= 1 << (n % mod);
+    l[n / mod_] |= 1 << (n % mod_);
 }
 
 void rem_set(int *l, int n) /* removes an element from a set */
 {
-    l[n / mod] &= (-1 - (1 << (n % mod)));
+    l[n / mod_] &= (-1 - (1 << (n % mod_)));
 }
 /* LCOV_EXCL_START */
 void spin_print_set(int *pos, int *neg) /* prints the content of a set for spin */
 {
     int i, j, start = 1;
     for (i = 0; i < sym_size; i++)
-        for (j = 0; j < mod; j++)
+        for (j = 0; j < mod_; j++)
         {
             if (pos[i] & (1 << j))
             {
@@ -135,7 +135,7 @@ void spin_print_set(int *pos, int *neg) /* prints the content of a set for spin 
                 {
                     fprintf(tl_out, " && ");
                 }
-                fprintf(tl_out, "%s", sym_table[mod * i + j]);
+                fprintf(tl_out, "%s", sym_table[mod_ * i + j]);
                 start = 0;
             }
             if (neg[i] & (1 << j))
@@ -144,7 +144,7 @@ void spin_print_set(int *pos, int *neg) /* prints the content of a set for spin 
                 {
                     fprintf(tl_out, " && ");
                 }
-                fprintf(tl_out, "!%s", sym_table[mod * i + j]);
+                fprintf(tl_out, "!%s", sym_table[mod_ * i + j]);
                 start = 0;
             }
         }
@@ -162,7 +162,7 @@ void print_set(int *l, int type) /* prints the content of a set */
         fprintf(tl_out, "{");
     }
     for (i = 0; i < set_size(type); i++)
-        for (j = 0; j < mod; j++)
+        for (j = 0; j < mod_; j++)
             if (l[i] & (1 << j))
             {
                 switch (type)
@@ -173,14 +173,14 @@ void print_set(int *l, int type) /* prints the content of a set */
                     {
                         fprintf(tl_out, ",");
                     }
-                    fprintf(tl_out, "%i", mod * i + j);
+                    fprintf(tl_out, "%i", mod_ * i + j);
                     break;
                 case 1:
                     if (!start)
                     {
                         fprintf(tl_out, " & ");
                     }
-                    fprintf(tl_out, "%s", sym_table[mod * i + j]);
+                    fprintf(tl_out, "%s", sym_table[mod_ * i + j]);
                     break;
                 }
                 start = 0;
@@ -224,14 +224,14 @@ int included_set(int *l1, int *l2, int type)
 
 int in_set(int *l, int n) /* tests if an element is in a set */
 {
-    return (l[n / mod] & (1 << (n % mod)));
+    return (l[n / mod_] & (1 << (n % mod_)));
 }
 
 int *list_set(int *l, int type) /* transforms a set into a list */
 {
     int i, j, size = 1, *list;
     for (i = 0; i < set_size(type); i++)
-        for (j = 0; j < mod; j++)
+        for (j = 0; j < mod_; j++)
             if (l[i] & (1 << j))
             {
                 size++;
@@ -240,10 +240,10 @@ int *list_set(int *l, int type) /* transforms a set into a list */
     list[0] = size;
     size = 1;
     for (i = 0; i < set_size(type); i++)
-        for (j = 0; j < mod; j++)
+        for (j = 0; j < mod_; j++)
             if (l[i] & (1 << j))
             {
-                list[size++] = mod * i + j;
+                list[size++] = mod_ * i + j;
             }
     return list;
 }

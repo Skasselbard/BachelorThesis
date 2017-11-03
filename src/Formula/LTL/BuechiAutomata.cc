@@ -16,83 +16,13 @@
 ****************************************************************************/
 
 #include <Core/Dimensions.h>
-#include <Exploration/StatePredicateProperty.h>
+#include <Core/Runtime.h>
+#include <InputOutput/InputOutput.h>
 #include <Formula/LTL/BuechiAutomata.h>
 #include <Formula/StatePredicate/AtomicStatePredicate.h>
 #include <Net/Net.h>
 #include <Net/NetState.h>
 
-int BuechiAutomata::getSuccessors(arrayindex_t **list,
-        arrayindex_t currentState)
-{
-    arrayindex_t cardTransitionList = cardTransitions[currentState];
-    uint32_t **transitionsList = transitions[currentState];
-
-    *list = new arrayindex_t[cardEnabled[currentState]];
-    int curCard = 0;
-
-    //RT::rep->message("SIZE %d (curState %d)",cardEnabled[currentState], currentState);
-    for (arrayindex_t i = 0; i < cardTransitionList; i++)
-    {
-        //RT::rep->message("checking %d (%d) -> %d",currentState, 
-        //    atomicPropositions[transitionsList[i][0]]->getPredicate()->value,transitionsList[i][1]);
-        if (atomicPropositions[transitionsList[i][0]]->getPredicate()->value)
-        {
-            //RT::rep->message("NOW PROP %d (p:%d)--> TRUE",i,atomicPropositions[transitionsList[i][0]]);
-
-            //RT::rep->message("List(%d) %d = %d @ %d/%d [%d] (p: %d)",i,curCard,transitionsList[i][1], 
-            //    cardEnabled[currentState],cardTransitionList,currentState,atomicPropositions[transitionsList[i][0]]);
-            (*list)[curCard++] = transitionsList[i][1];
-        } //else
-    }
-    //RT::rep->message("END");
-    return curCard;
-}
-
-void BuechiAutomata::updateProperties(NetState &ns, arrayindex_t transition)
-{
-    //RT::rep->message("UPDATE");
-    for (arrayindex_t i = 0; i < cardStates; i++)
-    {
-        cardEnabled[i] = 0;
-    }
-    for (arrayindex_t i = 0; i < cardAtomicPropositions; i++)
-        if (atomicPropositions[i]->checkProperty(ns, transition))
-        {
-            //RT::rep->message("CHECK PROP %d (s = %d, p:%d) --> TRUE",i,atomicPropotions_backlist[i],atomicPropositions[i]);
-            cardEnabled[atomicPropotions_backlist[i]]++;
-        } //else
-    ////RT::rep->message("CHECK PROP %d (s = %d, p:%d)--> FALSE",i,atomicPropotions_backlist[i],atomicPropositions[i]);
-}
-
-void BuechiAutomata::initProperties(NetState &ns)
-{
-    //RT::rep->message("INIT");
-    for (arrayindex_t i = 0; i < cardAtomicPropositions; i++)
-    {
-        //RT::rep->message("INIT %d",i);
-        if (atomicPropositions[i]->initProperty(ns))
-        {
-            cardEnabled[atomicPropotions_backlist[i]]++;
-            //RT::rep->message("TRUE %d", cardEnabled[atomicPropotions_backlist[i]]);
-        } //else
-        //RT::rep->message("FALSE");
-    }
-}
-
-void BuechiAutomata::revertProperties(NetState &ns, arrayindex_t transition)
-{
-    ////RT::rep->message("REVERT");
-    for (arrayindex_t i = 0; i < cardStates; i++)
-    {
-        cardEnabled[i] = 0;
-    }
-    for (arrayindex_t i = 0; i < cardAtomicPropositions; i++)
-        if (atomicPropositions[i]->updateProperty(ns, transition))
-        {
-            cardEnabled[atomicPropotions_backlist[i]]++;
-        }
-}
 
 bool BuechiAutomata::isAcceptingState(arrayindex_t state)
 {
@@ -106,28 +36,16 @@ arrayindex_t BuechiAutomata::getNumberOfStates()
 
 BuechiAutomata::~BuechiAutomata()
 {
-    for (arrayindex_t i = 0; i < cardAtomicPropositions; i++)
-    {
-        //delete atomicPropositions[i]->getPredicate();
-        //delete atomicPropositions[i];
-    }
-
-    // allocated in Task::setFormula()
-    delete[] atomicPropositions;
-
     for (arrayindex_t i = 0; i < cardStates; i++)
     {
-        for (arrayindex_t j = 0; j < cardTransitions[i]; j++)
-        {
-            delete[] transitions[i][j];
-        }
-        delete[] transitions[i];
+        delete[] nextstate[i];
+        delete[] guard[i];
     }
 
-    delete[] transitions;
+    delete[] nextstate;
+    delete[] guard;
     delete[] cardTransitions;
     delete[] isStateAccepting;
-    delete[] atomicPropotions_backlist;
 }
 
 
@@ -152,7 +70,7 @@ void BuechiAutomata::writeBuechi()
         fprintf(buechifile, "\tState%d :\n", i);
         for (int j = 0; j < cardTransitions[i]; j++)
         {
-            fprintf(buechifile, "\t\t%s => State%d\n", atomicPropositions[transitions[i][j][0]]->getPredicate()->toString(), transitions[i][j][1]);
+            fprintf(buechifile, "\t\t%s => State%d\n", guard[i][j]->toString(), nextstate[i][j]);
         }
         if (i < cardStates - 1)
         {

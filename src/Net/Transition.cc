@@ -48,7 +48,11 @@ arrayindex_t **Transition::Conflicting = NULL;
 arrayindex_t *Transition::CardBackConflicting = NULL;
 arrayindex_t **Transition::BackConflicting = NULL;
 bool *Transition::BackConflictingIsOriginal = NULL;
+bool *Transition::Visible = NULL;
 int32_t *Transition::ProgressMeasure = NULL;
+
+arrayindex_t * Transition::StubbornPriority = NULL;
+arrayindex_t Transition::SingletonClusters = 0;
 
 /*!
 \brief clean up transitions for valgrind

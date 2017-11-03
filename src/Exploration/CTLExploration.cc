@@ -15,6 +15,8 @@
   along with LoLA. If not, see <http://www.gnu.org/licenses/>.
 ****************************************************************************/
 
+// TODO seg fault swimmingpool-01 AGEF INITIAL & EFAGEF INITIAL
+
 #include <config.h>
 #include <Exploration/CTLExploration.h>
 #include <Exploration/Firelist.h>
@@ -47,7 +49,19 @@ bool CTLExploration::checkProperty(CTLFormula *formula, Store<void *> &store,
     formula->initAtomics(ns);
 
     witness.clear();
-    return formula->check(store, ns, firelist, witness);
+    if(RT::args.fair_given)	
+    {
+	    RT::rep->status("Respecting fairness constraints (%s).",
+		 RT::rep->markup(MARKUP_PARAMETER, "--fair").str());
+
+	    return formula->checkfair(store, ns, firelist, witness);
+    }
+    else
+    {
+	    RT::rep->status("Ignoring fairness constraints (%s).",
+		 RT::rep->markup(MARKUP_PARAMETER, "--fair").str());
+	    return formula->check(store, ns, firelist, witness);
+    }
 }
 
 Path CTLExploration::path()

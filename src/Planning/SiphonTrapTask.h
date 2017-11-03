@@ -35,6 +35,9 @@ public:
      siphon_result_t result;
      bool finished;
      bool printFinalResult;
+    SiphonTrapTask(){ 
+	taskname = "stp";
+    }
     ~SiphonTrapTask(){ 
     }
 
@@ -47,18 +50,23 @@ public:
         // display information about the siphon/trap property and set the returned result value
         switch (result)
         {
-            case SIPHON_PROPERTY_TRUE: RT::rep->status("The siphon/trap property holds");
+            case SIPHON_PROPERTY_TRUE: RT::rep->status("stp: The siphon/trap property holds");
+		RT::data["task"]["siphon"]["result"] = "SIPHON_PROPERTY_TRUE";
                 return TERNARY_FALSE;
-            case SIPHON_PROPERTY_FALSE: RT::rep->status("The siphon/trap property does not hold");
+            case SIPHON_PROPERTY_FALSE: RT::rep->status("stp: The siphon/trap property does not hold");
+		RT::data["task"]["siphon"]["result"] = "SIPHON_PROPERTY_FALSE";
                 return TERNARY_UNKNOWN;
-            case SIPHON_INHOMOGENIOUS: RT::rep->status("The siphon/trap property is not applicable "
+            case SIPHON_INHOMOGENIOUS: RT::rep->status("stp: The siphon/trap property is not applicable "
                         "since the net is inhomogeneous");
+		RT::data["task"]["siphon"]["result"] = "SIPHON_INHOMOGENIOUS";
                 return TERNARY_UNKNOWN;
-            case SIPHON_INCONCLUSIVE: RT::rep->status("The siphon/trap property is inconclusive "
+            case SIPHON_INCONCLUSIVE: RT::rep->status("stp: The siphon/trap property is inconclusive "
                         "since the generated formula is too short");
+		RT::data["task"]["siphon"]["result"] = "SIPHON_INCONCLUSIVE";
                 return TERNARY_UNKNOWN;
-            case SIPHON_INDETERMINATE: RT::rep->status("The siphon/trap property cannot be "
+            case SIPHON_INDETERMINATE: RT::rep->status("stp: The siphon/trap property cannot be "
                         "evaluated since the SAT solver cannot handle the generated formula");
+		RT::data["task"]["siphon"]["result"] = "SIPHON_INDETERMINATE";
                 return TERNARY_UNKNOWN;
         }
     }
@@ -69,14 +77,18 @@ public:
         if (result == SIPHON_PROPERTY_TRUE)
         {
             RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-            RT::data["analysis"]["result"] = false;
+            RT::rep->status("produced by: %s",taskname);
+            RT::data["result"]["value"] = false;
+            RT::data["result"]["produced_by"] = std::string(taskname);
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                     "The net does not have deadlocks.").str());
         }
         else
         {
             RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-            RT::data["analysis"]["result"] = JSON::null;
+            RT::rep->status("produced by: %s",taskname);
+            RT::data["result"]["value"] = JSON::null;
+            RT::data["result"]["produced_by"] = std::string(taskname);
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                     "The net may or may not have deadlocks.").str());
         }

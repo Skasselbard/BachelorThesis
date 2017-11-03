@@ -82,6 +82,8 @@ Sweep<T>::Sweep(SimpleProperty &property, NetState &ns, SweepEmptyStore &st, Fir
         transient_offset = (arrayindex_t)(-it->first);
     }
 
+    RT::data["task"]["search"]["sweep"]["minprogress"] = boff;
+    RT::data["task"]["search"]["sweep"]["maxprogress"] = foff;
     RT::rep->status("transition progress range [%d,%d], transients in [%d,%d]", boff, foff,
                     -(int32_t)(transient_offset), foff);
 
@@ -240,9 +242,9 @@ bool Sweep<T>::run()
     // make a final calculation of states and edges
     forwardStateCount();
 
-    delete[] args.persistent_count;
-    delete[] args.transient_count;
-    delete[] args.call_count;
+//    delete[] args.persistent_count;
+//    delete[] args.transient_count;
+//    delete[] args.call_count;
     return prop.value;
 }
 
@@ -982,6 +984,9 @@ void Sweep<T>::forwardStateCount(bool show)
     {
         RT::rep->status("%lld persistent markings, %lld transient markings (max)", pscnt, trcnt);
     }
+    RT::data["task"]["search"]["sweep"]["maxtransient"] = static_cast<int>(trcnt);
+    RT::data["task"]["search"]["sweep"]["persistent"] = static_cast<int>(pscnt);
+    RT::data["task"]["search"]["sweep"]["peak"] = static_cast<int>(trcnt+pscnt);
     count_store.setMarkings(trcnt + pscnt);
     count_store.setCalls(ccnt);
 }

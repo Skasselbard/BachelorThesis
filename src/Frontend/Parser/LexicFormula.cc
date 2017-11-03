@@ -27,8 +27,8 @@
 
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 37
+#define YY_FLEX_MINOR_VERSION 6
+#define YY_FLEX_SUBMINOR_VERSION 0
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -161,7 +161,15 @@ typedef unsigned int flex_uint32_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k.
+ * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
+ * Ditto for the __ia64__ case accordingly.
+ */
+#define YY_BUF_SIZE 32768
+#else
 #define YY_BUF_SIZE 16384
+#endif /* __ia64__ */
 #endif
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
@@ -200,6 +208,13 @@ extern FILE *ptformula_in, *ptformula_out;
                     if ( ptformula_text[yyl] == '\n' )\
                         --ptformula_lineno;\
             }while(0)
+    #define YY_LINENO_REWIND_TO(dst) \
+            do {\
+                const char *p;\
+                for ( p = yy_cp-1; p >= (dst); --p)\
+                    if ( *p == '\n' )\
+                        --ptformula_lineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -234,7 +249,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -304,7 +319,7 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 
 /* yy_hold_char holds the character lost when ptformula_text is formed. */
 static char yy_hold_char;
-static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
+static int yy_n_chars;		/* number of characters read into yy_ch_buf */
 yy_size_t ptformula_leng;
 
 /* Points to current character in buffer. */
@@ -363,7 +378,7 @@ void ptformula_free (void *  );
 
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
-#define ptformula_wrap() 1
+#define ptformula_wrap() (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -377,11 +392,17 @@ extern int ptformula_lineno;
 int ptformula_lineno = 1;
 
 extern char *ptformula_text;
+#ifdef yytext_ptr
+#undef yytext_ptr
+#endif
 #define yytext_ptr ptformula_text
 
 static yy_state_type yy_get_previous_state (void );
 static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
 static int yy_get_next_buffer (void );
+#if defined(__GNUC__) && __GNUC__ >= 3
+__attribute__((__noreturn__))
+#endif
 static void yy_fatal_error (yyconst char msg[]  );
 
 /* Done after the current pattern has been matched and before the
@@ -442,7 +463,7 @@ static yyconst flex_int16_t yy_accept[318] =
         3,    3,   21,   27,    3,    3,    0
     } ;
 
-static yyconst flex_int32_t yy_ec[256] =
+static yyconst YY_CHAR yy_ec[256] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    4,    1,    1,    1,    1,    1,    1,    1,
@@ -474,7 +495,7 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[46] =
+static yyconst YY_CHAR yy_meta[46] =
     {   0,
         1,    2,    3,    3,    1,    1,    2,    2,    4,    1,
         2,    1,    1,    1,    2,    2,    1,    1,    1,    1,
@@ -483,7 +504,7 @@ static yyconst flex_int32_t yy_meta[46] =
         1,    1,    1,    2,    2
     } ;
 
-static yyconst flex_int16_t yy_base[323] =
+static yyconst flex_uint16_t yy_base[323] =
     {   0,
         0,    0,   45,    0,  549,    0,  550,  550,  550,  530,
         0,  550,  550,    0,    0,  550,   77,  538,  532,  550,
@@ -563,7 +584,7 @@ static yyconst flex_int16_t yy_def[323] =
       317,  317
     } ;
 
-static yyconst flex_int16_t yy_nxt[596] =
+static yyconst flex_uint16_t yy_nxt[596] =
     {   0,
         6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
        16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
@@ -777,7 +798,7 @@ information on the macro.
   ptformula_lloc.last_column = ptformula_colno+ptformula_leng-1; \
   ptformula_colno += ptformula_leng;
 
-#line 781 "Frontend/Parser/LexicFormula.cc"
+#line 802 "Frontend/Parser/LexicFormula.cc"
 
 #define INITIAL 0
 #define IN_COMMENT 1
@@ -811,11 +832,11 @@ void ptformula_set_extra (YY_EXTRA_TYPE user_defined  );
 
 FILE *ptformula_get_in (void );
 
-void ptformula_set_in  (FILE * in_str  );
+void ptformula_set_in  (FILE * _in_str  );
 
 FILE *ptformula_get_out (void );
 
-void ptformula_set_out  (FILE * out_str  );
+void ptformula_set_out  (FILE * _out_str  );
 
 yy_size_t ptformula_get_leng (void );
 
@@ -823,7 +844,7 @@ char *ptformula_get_text (void );
 
 int ptformula_get_lineno (void );
 
-void ptformula_set_lineno (int line_number  );
+void ptformula_set_lineno (int _line_number  );
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -835,6 +856,10 @@ extern "C" int ptformula_wrap (void );
 #else
 extern int ptformula_wrap (void );
 #endif
+#endif
+
+#ifndef YY_NO_UNPUT
+    
 #endif
 
 #ifndef yytext_ptr
@@ -857,7 +882,12 @@ static int input (void );
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k */
+#define YY_READ_BUF_SIZE 16384
+#else
 #define YY_READ_BUF_SIZE 8192
+#endif /* __ia64__ */
 #endif
 
 /* Copy whatever the last rule matched to the standard output. */
@@ -944,7 +974,7 @@ extern int ptformula_lex (void);
 
 /* Code executed at the end of each rule. */
 #ifndef YY_BREAK
-#define YY_BREAK break;
+#define YY_BREAK /*LINTED*/break;
 #endif
 
 #define YY_RULE_SETUP \
@@ -954,16 +984,10 @@ extern int ptformula_lex (void);
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
     
-#line 64 "Frontend/Parser/LexicFormula.ll"
-
-
- /* from http://flex.sourceforge.net/manual/How-can-I-match-C_002dstyle-comments_003f.html */
-#line 966 "Frontend/Parser/LexicFormula.cc"
-
 	if ( !(yy_init) )
 		{
 		(yy_init) = 1;
@@ -990,7 +1014,14 @@ YY_DECL
 		ptformula__load_buffer_state( );
 		}
 
-	while ( 1 )		/* loops until end-of-file is reached */
+	{
+#line 64 "Frontend/Parser/LexicFormula.ll"
+
+
+ /* from http://flex.sourceforge.net/manual/How-can-I-match-C_002dstyle-comments_003f.html */
+#line 1023 "Frontend/Parser/LexicFormula.cc"
+
+	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
 		yy_cp = (yy_c_buf_p);
 
@@ -1006,7 +1037,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				(yy_last_accepting_state) = yy_current_state;
@@ -1036,7 +1067,7 @@ yy_find_action:
 
 		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
 			{
-			int yyl;
+			yy_size_t yyl;
 			for ( yyl = 0; yyl < ptformula_leng; ++yyl )
 				if ( ptformula_text[yyl] == '\n' )
 					   
@@ -1317,7 +1348,7 @@ YY_RULE_SETUP
 #line 129 "Frontend/Parser/LexicFormula.ll"
 ECHO;
 	YY_BREAK
-#line 1321 "Frontend/Parser/LexicFormula.cc"
+#line 1352 "Frontend/Parser/LexicFormula.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(IN_COMMENT):
 	yyterminate();
@@ -1449,6 +1480,7 @@ case YY_STATE_EOF(IN_COMMENT):
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
+	} /* end of user's declarations */
 } /* end of ptformula_lex */
 
 /* yy_get_next_buffer - try to read in a new buffer
@@ -1460,9 +1492,9 @@ case YY_STATE_EOF(IN_COMMENT):
  */
 static int yy_get_next_buffer (void)
 {
-    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = (yytext_ptr);
-	register int number_to_move, i;
+    	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = (yytext_ptr);
+	yy_size_t number_to_move, i;
 	int ret_val;
 
 	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
@@ -1491,7 +1523,7 @@ static int yy_get_next_buffer (void)
 	/* Try to read more data. */
 
 	/* First move last chars to start of buffer. */
-	number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
+	number_to_move = (yy_size_t) ((yy_c_buf_p) - (yytext_ptr)) - 1;
 
 	for ( i = 0; i < number_to_move; ++i )
 		*(dest++) = *(source++);
@@ -1573,9 +1605,9 @@ static int yy_get_next_buffer (void)
 	else
 		ret_val = EOB_ACT_CONTINUE_SCAN;
 
-	if ((yy_size_t) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
+	if ((int) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
-		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+		int new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
 		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) ptformula_realloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size  );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
@@ -1594,14 +1626,14 @@ static int yy_get_next_buffer (void)
 
     static yy_state_type yy_get_previous_state (void)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
+	yy_state_type yy_current_state;
+	char *yy_cp;
     
 	yy_current_state = (yy_start);
 
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
 		if ( yy_accept[yy_current_state] )
 			{
 			(yy_last_accepting_state) = yy_current_state;
@@ -1626,10 +1658,10 @@ static int yy_get_next_buffer (void)
  */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
-	register int yy_is_jam;
-    	register char *yy_cp = (yy_c_buf_p);
+	int yy_is_jam;
+    	char *yy_cp = (yy_c_buf_p);
 
-	register YY_CHAR yy_c = 1;
+	YY_CHAR yy_c = 1;
 	if ( yy_accept[yy_current_state] )
 		{
 		(yy_last_accepting_state) = yy_current_state;
@@ -1646,6 +1678,10 @@ static int yy_get_next_buffer (void)
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
+
+#ifndef YY_NO_UNPUT
+
+#endif
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
@@ -1801,7 +1837,7 @@ static void ptformula__load_buffer_state  (void)
 	if ( ! b )
 		YY_FATAL_ERROR( "out of dynamic memory in ptformula__create_buffer()" );
 
-	b->yy_buf_size = size;
+	b->yy_buf_size = (yy_size_t)size;
 
 	/* yy_ch_buf has to be 2 characters longer than the size given because
 	 * we need to put in 2 end-of-buffer characters.
@@ -1956,7 +1992,7 @@ static void ptformula_ensure_buffer_stack (void)
 		 * scanner will even need a stack. We use 2 instead of 1 to avoid an
 		 * immediate realloc on the next call.
          */
-		num_to_alloc = 1;
+		num_to_alloc = 1; /* After all that talk, this was set to 1 anyways... */
 		(yy_buffer_stack) = (struct yy_buffer_state**)ptformula_alloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
@@ -1973,7 +2009,7 @@ static void ptformula_ensure_buffer_stack (void)
 	if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1){
 
 		/* Increase the buffer to prepare for a possible push. */
-		int grow_size = 8 /* arbitrary grow size */;
+		yy_size_t grow_size = 8 /* arbitrary grow size */;
 
 		num_to_alloc = (yy_buffer_stack_max) + grow_size;
 		(yy_buffer_stack) = (struct yy_buffer_state**)ptformula_realloc
@@ -2050,7 +2086,7 @@ YY_BUFFER_STATE ptformula__scan_bytes  (yyconst char * yybytes, yy_size_t  _yyby
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
@@ -2081,7 +2117,7 @@ YY_BUFFER_STATE ptformula__scan_bytes  (yyconst char * yybytes, yy_size_t  _yyby
 
 static void yy_fatal_error (yyconst char* msg )
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+			(void) fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -2147,29 +2183,29 @@ char *ptformula_get_text  (void)
 }
 
 /** Set the current line number.
- * @param line_number
+ * @param _line_number line number
  * 
  */
-void ptformula_set_lineno (int  line_number )
+void ptformula_set_lineno (int  _line_number )
 {
     
-    ptformula_lineno = line_number;
+    ptformula_lineno = _line_number;
 }
 
 /** Set the input stream. This does not discard the current
  * input buffer.
- * @param in_str A readable stream.
+ * @param _in_str A readable stream.
  * 
  * @see ptformula__switch_to_buffer
  */
-void ptformula_set_in (FILE *  in_str )
+void ptformula_set_in (FILE *  _in_str )
 {
-        ptformula_in = in_str ;
+        ptformula_in = _in_str ;
 }
 
-void ptformula_set_out (FILE *  out_str )
+void ptformula_set_out (FILE *  _out_str )
 {
-        ptformula_out = out_str ;
+        ptformula_out = _out_str ;
 }
 
 int ptformula_get_debug  (void)
@@ -2177,9 +2213,9 @@ int ptformula_get_debug  (void)
         return ptformula__flex_debug;
 }
 
-void ptformula_set_debug (int  bdebug )
+void ptformula_set_debug (int  _bdebug )
 {
-        ptformula__flex_debug = bdebug ;
+        ptformula__flex_debug = _bdebug ;
 }
 
 static int yy_init_globals (void)
@@ -2242,7 +2278,8 @@ int ptformula_lex_destroy  (void)
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 {
-	register int i;
+		
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
@@ -2251,7 +2288,7 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen (yyconst char * s )
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -2261,11 +2298,12 @@ static int yy_flex_strlen (yyconst char * s )
 
 void *ptformula_alloc (yy_size_t  size )
 {
-	return (void *) malloc( size );
+			return (void *) malloc( size );
 }
 
 void *ptformula_realloc  (void * ptr, yy_size_t  size )
 {
+		
 	/* The cast to (char *) in the following accommodates both
 	 * implementations that use char* generic pointers, and those
 	 * that use void* generic pointers.  It works with the latter
@@ -2278,7 +2316,7 @@ void *ptformula_realloc  (void * ptr, yy_size_t  size )
 
 void ptformula_free (void * ptr )
 {
-	free( (char *) ptr );	/* see ptformula_realloc() for (char *) cast */
+			free( (char *) ptr );	/* see ptformula_realloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"

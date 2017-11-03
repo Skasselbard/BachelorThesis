@@ -18,6 +18,7 @@
 #include <config.h>
 #include <Core/Dimensions.h>
 #include <Exploration/CTLExploration.h>
+#include <Exploration/FirelistStubbornCTL.h>
 #include <Symmetry/Symmetry.h>
 #include <Symmetry/Constraints.h>
 #include <Exploration/Firelist.h>
@@ -40,6 +41,10 @@ extern kc::tFormula TheFormula;
 
 CTLTask::CTLTask()
 {
+	previousNrOfMarkings  = 0;
+	taskname = "CTL model checker";
+        RT::data["task"]["search"]["type"] = "ctl model checker";
+	//Task::outputFormula(TheFormula);
     goStatus = false;
     ns = NetState::createNetStateFromInitial();
     // prepare counting of place in the formula
@@ -50,7 +55,9 @@ CTLTask::CTLTask()
     places_mentioned = 0;
     unique_places_mentioned = 0;
         // replace path quantor+temporal operator by dedicated CTL operator
+        TheFormula = TheFormula->rewrite(kc::tautology);
         TheFormula = TheFormula->rewrite(kc::ctloperators);
+        TheFormula = TheFormula->rewrite(kc::tautology);
         TheFormula->unparse(myprinter, kc::ctl);
 	assert(TheFormula);
 	assert(TheFormula->ctl_formula);
@@ -60,8 +67,50 @@ CTLTask::CTLTask()
         assert(ctlFormula);
     // prepare task
     ctlStore = StoreCreator<void *>::createStore(number_of_threads);
-        RT::data["analysis"]["type"] = "modelchecking";
-    fl = new Firelist();
+     if(RT::args.stubborn_arg != stubborn_arg_off)
+     {
+	// use stubborn sets
+	
+	// mark visible transitions
+	Transition::Visible = new bool [Net::Card[TR]];
+	TheFormula->unparse(myprinter,kc::visible);
+	
+    for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_net)
+        {
+		int vis = 0;
+		for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+		{
+			if(Transition::Visible[i]) vis++;
+		}
+                RT::data["task"]["search"]["stubborn"]["visible"] = vis;
+		break;
+        }
+    }
+	if(TheFormula->containsNext)
+	{
+		// application of stubborn sets not possible
+		RT::rep->status("Formula contains EX or AX operators, stubborn sets not applicable");
+		fl = new Firelist();
+                RT::data["task"]["search"]["stubborn"]["type"] = "no (formula contains X operator)";
+	}
+	else
+	{
+		// compute conflict clusters
+		Net::computeConflictClusters();
+
+		// use stubborn set firelist generator
+		fl = new FirelistStubbornCTL();
+		RT::rep->status("Using CTL preserving stubborn sets");
+                RT::data["task"]["search"]["stubborn"]["type"] = "ctl preserving";
+	}
+     }
+     else
+     {
+            RT::data["task"]["search"]["stubborn"]["type"] = "no";
+	    fl = new Firelist();
+     }
     ctlExploration = new CTLExploration();
 }
 
@@ -118,14 +167,18 @@ void CTLTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["produced_by"] = std::string(taskname);
+        RT::data["result"]["value"] = true;
         RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The net satisfies the given formula.").str());
 
         break;
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["produced_by"] = std::string(taskname);
+        RT::data["result"]["value"] = false;
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The net does not satisfy the given formula.").str());
 
@@ -133,7 +186,9 @@ void CTLTask::interpreteResult(ternary_t result)
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["produced_by"] = std::string(taskname);
+        RT::data["result"]["value"] = JSON::null;
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The net may or may not satisfy the given formula.").str());
 
@@ -159,8 +214,8 @@ void CTLTask::getStatistics()
         uint64_t result2 = ctlStore->get_number_of_markings();
 
             RT::rep->status("%llu markings, %llu edges", result2, result);
-    RT::data["analysis"]["stats"]["states"] = static_cast<int>(result2);
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int>(result);
+    RT::data["result"]["markings"] = static_cast<int>(result2);
+    RT::data["result"]["edges"] = static_cast<int>(result);
 
 }
 

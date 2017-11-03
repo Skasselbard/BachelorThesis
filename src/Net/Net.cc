@@ -35,6 +35,7 @@
 #include <Net/Place.h>
 #include <Net/Transition.h>
 #include <Exploration/Firelist.h>
+#include <Exploration/ComputePlacesBounds.h> 
 
 void    organizeConflictingTransitions();
 void    organizeBackConflictingTransitions();
@@ -235,6 +236,67 @@ void clusterSortArcs(arrayindex_t *arcs, mult_t *mults, const arrayindex_t from,
 
     clusterSortArcs(arcs, mults, from, blue);
     clusterSortArcs(arcs, mults, red, to);
+}
+
+int getInDegree(arrayindex_t t)
+{
+	int r = 0;
+	for(arrayindex_t i = 0;i < Net::CardArcs[TR][PRE][t];i++)
+	{
+		r += Net::Arc[TR][PRE][t][i];
+	}
+	return r;
+	
+}
+
+// sort transitions in cluster according to in degree
+void clusterSortTransitions(arrayindex_t *array, const arrayindex_t from,
+                   const arrayindex_t to)
+{
+    if ((to - from) < 2)
+    {
+        return;    // less than 2 elements are always sorted
+    }
+
+    // points to first index where element is not known < pivot
+    arrayindex_t blue = from;
+    // points to first index where element is not know <= pivot
+    arrayindex_t white = from + 1;
+    // points to last index (+1) where element is not know to be  pivot
+    arrayindex_t red = to;
+    const arrayindex_t pivot = getInDegree(array[from]);
+    
+
+    assert(from < to);
+
+    while (red > white)
+    {
+        if (getInDegree(array[white]) < pivot)
+        {
+            // swap white <-> blue
+            const arrayindex_t tmp_index = array[blue];
+            array[blue++] = array[white];
+            array[white++] = tmp_index;
+        }
+        else
+        {
+		if(getInDegree(array[white]) == pivot)
+		{
+			++white;
+		}
+		else
+		{
+
+		    // swap white <-> red
+		    const arrayindex_t tmp_index = array[--red];
+		    array[red] = array[white];
+		    array[white] = tmp_index;
+		}
+        }
+    }
+
+    clusterSortTransitions(array, from, blue);
+    clusterSortTransitions(array, red, to);
 }
 
 void backClusterSortArcs(arrayindex_t *arcs, mult_t *mults, const arrayindex_t from,
@@ -1553,6 +1615,16 @@ This function does the preprocessing for the given net. With finished preprocess
 */
 void Net::preprocess()
 {
+    /************************************
+    * 0. compute structural bounds      *
+    ************************************/
+
+//ComputePlacesBounds cpb = ComputePlacesBounds();
+//   for(arrayindex_t p = 0; p < Net::Card[PL];p++)
+//   {
+//		if(cpb.placesBounds[p] < Place::Capacity[p]) Place::Capacity[p] = cpb.placesBounds[p];
+//   }
+
     const arrayindex_t cardPL = Net::Card[PL];
     const arrayindex_t cardTR = Net::Card[TR];
 
@@ -1566,6 +1638,7 @@ void Net::preprocess()
         Place::SizeOfBitVector +=
             (Place::CardBits[p] = Place::Capacity2Bits(Place::Capacity[p]));
     }
+	RT::rep->status("Size  of bit vector: %d",Place::SizeOfBitVector);
 
     /********************
     * 2. Compute Hashes *
@@ -1581,7 +1654,7 @@ void Net::preprocess()
     // set hash value for initial marking
     Marking::HashCurrent = Marking::HashInitial;
 
-    Firelist::usedAsScapegoat = new uint64_t [Net::Card[PL]];
+    Firelist::usedAsScapegoat = new arrayindex_t [Net::Card[PL]];
 	for(arrayindex_t i = 0; i < Net::Card[PL];i++)
 	{
 		   Firelist::usedAsScapegoat[i] = 0;
@@ -1627,6 +1700,21 @@ void Net::preprocess()
     RT::data["net"]["transitions"] = static_cast<int>(Net::Card[TR]);
     RT::data["net"]["places_significant"] = static_cast<int>(Place::CardSignificant);
 
+    for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_net)
+        {
+		int arcs = 0;
+		for(arrayindex_t p = 0; p < Net::Card[PL];p++)
+		{
+			arcs += Net::CardArcs[PL][PRE][p];
+			arcs += Net::CardArcs[PL][POST][p];
+		}
+                RT::data["net"]["arcs"] = arcs;
+        }
+    }
+
+
     // sort all arcs. Needs to be done before enabledness check in order to not mess up the disabled lists and scapegoats, but after determining the significant places since it swaps places and destroys any arc ordering.
 
     /**************************************
@@ -1670,19 +1758,23 @@ void Net::preprocess()
     {
         Transition::checkEnabled_Initial(t);
     }
+    /*******************************
+    * 8. Conflict Clusters         *
+    *******************************/
+    computeConflictClusters();
 }
 
 void unionfindsort(arrayindex_t * cl,int64_t * uf, arrayindex_t card)
 {
 	int64_t pivot = uf[0];
-	arrayindex_t b = 0; // the first element not smaller than pivot
-	arrayindex_t w = 1; // the first element not smaller or equal to pivot
-	arrayindex_t r = card; // the first element larger than pivot
+	arrayindex_t b = 0; // the first element not larger than pivot
+	arrayindex_t w = 1; // the first element not larger or equal to pivot
+	arrayindex_t r = card; // the first element smaller than pivot
 
 	// the elements between w and (including r-1) form the unknwon area
 	while(w<r)
 	{
-		if(uf[w] < pivot)
+		if(uf[w] > pivot)
 		{
 			// swap into the 0..b area
 			arrayindex_t tempc = cl[b];
@@ -2011,14 +2103,11 @@ void * computeconflictthread(void * data)
 	pthread_exit(NULL); // this thread finished
 }
 
-void organizeConflictingTransitions()
+// \brief Compute all conflict clusters, fill the array
+// Transition::StubbornPriority and Transition::SingletonClusters
+void Net::computeConflictClusters()
 {
-	
-	cardOriginal = 0;
-	runningclusterthreads = 0;
-	pthread_cond_init(&clustercond,NULL);
-	clusterSortAllArcs();
-	arrayindex_t sectionL, sectionR;
+
 	// 1. Compute conflict clusters using union/find algorithm
 
 	// the semantics of the data structure: 
@@ -2076,16 +2165,14 @@ void organizeConflictingTransitions()
 				if(unionfind[k] < unionfind[l])
 				{
 					// k is in larger set (remember that we compare negative numbers)
-					m = k;
-					unionfind[k] = unionfind[k] + unionfind[l]; // new size
-					unionfind[l] = k; // l linked to k
+					unionfind[k] += unionfind[l]; // new size
+					m = unionfind[l] = k; // l linked to k
 				}
 				else
 				{
-					m = l;
 					// l is in larger set 
-					unionfind[l] = unionfind[k] + unionfind[l]; // new size
-					unionfind[k] = l; // k linked to l
+					unionfind[l] += unionfind[k] ; // new size
+					m = unionfind[k] = l; // k linked to l
 				}
 			}
 			// after union, we compress the paths of both original nodes
@@ -2108,68 +2195,47 @@ void organizeConflictingTransitions()
 
 	// here, the union find structure represents the disjoint (transition parts of)
 	// all conflict clusters. For accessing it, we post process the data structure.
-	// First, we link all nodes directly to their root
+	// First, we record, for each transition, the -size of its cluster
 	
+	arrayindex_t cardClusters = 0;
 	for(arrayindex_t i = 0; i < Net::Card[TR]; i++)
 	{
 		arrayindex_t k;
 		for(k = i; unionfind[k] >= 0; k = unionfind[k]);
-		if(k != i) unionfind[i] = k;
-	}
-
-	// Second, we turn all negative entries into positive ones. After this step
-	// t1 and t2 are in the same set iff unionfind[t1] == unionfind[t2].
-	// At the same time, we count the sets.
-	
-	arrayindex_t CardConflictingSets = 0;
-
-	for(arrayindex_t i = 0; i < Net::Card[TR];i++)
-	{
-		if(unionfind[i] < 0) 
+		if(k != i) 
 		{
-			unionfind[i] = i; // must have been root
-			++CardConflictingSets;
+			unionfind[i] = unionfind[k];
+		}
+		else
+		{
+			cardClusters++;
 		}
 	}
-	RT::rep->status("The net has %llu conflict clusters",CardConflictingSets);
-	runningclusterthreads = CardConflictingSets; // we start a thread for each cluster
+	RT::data["net"]["conflict_clusters"] = static_cast<int>(cardClusters);
+
 
 	// Third, we introduce a new array containing each transition once and
 	// sort it according to the unionfind values
 
-	Clusters = new arrayindex_t [Net::Card[TR]];
+	Transition::StubbornPriority = new arrayindex_t[Net::Card[TR]];
 	for(arrayindex_t i = 0; i < Net::Card[TR]; i++)
 	{
-		Clusters[i] = i;
+		Transition::StubbornPriority[i] = i;
 	}
-	unionfindsort(Clusters,unionfind,Net::Card[TR]);
-	
-	// 2. for each conflict cluster, introduce a todo record
-	arrayindex_t clStart, clEnd;
+	unionfindsort(Transition::StubbornPriority,unionfind,Net::Card[TR]);
 
+	// Fourth: find the position of the first transition that is not alone in its conflict set.
 
-	for(clStart = 0; clStart < Net::Card[TR]; )
+	arrayindex_t i;
+	for(i = 0; i < Net::Card[TR];i++)
 	{
-		for(clEnd = clStart+1; clEnd < Net::Card[TR] && unionfind[clStart] == unionfind[clEnd]; clEnd++);
-		todoConf * rec = new todoConf();
-		rec -> start = rec -> from = clStart;
-		rec -> to = clEnd;
-		rec -> vector = reinterpret_cast<arrayindex_t *> (calloc(clEnd-clStart, sizeof(arrayindex_t)));
-		rec -> bvector = reinterpret_cast<bool *> (calloc(Net::Card[TR], sizeof(bool)));
-		rec -> pindex = 0;
-		rec -> vindex = 0;
-		rec -> next = NULL;
-
-		pthread_t * mythread = new pthread_t();
-		pthread_create(mythread,NULL,computeconflictthread,reinterpret_cast<void *>(rec));
-		clStart = clEnd;
+		if(unionfind[i] != -1)
+		{
+			break;
+		}
 	}
-
-	// now: wait for all threads to be finished
-	pthread_mutex_lock(&clustermutex);
-	pthread_cond_wait(&clustercond,&clustermutex);
-	pthread_mutex_unlock(&clustermutex);
-	RT::rep->status("computed %u orginal conflict arrays",cardOriginal);
+	Transition::SingletonClusters = i;
+	RT::data["net"]["singleton_clusters"] = static_cast<int>(Transition::SingletonClusters);
 }
 
 void organizeBackConflictingTransitions()

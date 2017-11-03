@@ -51,6 +51,8 @@ public:
     /// evaluates a given property by standard depth-first-search
     int64_t depth_first_num(SimpleProperty &property, NetState &ns, Store<void> &myStore,
                              Firelist &myFirelist, int threadNumber);
+	int64_t lp(SimpleProperty &property, NetState &ns, Store<void> &myStore,
+                             Firelist &myFirelist, int threadNumber);
     // remaining methods only here for syntactical completeness
     // LCOV_EXCL_START
     bool virtual depth_first(SimpleProperty &property, NetState &ns, Store<void> &myStore,

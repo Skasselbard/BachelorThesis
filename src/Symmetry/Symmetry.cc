@@ -143,6 +143,11 @@ void GeneratingSet::condense()
     newlevel = oldlevel++;
     for (; oldlevel < Net::Card[PL]; oldlevel++)
     {
+	if(newlevel > RT::args.symmetrydepth_arg)
+	{	
+		cardLevels = newlevel;
+		break;
+	}
         if (!card[oldlevel])
         {
             continue;
@@ -195,16 +200,19 @@ capacity_t *GeneratingSet::canonize(capacity_t *m)
     // iterate all levels
     for (arrayindex_t d = 0; d < cardLevels; d++)
     {
+	arrayindex_t start = depth[d];
+	arrayindex_t end = d +1 < cardLevels ? d + 1 : Net::Card[PL];
         // within each level, select best symmetry
         arrayindex_t bestcandidate = 0;
         for (arrayindex_t currentcandidate = 1; currentcandidate < card[d]; currentcandidate++)
         {
+	    bool have_minimum;
             arrayindex_t i;
             // compare currentcandidate with bestcandidate
-            for (i = depth[d]; i < Net::Card[PL]; i++)
+            for (i = start; i < end; i++)
             {
                 // check if we find a mismatch
-                if (m[store[d][currentcandidate][i - depth[d]]] != m[store[d][bestcandidate][i - depth[d]]])
+                if (m[store[d][currentcandidate][i - start]] != m[store[d][bestcandidate][i - start]])
                 {
                     break;
                 }
@@ -212,12 +220,22 @@ capacity_t *GeneratingSet::canonize(capacity_t *m)
             // evaluate the mismatch to decide which vector is better
             // if we did not find a mismatch, then i == Net::Card[PL], so we
             // stick with the old bestcandidate
-            if (i < Net::Card[PL]
-                    && m[store[d][currentcandidate][i - depth[d]]] < m[store[d][bestcandidate][i - depth[d]]])
+            if (i < end
+                    && m[store[d][currentcandidate][i - start]] < m[store[d][bestcandidate][i - start]])
             {
                 // current better than best
                 bestcandidate = currentcandidate;
+	        for(i=start;i<end;i++)
+		{
+			if(m[store[d][bestcandidate][i - start]] != 0)
+			{
+				break;
+			}
+			if(i == end) have_minimum = true;
+			else have_minimum = false;
+		}
             }
+	    if(have_minimum) break;
         }
 
         // here: bestcandidate is best symmetry in level d,
@@ -225,26 +243,26 @@ capacity_t *GeneratingSet::canonize(capacity_t *m)
         // any symmetry at all (or applying identity)
         // hence: compare best candidate to m itself
         arrayindex_t i;
-        for (i = depth[d]; i < Net::Card[PL]; i++)
+        for (i = start; i < end; i++)
         {
-            if (m[i] != m[store[d][bestcandidate][i - depth[d]]])
+            if (m[i] != m[store[d][bestcandidate][i - start]])
             {
                 break;
             }
         }
-        if (i < Net::Card[PL] && m[store[d][bestcandidate][i - depth[d]]] < m[i])
+        if (i < end && m[store[d][bestcandidate][i - start]] < m[i])
         {
             // the best symmetry is actually better than the identity -> now
             // apply best symmetry to given marking
 
             // the markings are the same for the first depth[d] places
-            for (arrayindex_t i = 0; i < depth[d]; i ++)
+            for (arrayindex_t i = 0; i < start; i ++)
             {
                 reserve_marking[i] = m[i];
             }
 
             // from depth[d] on, apply symmetry
-            for (arrayindex_t i = depth[d]; i < Net::Card[PL]; i++)
+            for (arrayindex_t i = start; i < Net::Card[PL]; i++)
             {
                 reserve_marking[i] = m[store[d][bestcandidate][i - depth[d]]];
             }

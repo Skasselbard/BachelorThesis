@@ -65,7 +65,9 @@ typedef enum {  formula_ag = 1,
                 formula_false = 22,
                 formula_atomic = 23,
                 formula_deadlock = 24,
-                formula_nodeadlock = 25
+                formula_nodeadlock = 25,
+                formula_fireable = 26,
+                formula_unfireable = 27
              } FormulaNodeTagt;
 
 class FormulaInfo

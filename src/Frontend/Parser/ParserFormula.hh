@@ -1,19 +1,19 @@
-/* A Bison parser, made by GNU Bison 2.7.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
-   
+
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -26,13 +26,13 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
 #ifndef YY_PTFORMULA_FRONTEND_PARSER_PARSERFORMULA_HH_INCLUDED
 # define YY_PTFORMULA_FRONTEND_PARSER_PARSERFORMULA_HH_INCLUDED
-/* Enabling traces.  */
+/* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
@@ -40,54 +40,53 @@
 extern int ptformula_debug;
 #endif
 
-/* Tokens.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     END = 0,
-     _CTLOPERATOR_ = 258,
-     IDENTIFIER = 259,
-     NUMBER = 260,
-     _RELEASE_ = 261,
-     _NEXTSTATE_ = 262,
-     _INITIAL_ = 263,
-     _DEADLOCK_ = 264,
-     _FORMULA_ = 265,
-     _MAX_ = 266,
-     _AND_ = 267,
-     _NOT_ = 268,
-     _OR_ = 269,
-     _XOR_ = 270,
-     _iff_ = 271,
-     _ALLPATH_ = 272,
-     _ALWAYS_ = 273,
-     _EVENTUALLY_ = 274,
-     _EXPATH_ = 275,
-     _UNTIL_ = 276,
-     _REACHABLE_ = 277,
-     _INVARIANT_ = 278,
-     _IMPOSSIBLE_ = 279,
-     _notequal_ = 280,
-     _implies_ = 281,
-     _equals_ = 282,
-     _plus_ = 283,
-     _minus_ = 284,
-     _times_ = 285,
-     _leftparenthesis_ = 286,
-     _rightparenthesis_ = 287,
-     _greaterthan_ = 288,
-     _lessthan_ = 289,
-     _greaterorequal_ = 290,
-     _lessorequal_ = 291,
-     _semicolon_ = 292,
-     _TRUE_ = 293,
-     _FALSE_ = 294,
-     _FIREABLE_ = 295,
-     _omega_ = 296,
-     _colon_ = 297
-   };
+  enum yytokentype
+  {
+    END = 0,
+    _CTLOPERATOR_ = 258,
+    IDENTIFIER = 259,
+    NUMBER = 260,
+    _RELEASE_ = 261,
+    _NEXTSTATE_ = 262,
+    _INITIAL_ = 263,
+    _DEADLOCK_ = 264,
+    _FORMULA_ = 265,
+    _MAX_ = 266,
+    _AND_ = 267,
+    _NOT_ = 268,
+    _OR_ = 269,
+    _XOR_ = 270,
+    _iff_ = 271,
+    _ALLPATH_ = 272,
+    _ALWAYS_ = 273,
+    _EVENTUALLY_ = 274,
+    _EXPATH_ = 275,
+    _UNTIL_ = 276,
+    _REACHABLE_ = 277,
+    _INVARIANT_ = 278,
+    _IMPOSSIBLE_ = 279,
+    _notequal_ = 280,
+    _implies_ = 281,
+    _equals_ = 282,
+    _plus_ = 283,
+    _minus_ = 284,
+    _times_ = 285,
+    _leftparenthesis_ = 286,
+    _rightparenthesis_ = 287,
+    _greaterthan_ = 288,
+    _lessthan_ = 289,
+    _greaterorequal_ = 290,
+    _lessorequal_ = 291,
+    _semicolon_ = 292,
+    _TRUE_ = 293,
+    _FALSE_ = 294,
+    _FIREABLE_ = 295,
+    _omega_ = 296,
+    _colon_ = 297
+  };
 #endif
 /* Tokens.  */
 #define END 0
@@ -132,41 +131,25 @@ extern int ptformula_debug;
 #define _omega_ 296
 #define _colon_ 297
 
+/* Value type.  */
 
-
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
-# define YYSTYPE_IS_DECLARED 1
-#endif
-
+/* Location type.  */
 #if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
-typedef struct YYLTYPE
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
 {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
-} YYLTYPE;
-# define yyltype YYLTYPE /* obsolescent; will be withdrawn */
+};
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
 
+
 extern YYSTYPE ptformula_lval;
 extern YYLTYPE ptformula_lloc;
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int ptformula_parse (void *YYPARSE_PARAM);
-#else
-int ptformula_parse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
 int ptformula_parse (void);
-#else
-int ptformula_parse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
 
 #endif /* !YY_PTFORMULA_FRONTEND_PARSER_PARSERFORMULA_HH_INCLUDED  */

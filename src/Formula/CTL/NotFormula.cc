@@ -52,6 +52,12 @@ bool NotFormula::check(Store<void *> &s, NetState &ns, Firelist &firelist,
     return not inner->check(s, ns, firelist, witness);
 }
 
+bool NotFormula::checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+                       std::vector<int> &witness)
+{
+    return not inner->checkfair(s, ns, firelist, witness);
+}
+
 // LCOV_EXCL_START
 void NotFormula::DEBUG_print()
 {
@@ -84,4 +90,10 @@ FormulaInfo *NotFormula::getInfo() const
 int NotFormula::countSubFormulas() const
 {
     return 1 + inner->countSubFormulas();
+}
+
+void NotFormula::print()
+{
+	std::cout << "NOT ";
+	inner -> print();
 }
