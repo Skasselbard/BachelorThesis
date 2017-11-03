@@ -45,32 +45,36 @@ This class wraps the stateless search for a deadlock
 
 DeadlockFindpathTask::DeadlockFindpathTask()
 {
+	taskname = "findpath";
 	ns = NetState::createNetStateFromInitial();
-	RT::data["store"]["type"] = "empty";
-        RT::data["store"]["search"] = "findpath";
 	store = new EmptyStore<void>(number_of_threads);
  	p = new DeadlockExploration();
 	RT::rep->indent(-2);
-	RT::rep->status("SEARCH");
+	RT::rep->status("SEARCH (findpath)");
 	RT::rep->indent(2);
 
 	switch(RT::args.stubborn_arg)
 	{
 	case stubborn_arg_deletion:
-	    RT::rep->status("using deadlock preserving stubborn set method with deletion algorithm (%s)",RT::rep->markup(MARKUP_PARAMETER,"--stubborn=deletion").str());
+	RT::data["task"]["findpath"]["stubborn"]["type"] = "deadlock preserving/deletion";
+	    RT::rep->status("findpath: using deadlock preserving stubborn set method with deletion algorithm (%s)",RT::rep->markup(MARKUP_PARAMETER,"--stubborn=deletion").str());
             fl = new FirelistStubbornDeletion();
 	    break;
+	case stubborn_arg_combined:
 	case stubborn_arg_tarjan:
-	    RT::rep->status("using deadlock preserving stubborn set method with insertion algorithm (%s)",RT::rep->markup(MARKUP_PARAMETER,"--stubborn=tarjan").str());
+	RT::data["task"]["findpath"]["stubborn"]["type"] = "deadlock preserving/insertion";
+	    RT::rep->status("findpath: using deadlock preserving stubborn set method with insertion algorithm (%s)",RT::rep->markup(MARKUP_PARAMETER,"--stubborn=tarjan").str());
             fl = new FirelistStubbornDeadlock();
 	    break;
 	case stubborn_arg_off:
-	    RT::rep->status("not using stubborn set method(%s)",RT::rep->markup(MARKUP_PARAMETER,"--stubborn=tarjan").str());
+	    RT::rep->status("findpath: not using stubborn set method(%s)",RT::rep->markup(MARKUP_PARAMETER,"--stubborn=tarjan").str());
 	    fl = new Firelist();
+	RT::data["task"]["findpath"]["stubborn"]["type"] = "no";
 	    break;
 	default:
 	    assert(false); // case consideration exhaustive
 	}
+	RT::data["task"]["findpath"]["threads"] = "number_of_threads";
 	if (number_of_threads == 1)
             {
                 exploration = new DFSExploration();
@@ -92,30 +96,33 @@ DeadlockFindpathTask::~DeadlockFindpathTask()
 
 ternary_t DeadlockFindpathTask::getResult()
 {
-    RT::rep->status("starting randomized, memory-less exploration (%s)",
+    RT::rep->status("findpath: starting randomized, memory-less exploration (%s)",
 	    RT::rep->markup(MARKUP_PARAMETER, "--search=findpath").str());
 
-    RT::rep->status("searching for paths with maximal depth %d (%s)",
+    RT::rep->status("findpath: searching for paths with maximal depth %d (%s)",
 		    RT::args.depthlimit_arg,
 		    RT::rep->markup(MARKUP_PARAMETER, "--depthlimit").str());
 
     if (RT::args.retrylimit_arg == 0)
     {
-	RT::rep->status("no retry limit given (%s)",
+	RT::rep->status("findpath: no retry limit given (%s)",
 	RT::rep->markup(MARKUP_PARAMETER, "--retrylimit").str());
+	RT::data["task"]["findpath"]["retry_limit"] = JSON();
     }
     else
     {
-	RT::rep->status("restarting search at most %d times (%s)",
+	RT::data["task"]["findpath"]["retry_limit"] = RT::args.retrylimit_arg;
+	RT::rep->status("findpath: restarting search at most %d times (%s)",
 			RT::args.retrylimit_arg,
 			RT::rep->markup(MARKUP_PARAMETER, "--retrylimit").str());
     }
+	RT::data["task"]["findpath"]["depthlimit"] = RT::args.depthlimit_arg;
 
     bool bool_result;
     // added a scope to allow a local definition of choose
     {
 	ChooseTransition *choose = NULL;
-    	RT::rep->status("transitions are chosen randomly");
+    	RT::rep->status("findpath: transitions are chosen randomly");
         choose = new ChooseTransitionRandomly();
 	bool_result = exploration->find_path(*p, *ns, RT::args.retrylimit_arg,
 	     RT::args.depthlimit_arg, *fl, *((EmptyStore<void> *)store), *choose);
@@ -139,7 +146,9 @@ void DeadlockFindpathTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The net has deadlock(s).").str());
 
@@ -151,7 +160,9 @@ void DeadlockFindpathTask::interpreteResult(ternary_t result)
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The net may or may not have deadlocks.").str());
@@ -181,9 +192,9 @@ capacity_t *DeadlockFindpathTask::getMarking()
 void DeadlockFindpathTask::getStatistics()
 {
 uint64_t markingcount = store->get_number_of_markings();
-        RT::data["analysis"]["stats"]["states"] = static_cast<int>(result);
+        RT::data["result"]["markings"] = static_cast<int>(result);
         uint64_t edgecount = store->get_number_of_calls();
-        RT::data["analysis"]["stats"]["edges"] = static_cast<int>(result);
+        RT::data["result"]["edges"] = static_cast<int>(result);
 }
 
 

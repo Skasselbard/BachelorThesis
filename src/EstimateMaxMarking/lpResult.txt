@@ -1,0 +1,10 @@
+
+Value of objective function: 6
+
+Actual values of the variables:
+m0                              0
+m1                              2
+x2                              1
+x0                              2
+x1                              0
+m2                              0

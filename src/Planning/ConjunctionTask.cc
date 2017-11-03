@@ -83,22 +83,23 @@ void ConjunctionTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+        RT::data["result"]["value"] = true;
         RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The Boolean predicate is true.").str());
         break;
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+        RT::data["result"]["value"] = false;
         RT::rep->status("%s", RT::rep->markup(MARKUP_BAD, "The Boolean predicate is false.").str());
         break;
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+        RT::data["result"]["value"] = JSON::null;
         RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING, "The Boolean predicate may be true or false.").str());
         break;
     }
+      RT::data["result"]["produced_by"] = "boolean";
 }
  
 Task * ConjunctionTask::buildTask()

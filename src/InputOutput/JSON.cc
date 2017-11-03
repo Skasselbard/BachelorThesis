@@ -310,6 +310,18 @@ JSON::operator std::map<std::string, JSON>() const {
     }
 }
 
+std::string tabb(int indent)
+{
+	std::string result;
+	for(int i = 0; i < indent;i++)
+	{
+		result += " ";
+	}
+	return result;
+}
+
+int indent = 0;
+
 const std::string JSON::toString() const {
     switch (_type) {
         case (null): {
@@ -341,29 +353,35 @@ const std::string JSON::toString() const {
         }
 
         case (array): {
+	    indent += 2;
             std::string result;
 
             for (array_t::const_iterator i = _value.array->begin(); i != _value.array->end(); ++i) {
                 if (i != _value.array->begin()) {
                     result += ", ";
                 }
+		result += "\n";
+	        result += tabb(indent);
                 result += (*i).toString();
             }
 
-            return "[" + result + "]";
+	   indent -= 2;
+            return "\n" + tabb(indent) + "[" + result + "\n" + tabb(indent) + "]";
         }
 
         case (object): {
             std::string result;
 
+	    indent += 2;
             for (object_t::const_iterator i = _value.object->begin(); i != _value.object->end(); ++i) {
                 if (i != _value.object->begin()) {
                     result += ", ";
                 }
-                result += "\"" + i->first + "\": " + (i->second).toString();
+                result += "\n" + tabb(indent) + "\"" + i->first + "\": " + (i->second).toString();
             }
+	    indent -= 2;
 
-            return "{" + result + "}";
+            return "\n" + tabb(indent) + "{" + result + "\n" + tabb(indent) + "}";
         }
         
         default: {

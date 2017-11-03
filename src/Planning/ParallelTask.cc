@@ -59,9 +59,8 @@ void * executeSubTask(void * arg)
     // announce result to main task
 
     // lock mutex
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &last_state);
+    // pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &last_state); //sjsj
     pthread_mutex_lock(&(parent -> subtaskmutex));
-
     // change result variables
     parent -> has_finished[my_index] = true;
     parent -> subresult[my_index] = result;
@@ -124,10 +123,10 @@ ternary_t ParallelTask::getResult()
     {
         if (!has_finished[i])
         {
-            pthread_cancel(SubTask[i]);
+	  //pthread_cancel(SubTask[i]);
         }
     }
-    pthread_mutex_unlock(&subtaskmutex);
+    //    pthread_mutex_unlock(&subtaskmutex);
 
     // kill sara if running
     if (RT::saraPID > 0)
@@ -139,14 +138,17 @@ ternary_t ParallelTask::getResult()
     if (subresult[0] == TERNARY_UNKNOWN)
     {
         winner = TERNARY_TRUE;
+	taskname = second -> taskname;
         return subresult[1];
     }
     winner = TERNARY_FALSE;
+    taskname = first -> taskname;
     return subresult[0];
 }
 
 ParallelTask::ParallelTask(Task * f, Task * s)
 {
+    taskname = "parallel";
     first = f;
     second = s;
     has_finished[0] = has_finished[1] = false;

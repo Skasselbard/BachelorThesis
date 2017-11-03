@@ -56,6 +56,23 @@ The type of property to be verified by LoLA is selected:
   default="modelchecking"
   optional
 
+option "preference" -
+  "Preferred logic fragment"
+   details = "
+When a formula can be classified as both CTL and LTL formula, the fragment
+specified here is used for selecting the model checking procedure. Note that
+LoLA will nevertheless classify a formula as deadlock, reachability, or
+initial satisfaction if possible.  Values for this option are:
+* ctl: ltl cap ctl formula is treated as CTL formula;
+* ltl: ltl cap ctl formula is treated as LTL formula;
+* none: no preference.
+
+"
+  values="none","ltl","ctl" enum
+  typestr="FRAGMENT"
+  default="none"
+  optional
+
 
 option "formula" f
   "Check a formula"
@@ -81,6 +98,15 @@ path that is accepted by that automaton (requires `--check=modelchecking').
   string
   typestr="AUTOMATON"
   optional
+
+option "fair" -
+  "Take care of fairness constraints."
+  details="
+If set, LoLA searches for witness resp. counterexample paths that satisfy
+all specified weak and strong fairness constraints. Otherwise, fairness
+constraints are comletely ignored.
+"
+  flag off
 
 
 
@@ -153,9 +179,12 @@ stubborn sets which have different performance.
   It has quadratic complexity (in the number of transitions) but produces
   smaller stubborn sets. It has superior performance if no target state (or
   deadlock) is actually reachable.
+* combined: Apply the deletion algorithm to the result of the insertion
+  algorithm
+* off: do not apply stubborn sets at all
 
 "
-  values="tarjan","deletion","off" enum
+  values="tarjan","deletion","combined","off" enum
   typestr="STUBBORN"
   default="tarjan"
   optional
@@ -184,6 +213,19 @@ way, only few members of an equivalence class are physically present in the
 set of stored markings.
 "
   flag off
+
+
+option "symmetrydepth" -
+  "Control the complexity of computing canonical representatives"
+  details="
+Computing a canonical representative means that symmetries are used
+for shifting small marking values to places with small indices.
+With a small value for symmetrydepth, this procedure is executed only
+for few places. This is quicker but leads to larger a state space.
+"
+  int
+  default="1073741824"
+  optional
 
 option "ltlstubborn" - 
   "Apply computing stubborn sets for LTL."
@@ -451,7 +493,7 @@ JSON output.
 
 "
   dependon="json"
-  values="path","state" enum
+  values="path","state","log","formula","formulastat","siphon","net" enum
   typestr="DATA"
   optional
   multiple

@@ -14,7 +14,9 @@
   You should have received a copy of the GNU Affero General Public License
   along with LoLA. If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
-
+#include <Frontend/Parser/ParserPTNet.h>
+#include <Frontend/SymbolTable/Symbol.h>
+#include <Frontend/SymbolTable/SymbolTable.h>
 #include <config.h>
 #include <Core/Dimensions.h>
 #include <Planning/StoreCreator.h>
@@ -24,6 +26,7 @@
 #include <Exploration/SimpleProperty.h>
 #include <Formula/LTL/BuechiFromLTL.h>
 #include <Formula/StatePredicate/TruePredicate.h>
+#include <Formula/StatePredicate/StatePredicate.h>
 #include <Formula/StatePredicate/AtomicStatePredicate.h>
 #include <Formula/StatePredicate/ConjunctionStatePredicate.h>
 #include <Formula/StatePredicate/DisjunctionStatePredicate.h>
@@ -33,9 +36,10 @@
 #include <Planning/LTLTask.h>
 #include <Stores/Store.h>
 #include <Witness/Path.h>
-#include <Frontend/SymbolTable/SymbolTable.h>
-#include <Exploration/FirelistStubbornLTL.h>
+#include <Exploration/FirelistStubbornLTLTarjan.h>
+// #include <Exploration/FirelistStubbornLTL.h>
 
+extern ParserPTNet* symbolTables;
 extern int ptbuechi_parse();
 
 extern int ptbuechi_lex_destroy();
@@ -62,7 +66,188 @@ extern kc::tBuechiAutomata TheBuechi;
 \todo Is this mapping actually needed or was it this just added for debugging
 purposes.
  */
-std::map<int, AtomicStatePredicate *> predicateMap;
+std::map<int, StatePredicate *> predicateMap;
+
+void insertBuchiState(int number_of_states)
+{
+	// the swap only needs to be executed if there are insignificant places
+	if(Place::CardSignificant < Net::Card[PL])
+	{
+		// the trick is not to forget any data structure already
+ 		// initialized, and used in LTL model checking
+
+		// Chapter 1: The net data structures
+
+		// 1.1: arrays ranging on all places. They need to be
+		// enlarged before shifting the entry
+
+		Net::Name[PL] = reinterpret_cast<const char **>(realloc(Net::Name[PL],(Net::Card[PL]+1)*SIZEOF_VOIDP)); 
+		Net::Name[PL][Net::Card[PL]] = Net::Name[PL][Place::CardSignificant];
+		char * buchitext = reinterpret_cast<char *>(calloc(sizeof(char) , (strlen("state of buchi automaton") + 1)));
+		strcpy(buchitext,"state of buchi automaton");
+		Net::Name[PL][Place::CardSignificant] = buchitext;
+		for (int direction = PRE; direction <= POST; ++direction)
+    		{
+			Net::CardArcs[PL][direction] = reinterpret_cast<arrayindex_t *>(realloc(Net::CardArcs[PL][direction], (Net::Card[PL]+1) * SIZEOF_ARRAYINDEX_T));
+        		Net::CardArcs[PL][direction][Net::Card[PL]] = Net::CardArcs[PL][direction][Place::CardSignificant];
+			Net::CardArcs[PL][direction][Place::CardSignificant] = 0;
+			Net::Arc[PL][direction] = reinterpret_cast<arrayindex_t **>(realloc(Net::Arc[PL][direction],(Net::Card[PL]+1) * SIZEOF_VOIDP));
+        		Net::Arc[PL][direction][Net::Card[PL]] = Net::Arc[PL][direction][Place::CardSignificant];
+			Net::Arc[PL][direction][Place::CardSignificant] = NULL;
+			Net::Mult[PL][direction] = reinterpret_cast<mult_t **>(realloc(Net::Mult[PL][direction],(Net::Card[PL]+1)*SIZEOF_VOIDP));
+        		Net::Mult[PL][direction][Net::Card[PL]] = Net::Mult[PL][direction][Place::CardSignificant];
+			Net::Mult[PL][direction][Place::CardSignificant] = NULL;
+    		}
+
+		// arrays ranging on transitions
+		for (int direction = PRE; direction <= POST; ++direction)
+    		{
+        		for (arrayindex_t a = 0; a < Net::CardArcs[PL][direction][Net::Card[PL]]; ++a)
+        {
+            direction_t otherdirection = (direction == PRE) ? POST : PRE;
+            const arrayindex_t t = Net::Arc[PL][direction][Net::Card[PL]][a];
+            for (arrayindex_t b = 0; b < Net::CardArcs[TR][otherdirection][t]; b++)
+            {
+                if (Net::Arc[TR][otherdirection][t][b] == Place::CardSignificant)
+                {
+                    Net::Arc[TR][otherdirection][t][b] = Net::Card[PL];
+                }
+            }
+        }
+    }
+		// Chapter 2: Place data structures
+
+		// 2.1 hash function for markings
+
+		Place::Hash = reinterpret_cast<hash_t *>(realloc(Place::Hash,(Net::Card[PL]+1)*SIZEOF_HASH_T));
+		Place::Hash[Net::Card[PL]] = Place::Hash[Place::CardSignificant];
+		// setting the hash factor for the buchi state to 0 means
+		// that we can set the state without need to update the
+		// hash value
+		Place::Hash[Place::CardSignificant] = 0;
+
+		// 2.2 capacity based arrays
+
+		Place::Capacity = reinterpret_cast<capacity_t *>(realloc(Place::Capacity,(Net::Card[PL]+1)*SIZEOF_CAPACITY_T));
+		Place::Capacity[Net::Card[PL]] = Place::Capacity[Place::CardSignificant];
+		Place::Capacity[Place::CardSignificant] = number_of_states;
+		Place::CardBits = reinterpret_cast<cardbit_t *>(realloc(Place::CardBits,(Net::Card[PL]+1)*SIZEOF_CARDBIT_T));
+		Place::CardBits[Net::Card[PL]] = Place::CardBits[Place::CardSignificant];
+		Place::CardBits[Place::CardSignificant] = Place::Capacity2Bits(number_of_states);
+		Place::SizeOfBitVector += Place::CardBits[Place::CardSignificant];
+
+		// Chapter 3: marking based arrays
+		// 3.1. current marking
+
+		Marking::Initial = reinterpret_cast<capacity_t *>(realloc(Marking::Initial,(Net::Card[PL]+1)*SIZEOF_CAPACITY_T));
+		Marking::Initial[Net::Card[PL]] = Marking::Initial[Place::CardSignificant];
+		Marking::Initial[Place::CardSignificant] = 0;
+		if(Marking::Current)
+		{
+			Marking::Current = reinterpret_cast<capacity_t *>(realloc(Marking::Current,(Net::Card[PL]+1)*SIZEOF_CAPACITY_T));
+			Marking::Current[Net::Card[PL]] = Marking::Current[Place::CardSignificant];
+			Marking::Current[Place::CardSignificant] = 0;
+		}
+		
+		// Chapter 4: transition based arrays
+
+		for (int direction = PRE; direction <= POST; ++direction)
+    {
+        for (arrayindex_t a = 0; a < Net::CardArcs[PL][direction][Net::Card[PL]]; ++a)
+        {
+            direction_t otherdirection = (direction == PRE) ? POST : PRE;
+            const arrayindex_t t = Net::Arc[PL][direction][Net::Card[PL]][a];
+            for (arrayindex_t b = 0; b < Transition::CardDeltaT[otherdirection][t]; b++)
+            {
+                if (Transition::DeltaT[otherdirection][t][b] == Place::CardSignificant)
+                {
+                    Transition::DeltaT[otherdirection][t][b] = Net::Card[PL];
+                }
+            }
+        }
+    }
+
+	// Chapter 5: data structures initialised in PreProcessing
+
+	// 5.1. UsedAsScapegoat
+
+	Firelist::usedAsScapegoat = reinterpret_cast<arrayindex_t*>(realloc(Firelist::usedAsScapegoat,(1+Net::Card[PL])*SIZEOF_ARRAYINDEX_T));
+	Firelist::usedAsScapegoat[Net::Card[PL]] = 0;
+
+	
+
+		// Last chapter: update Card[PL] and CardSignificant
+		Net::Card[PL]++;
+		Place::CardSignificant++;
+	}
+	else
+	{
+		// the trick is not to forget any data structure already
+ 		// initialized, and used in LTL model checking
+
+		// Chapter 1: The net data structures
+
+		// 1.1: arrays ranging on all places. They need to be
+		// enlarged before shifting the entry
+
+		Net::Name[PL] = reinterpret_cast<const char **>(realloc(Net::Name[PL],(Net::Card[PL]+1)*SIZEOF_VOIDP)); 
+		char * buchitext = reinterpret_cast<char *>(calloc(sizeof(char) , (strlen("state of buchi automaton") + 1)));
+		strcpy(buchitext,"state of buchi automaton");
+		Net::Name[PL][Place::CardSignificant] = buchitext;
+		for (int direction = PRE; direction <= POST; ++direction)
+    		{
+			Net::CardArcs[PL][direction] = reinterpret_cast<arrayindex_t *>(realloc(Net::CardArcs[PL][direction], (Net::Card[PL]+1) * SIZEOF_ARRAYINDEX_T));
+			Net::CardArcs[PL][direction][Place::CardSignificant] = 0;
+			Net::Arc[PL][direction] = reinterpret_cast<arrayindex_t **>(realloc(Net::Arc[PL][direction],(Net::Card[PL]+1) * SIZEOF_VOIDP));
+			Net::Arc[PL][direction][Place::CardSignificant] = NULL;
+			Net::Mult[PL][direction] = reinterpret_cast<mult_t **>(realloc(Net::Mult[PL][direction],(Net::Card[PL]+1)*SIZEOF_VOIDP));
+			Net::Mult[PL][direction][Place::CardSignificant] = NULL;
+    		}
+
+		// Chapter 2: Place data structures
+
+		// 2.1 hash function for markings
+
+		Place::Hash = reinterpret_cast<hash_t *>(realloc(Place::Hash,(Net::Card[PL]+1)*SIZEOF_HASH_T));
+		// setting the hash factor for the buchi state to 0 means
+		// that we can set the state without need to update the
+		// hash value
+		Place::Hash[Place::CardSignificant] = 0;
+
+		// 2.2 capacity based arrays
+
+		Place::Capacity = reinterpret_cast<capacity_t *>(realloc(Place::Capacity,(Net::Card[PL]+1)*SIZEOF_CAPACITY_T));
+		Place::Capacity[Place::CardSignificant] = number_of_states;
+		Place::CardBits = reinterpret_cast<cardbit_t *>(realloc(Place::CardBits,(Net::Card[PL]+1)*SIZEOF_CARDBIT_T));
+		Place::CardBits[Place::CardSignificant] = Place::Capacity2Bits(number_of_states);
+		Place::SizeOfBitVector += Place::CardBits[Place::CardSignificant];
+
+		// Chapter 3: marking based arrays
+		// 3.1. current marking
+
+		Marking::Initial = reinterpret_cast<capacity_t *>(realloc(Marking::Initial,(Net::Card[PL]+1)*SIZEOF_CAPACITY_T));
+		Marking::Initial[Place::CardSignificant] = 0;
+		if(Marking::Current)
+		{
+			Marking::Current = reinterpret_cast<capacity_t *>(realloc(Marking::Current,(Net::Card[PL]+1)*SIZEOF_CAPACITY_T));
+			Marking::Current[Place::CardSignificant] = 0;
+		}
+		
+		// Chapter 4: transition based arrays
+
+	// Chapter 5: data structures initialised in PreProcessing
+
+	// 5.1. UsedAsScapegoat
+
+	Firelist::usedAsScapegoat = reinterpret_cast<arrayindex_t*>(realloc(Firelist::usedAsScapegoat,(1+Net::Card[PL])*SIZEOF_ARRAYINDEX_T));
+	Firelist::usedAsScapegoat[Net::Card[PL]] = 0;
+
+		// Last chapter: update Card[PL] and CardSignificant
+		Net::Card[PL]++;
+		Place::CardSignificant++;
+	}
+}
+
 
 /* prints the content of a set for spin */
 StatePredicate *buildPropertyFromList(int *pos, int *neg)
@@ -82,14 +267,17 @@ StatePredicate *buildPropertyFromList(int *pos, int *neg)
                 if (atoi(sym_table[mod * i + j]) > 1)
                 {
                     subForms.push_back(
-                            predicateMap[atoi(sym_table[mod * i + j])]->StatePredicate::copy());
+                            predicateMap[atoi(sym_table[mod * i + j])]->copy(NULL));
                 }
             }
             if (neg[i] & (1 << j))
             {
                 if (atoi(sym_table[mod * i + j]) > 1)
                 {
-                    subForms.push_back(predicateMap[atoi(sym_table[mod * i + j])]->negate());
+		     StatePredicate * x = predicateMap[atoi(sym_table[mod * i + j])]->copy(NULL);
+		x = x -> negate();
+		    
+                    subForms.push_back(x);
                 }
             }
         }
@@ -110,38 +298,24 @@ StatePredicate *buildPropertyFromList(int *pos, int *neg)
 
 LTLTask::LTLTask()
 {
+	RT::data["task"]["workflow"] = "product automaton";
+	taskname = "LTL model checker";
     // process formula
     previousNrOfMarkings = 0;
 
     if (RT::args.formula_given)
     {
-        RT::rep->message("transforming LTL-Formula into a Büchi-Automaton");
-
-	// remove FIREABLE predicates and do subsequent rewriting
-	TheFormula = TheFormula -> rewrite(kc::goodbye_fireable);
-	TheFormula = TheFormula -> rewrite(kc::sides);
-	TheFormula = TheFormula -> rewrite(kc::productlists);
-	TheFormula = TheFormula -> rewrite(kc::leq);
+        RT::rep->status("transforming LTL-Formula into a Büchi-Automaton");
+	// subsequent rewriting
+	//TheFormula = TheFormula -> rewrite(kc::sides);
+	//TheFormula = TheFormula -> rewrite(kc::productlists);
+	//TheFormula = TheFormula -> rewrite(kc::leq);
 	TheFormula = TheFormula -> rewrite(kc::tautology);
-	unparsed.clear();
-	TheFormula ->unparse(myprinter,kc::countdeadlock);
-	if(TheFormula -> containsDeadlock)
-	{
-		RT::rep->message("DEADLOCK atomic propositions are not supported in LTL model checking");
-		RT::rep->abort(ERROR_COMMANDLINE);
-	}
-        ns = NetState::createNetStateFromInitial();
-        // prepare counting of place in the formula
-        extern bool *place_in_formula;
-        extern unsigned int places_mentioned;
-        extern unsigned int unique_places_mentioned;
-        place_in_formula = new bool[Net::Card[PL]]();
-        places_mentioned = 0;
-        unique_places_mentioned = 0;
 
         // extract the Node*
+        Task::outputFormulaAsProcessed();
+	unparsed.clear();
         TheFormula->unparse(myprinter, kc::ltl);
- //Task::outputFormulaAsProcessed();
 
         tl_Node *n = TheFormula->ltl_tree;
         //n = bin_simpler(n);
@@ -181,12 +355,11 @@ LTLTask::LTLTask()
         //RT::rep->message("Buechi-automaton has %d states", bauto->cardStates);
         // now i do know the number of states
         bauto->cardTransitions = new uint32_t[bauto->cardStates]();
-        bauto->transitions = new uint32_t **[bauto->cardStates]();
-        bauto->cardEnabled = new arrayindex_t[bauto->cardStates]();
+        bauto->nextstate = new uint32_t *[bauto->cardStates]();
+        bauto->guard = new StatePredicate **[bauto->cardStates]();
         bauto->isStateAccepting = new bool[bauto->cardStates]();
 
         std::vector<StatePredicate *> neededProperties;
-        std::map<StatePredicate *, int> neededProperties_backmap;
 
         // read out the datastructure
         int curState = -1;
@@ -199,13 +372,12 @@ LTLTask::LTLTask()
                 // build a TRUE-loop
                 bauto->isStateAccepting[curState] = true;
                 bauto->cardTransitions[curState] = 1;
-                bauto->transitions[curState] = new uint32_t *[1]();
-                bauto->transitions[curState][0] = new uint32_t[2]();
-                bauto->transitions[curState][0][0] = neededProperties.size();
-                bauto->transitions[curState][0][1] = curState;
-                curProperty++;
+                bauto->nextstate[curState] = new uint32_t [1]();
+                bauto->guard[curState] = new StatePredicate *[1]();
+                bauto->nextstate[curState][0] = curState;
                 neededProperties.push_back(new TruePredicate());
-                neededProperties_backmap[neededProperties.back()] = curState;
+                bauto->guard[curState][0] = neededProperties[curProperty];
+                curProperty++;
                 continue;
             }
             if (s->final == accepting_state)
@@ -248,24 +420,20 @@ LTLTask::LTLTask()
                     neededProperties.push_back(disjucntion);
                 }
                 //RT::rep->message("CREATE %d -> %d", neededProperties.size(), curState);
-                neededProperties_backmap[neededProperties.back()] = curState;
-
                 // increment number of transitions
                 bauto->cardTransitions[curState]++;
             }
 
-            bauto->transitions[curState] = new uint32_t *[bauto->cardTransitions[curState]]();
+            bauto->nextstate[curState] = new uint32_t [bauto->cardTransitions[curState]]();
+            bauto->guard[curState] = new StatePredicate *[bauto->cardTransitions[curState]]();
             int current_on_trans = -1;
             for (t = s->trans->nxt; t != s->trans; t = t->nxt)
             {
                 // bauto data structures
                 current_on_trans++;
-                bauto->transitions[curState][current_on_trans] = new uint32_t[2]();
-                //RT::rep->message("Transition %d -> %d", curState, state_id[t->to->final][t->to->id]);
-                bauto->transitions[curState][current_on_trans][0] = curProperty++;
-                bauto->transitions[curState][current_on_trans][1] =
+                bauto->guard[curState][current_on_trans] = neededProperties[curProperty++];
+                bauto->nextstate[curState][current_on_trans] =
                         state_id[t->to->final][t->to->id];
-                //RT::rep->message("FROM TO %d %d", curState, state_id[t->to->final][t->to->id]);
             }
         }
 
@@ -274,17 +442,8 @@ LTLTask::LTLTask()
         //
 
         // if the automata contains an all-accepting state
-        bauto->cardAtomicPropositions = neededProperties.size();
-        bauto->atomicPropositions = new StatePredicateProperty *[bauto->cardAtomicPropositions]();
-        bauto->atomicPropotions_backlist = new arrayindex_t[bauto->cardAtomicPropositions]();
-        for (size_t i = 0; i < neededProperties.size(); i++)
-        {
-            bauto->atomicPropositions[i] = new StatePredicateProperty(neededProperties[i]);
-            //RT::rep->message("BL %d %d", i, neededProperties_backmap[neededProperties[i]]);
-            bauto->atomicPropotions_backlist[i] =
-                    neededProperties_backmap[neededProperties[i]];
-        }
 
+	RT::data["task"]["buchi"]["states"] = static_cast<int>(bauto->getNumberOfStates());
         RT::rep->status("the resulting Büchi automaton has %d states", bauto->getNumberOfStates());
         if (RT::args.writeBuechi_given)
         {
@@ -322,16 +481,15 @@ LTLTask::LTLTask()
             //RT::rep->message("Finished Parsing");
 
             // restructure the formula: unfold complex constructs and handle negations and tautologies
-            TheBuechi = TheBuechi->rewrite(kc::goodbye_doublearrows);
-            TheBuechi = TheBuechi->rewrite(kc::goodbye_singlearrows);
-            TheBuechi = TheBuechi->rewrite(kc::goodbye_xor);
-            TheBuechi = TheBuechi->rewrite(kc::goodbye_fireable);
-            TheBuechi = TheBuechi->rewrite(kc::goodbye_initial);
+            //TheBuechi = TheBuechi->rewrite(kc::goodbye_doublearrows);
+            //TheBuechi = TheBuechi->rewrite(kc::goodbye_singlearrows);
+            //TheBuechi = TheBuechi->rewrite(kc::goodbye_xor);
+            //TheBuechi = TheBuechi->rewrite(kc::goodbye_initial);
 
             // restructure the formula: again tautoglies and simplification
-            TheBuechi = TheBuechi->rewrite(kc::sides);
-            TheBuechi = TheBuechi->rewrite(kc::productlists);
-            TheBuechi = TheBuechi->rewrite(kc::leq);
+            //TheBuechi = TheBuechi->rewrite(kc::sides);
+            //TheBuechi = TheBuechi->rewrite(kc::productlists);
+            //TheBuechi = TheBuechi->rewrite(kc::leq);
             TheBuechi = TheBuechi->rewrite(kc::tautology);
 
             // expand the transitions rules
@@ -379,41 +537,79 @@ LTLTask::LTLTask()
 
             // reading the buechi automata
             assert(bauto);
+	RT::data["task"]["buchi"]["states"] = static_cast<int>(bauto->getNumberOfStates());
+        }
+    }
+    if(RT::args.stubborn_arg != stubborn_arg_off)
+    {
+	Transition::Visible = new bool[Net::Card[TR]];
+	if(TheFormula) TheFormula->unparse(myprinter,kc::visible);
+    }
+   for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_net)
+        {
+                int vis = 0;
+                for(arrayindex_t i = 0; i < Net::Card[TR];i++)
+                {
+                        if(Transition::Visible[i]) vis++;
+                }
+                RT::data["task"]["search"]["stubborn"]["visible"] = vis;
+                break;
         }
     }
 
+    insertBuchiState(bauto->getNumberOfStates());
+    // adjust place indices in formula
+    for(arrayindex_t i = 0; i < bauto->getNumberOfStates();i++)
+    {
+	for(arrayindex_t j = 0; j < bauto->cardTransitions[i];j++)
+	{
+		bauto->guard[i][j]->adjust(Place::CardSignificant-1,Net::Card[PL]-1);
+	}
+    }
+
     // prepare task
-    RT::data["store"]["search"] = "depth_first_search";
-    ltlStore = StoreCreator<AutomataTree *>::createStore(number_of_threads);
+    RT::data["task"]["search"]["type"] = "product automaton/dfs";
+    ltlStore = StoreCreator<LTLPayload>::createStore(number_of_threads);
+    ns = NetState::createNetStateFromInitial();
 
     // Check, if stubborn sets should be used
     // TODO use the following commented code when firelist for LTL is fully
     // implemented. Remove the subsequently if-check of ltlstubborn_arg and 
     // remove ltlstubborn_arg from cmdline.ggo 
-    //    switch(RT::args.stubborn_arg)
-    //    {
-    //    case stubborn_arg_off:
-    //        fl = new Firelist();
-    //        break;
-    //    default: 
-    //        fl = new FirelistStubbornLTL();
-    //    ; 
-    //    }
+    if(RT::args.formula_given)
+    {
+    switch(RT::args.stubborn_arg)
+    {
+    case stubborn_arg_off:
+	RT::data["task"]["search"]["stubborn"]["type"] = "no";
+         fl = new Firelist();
+         break;
+    default: 
+	if(TheFormula->containsNext)
+	{
+	RT::data["task"]["search"]["stubborn"]["type"] = "no (formula contains X operator)";
+		RT::rep->status("Formula contains X operator; stubborn sets not applicable");
+		fl = new Firelist();
+	}
+	else
+	{
+	   RT::rep->status("using ltl preserving stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn").str());
+	RT::data["task"]["search"]["stubborn"]["type"] = "ltl preserving";
+           fl = new FirelistStubbornLTLTarjan();
+	}
+    }
+    }
+    else
+    {
+	RT::data["task"]["search"]["stubborn"]["type"] = "no (no formula given)";
+	fl = new Firelist();
+    }
     RT::rep->indent(-2);
     RT::rep->status("SEARCH");
     RT::rep->indent(2);
-    if (RT::args.ltlstubborn_arg == ltlstubborn_arg_on)
-    {
-RT::rep->status("using ltl preserving stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=ltlstubborn").str());
-        RT::rep->status("%s",RT::rep->markup(MARKUP_WARNING,"not implemented yet").str());
-        fl = new FirelistStubbornLTL(bauto);
-    } else
-    {
-RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
-        fl = new Firelist();
-    }
-    RT::data["analysis"]["type"] = "modelchecking";
-    ltlExploration = new LTLExploration(RT::args.ltlmode_arg == ltlmode_arg_tree);
+    ltlExploration = new LTLExploration();
 }
 
 /*!
@@ -481,13 +677,18 @@ void LTLTask::interpreteResult(ternary_t result)
     {
         case TERNARY_TRUE:
             RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-            RT::data["analysis"]["result"] = true;
+            RT::rep->status("produced by: %s", taskname);
+            RT::data["result"]["value"] = true;
+            RT::data["result"]["produced_by"] = std::string(taskname);
+	
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The net satisfies the given formula (language of the product automaton is empty).").str());
             break;
 
         case TERNARY_FALSE:
             RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-            RT::data["analysis"]["result"] = false;
+            RT::rep->status("produced by: %s", taskname);
+            RT::data["result"]["value"] = false;
+            RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                     "The net does not satisfy the given formula (language of the product automaton is nonempty).").str());
@@ -495,7 +696,9 @@ void LTLTask::interpreteResult(ternary_t result)
 
         case TERNARY_UNKNOWN:
             RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-            RT::data["analysis"]["result"] = JSON::null;
+            RT::rep->status("produced by: %s", taskname);
+            RT::data["result"]["value"] = JSON::null;
+            RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                     "The net may or may not satisfy the given formula.").str());
@@ -505,7 +708,7 @@ void LTLTask::interpreteResult(ternary_t result)
 
 Path LTLTask::getWitnessPath()
 {
-    return ltlExploration->path();
+    return *(ltlExploration->path);
 }
 
 capacity_t *LTLTask::getMarking()
@@ -517,10 +720,10 @@ void LTLTask::getStatistics()
 {
     uint64_t markings = 0;
     markings = ltlStore->get_number_of_markings();
-    RT::data["analysis"]["stats"]["states"] = static_cast<int> (markings);
+    RT::data["result"]["markings"] = static_cast<int> (markings);
     uint64_t edges = 0;
     edges = ltlStore->get_number_of_calls();
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int> (edges);
+    RT::data["result"]["edges"] = static_cast<int> (edges);
 
     RT::rep->status("%llu markings, %llu edges", markings, edges);
 

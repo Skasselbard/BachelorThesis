@@ -27,6 +27,7 @@
 
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/AtomicStatePredicate.h>
+#include <Formula/StatePredicate/StatePredicate.h>
 
 class FalsePredicate: public AtomicStatePredicate
 {
@@ -84,4 +85,8 @@ private:
     /// create a new state predicate by copy this object.
     virtual StatePredicate *copy(StatePredicate *parent);
     virtual char * toString();
+    virtual void adjust(arrayindex_t,arrayindex_t){}
+   void setVisible(){};
+    virtual AtomicBooleanPredicate * DNF();
+    virtual FormulaStatistics * count(FormulaStatistics *);
 };

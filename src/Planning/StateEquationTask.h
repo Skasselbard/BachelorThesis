@@ -50,5 +50,5 @@ public:
     static Task * buildTask();
 
 private:
-    bool saraIsRunning;
+    int saraIsRunning;
 };

@@ -38,17 +38,19 @@
 @menu
 * About LoLA::
 * Bootstrapping LoLA::
-* File formats::
-* Supported Properties::
+* Petri Net File Format::
+* Modes of Operation::
+* Properties::
 * Search strategies::
 * Reduction techniques::
+* Nostandard Verification Techniques::
 * Storage concepts::
 * Output formats::
 * Error messages::
 * Integration guide::
 * Utilities::
 * Examples::
-* From LoLA 1 to LoLA 2::
+* Difference to Previous Releases::
 * Index::
 @end menu
 
@@ -92,16 +94,24 @@ translated into the LoLA format (@pxref{File formats}).
 @cindex property (general)
 
 Properties analyzed by LoLA include typical properties of concurrent systems
-such as deadlock freedom and properties specified in a temporal logic. A
+such as deadlock freedom and properties specified in a temporal logic. 
+Most properties have binary values, and LoLA shall return true, false, or
+unknown (if an incomplete technique is used, or a verification run has not
+finished). The only exception is the computation of maximum number of tokens.
+Here, the result is a natural number.
+
+A
 property can be passed as command line parameter or as file. Given a Petri net
 and a property, LoLA explores the state space (reachability graph) of the Petri
-net to evaluate the property. As soon as the value is determined, LoLA quits
+net to evaluate the property. For some properties, LoLA is also able to explore
+structural criteria. As soon as the value is determined, LoLA quits
 state space exploration. LoLA is not a tool for randomly playing a manually
-controlled token game
-nor for using the Petri net as a control engine for any kind of environment.
+controlled token game,
+nor for using the Petri net as a control engine for any kind of environment,
+nor for visualising the state space.
 
 
-@subsection Exploration
+@subsection State Space Exploration
 
 @cindex state space exploration (general)
 @cindex explicit state space exploration
@@ -133,13 +143,38 @@ on the graph automorphisms of the Petri net. This method is able to deal with
 arbitrarily complex patterns of symmetry, as opposed to the scalar set approach
 used in several other tools.
 
+@item LoLA takes care that, for the given property, application of a reduction
+technique is sound. It automatically choses a version of the respective method
+that preserves the property under investigation. If there is no such version,
+the reduction technique is not applied.
+
 @item LoLA can apply the sweep-line method without requiring the user to
 provide a progress measure -- it computes a suitable progress measure on its own.
 
 @item LoLA employs results from the unique Petri net structure theory for
-further state space reduction or efficiency benefits.
+further state space reduction or efficiency benefits. In particular, it
+employs information about place invariants, transition invariants, and
+conflict clusters of the net.
 @end itemize  
 
+@subsection Structural Exploration
+
+@cindex structural verification 
+@cindex siphon-trap-property 
+@cindex state equation 
+
+For some properties, LoLA provides purely structural verification methods
+stemming form Petri net theory. These methods can be applied instead of,
+prior to, or parallel to state space exploration.
+These methods include:
+
+@itemize
+
+@item The siphon/trap-property for deadlock check
+
+@item The Petri net state equation for reachability queries
+
+@end itemize
 
 @subsection Memory
 
@@ -147,7 +182,7 @@ further state space reduction or efficiency benefits.
 
 LoLA uses the main memory of your machine for handling the state space. It
 supports several data structures for representing the states. Some of these
-structure are inherently subject to loss of information, 
+structures are inherently subject to loss of information, 
 that is they do not guarantee exhaustive
 search. If LoLA is run on a multicore machine, it can distribute some of its
 computations over a given number of cores.
@@ -176,7 +211,9 @@ engine in other tools, or in scripts. If applicable, LoLA supports its results
 by witness states, or witness paths. LoLA can also provide results gathered in
 preprocessing, it reports run time and size of the explored part of the state
 space, and it emits progress messages. Most messages can be suppressed, be
-deferred to files, or deferred to a remote machine.
+deferred to files, or deferred to a remote machine. For further processing,
+LoLA can collect all produced information as a JSON (Javascript Object Notation)
+object.
 
 
 @subsection More information
@@ -193,9 +230,13 @@ and Alex Yakovlev, editors, 28th International Conference on Applications and
 Theory of Petri Nets and Other Models of Concurrency, @acronym{ICATPN} 2007,
 Siedlce, Poland}, June 25-29, 2007, Proceedings, volume 4546 of Lecture Notes
 in Computer Science, pages 29-42, June 2007. Springer-Verlag. Invited lecture
+
+@item Karsten Wolf.
+@b{The Petri net twist in explicit model checking.} @i{Software and System Modeling} 14(2): pages 711-717 (2015)
+
+@item Karsten Wolf.
+@b{Running LoLA 2.0 in a Model Checking Competition.} @i{Transactions on Petri Nets and Other Models of Concurrency} 11: pages 274-285 (2016)
 @end itemize
-
-
 
 @section Success stories
 
@@ -341,6 +382,20 @@ Checking of Industrial Business Process Models.} @i{Data Knowl. Eng.},
 @item The Petri net files are available for download at @url{http://service-technology.org/soundness}
 @end itemize
 
+@subsection Semantic web service composition
+
+Given a formally specified goal, a web service composition algorithm aims at the automated selection
+and composition of services from a given repository that is able to reach the goal. The problem
+can be translated into the reachability problem for a Petri nets that is generated from the goal
+and the ontology based descriptions of the services in the repository. Using LoLA for solving the
+problem turned out to be an interesting alternative to the use of standard AI procedures.
+
+@b{More information:}
+@itemize
+@item 	Artur Niewiadomski and Karsten Wolf. @b{LoLA as Abstract Planning Engine of PlanICS.} @i{Proc. iWorkshop PNSE},
+:349-350, 2015.
+@end itemize
+
 
 @subsection LoLA as a ``sparring partner''
 
@@ -376,18 +431,12 @@ Design Automation of Electronic Systems (TODAES) Volume 12 Issue 4, September
 @subsection The Model Checking Contest at the @acronym{PETRI NETS} conferences
 
 The contests have been established in 2011. In all issues since then,
-LoLA participated in the REACHABILITY and DEADLOCK disciplines and 
+LoLA participated in various disciplines and 
 proved competitiveness with other Petri net verification tools.
 
 @b{More information:}
 
 @itemize
-@item Fabrice Kordon et al. @b{Report on the Model Checking Contest at Petri Nets 2011}. @i{LNCS ToPNoC}, 7400(VI):169--196, August 2012.
-
-@item Fabrice Kordon et al. @b{Raw Report on the Model Checking Contest at Petri Nets 2012}. Technical Report arXiv:1209.2382, arXiv.org, September 2012.
-
-@item Fabrice Kordon et al. @b{Model Checking Contest at Petri Nets: Report on the 2013 edition}. Technical Report arXiv:1309.2485, arXiv.org, September 2013.
-
 @item @url{http://mcc.lip6.fr}
 @end itemize
 
@@ -588,8 +637,11 @@ Petri net given as file @file{mutex.lola}. Beside a lot of output, you shall
 observe the message
 
 @smallexample
-lola: result: no
-lola: The net does not satisfy the given formula.
+lola: RESULT
+lola:   result: no
+lola:   produced by: state space
+lola:   The net does not have deadlocks.
+lola:   6 markings, 10 edges
 @end smallexample
 
 indicating that this net is deadlock free. In the remainder of this manual, all
@@ -599,16 +651,17 @@ other parameters are explained in detail.
 
 
 @c =========================================================================
-@node File formats
-@chapter File formats
+@node Petri Net File Format
+@chapter Petri Net File Format
 
-LoLA uses different proprietary file formats. Each file format aims at being
+LoLA uses a proprietary file format. It aims at being
 both simple to write or generate and easy to parse while trying to be as little
 verbose as possible. Consequently, we decided against the standard
-@acronym{PNML} file format and other @acronym{XML} dialects which are sometimes
-used to encode formulae.
+@acronym{PNML} file format. In our distribution, you shall find utilities that
+help you translating @acronym{PNML} files into LoLA file, though, 
+@pxref{Utilities}.
 
-In the following, we provide @acronym{EBNF} grammars for each file format.
+In the following, we provide the @acronym{EBNF} grammar for the file format.
 Thereby, we use the following conventions:
 
 @itemize
@@ -629,13 +682,11 @@ skipping and repetition.
 
 
 
-@section Petri nets
-
 @cindex grammar, Petri net
 
-@subsection Informal description
+@section Informal description
 
-LoLA's Petri net file formats contains of three parts:
+LoLA's Petri net file format consists of three parts:
 
 @enumerate
 @cindex @code{PLACE} keyword
@@ -646,15 +697,17 @@ beginning with keyword @samp{PLACE}. For a (sub-)list of places, an optional
 token bound can be defined using keyword @samp{SAFE} followed by a number (1 if
 no number is provided). This bound is not enforced by LoLA, but rather used to
 allow for bit-perfect data structures. If no bound is given, @math{2^{32}-1} is
-used as maximal bound. If a place is listed several times, the respective arc
-weights are added.
+used as maximal bound. If you are analysing Petri nets where the number of tokens exceeds the bound, the results of LoLA may become incorrect.
+
 
 @cindex @code{MARKING} keyword
 
-@item An initial marking in the form of a comma-separated list an assignment of
+@item An initial marking is a comma-separated list of assignments of
 place names with token numbers, beginning with keyword @samp{MARKING}. If no
 number is provided (i.e., only a place name is listed), an initial marking of
-one token is assumed.
+one token is assumed. If places are mentioned several times, the corresponding
+number of tokens is added. That is, @code MARKING{p1 , p1 : 1;} results in
+an initial marking woth two tokens on place @code{p1}.
 
 @cindex @code{TRANSITION} keyword
 @cindex @code{STRONG FAIR} keyword
@@ -662,7 +715,7 @@ one token is assumed.
 @cindex @code{CONSUME} keyword
 @cindex @code{PRODUCE} keyword
 
-@item a list of transitions, each beginning with keyword @samp{TRANSITION},
+@item Transitions are specified one by one, each beginning with keyword @samp{TRANSITION},
 followed by a name and an optional fairness assumption (@samp{STRONG FAIR} or
 @samp{WEAK FAIR}). Then, the transition's preset (@samp{CONSUME}) and postset
 (@samp{PRODUCE}) is given is the same fashion of a marking in the
@@ -674,13 +727,13 @@ A lot of example files are provided in the @file{examples} folder of the LoLA
 distribution.
 
 
-@subsection @acronym{EBNF} grammar
+@section @acronym{EBNF} grammar
 
 @smallexample
 @include grammars/net.ebnf
 @end smallexample
 
-@subsection Regular expressions for terminal symbols
+@section Regular expressions for terminal symbols
 @anchor{RENET}
 
 @table @code
@@ -697,25 +750,335 @@ Any nonempty sequence of characters, excluding @samp{,}, @samp{;}, @samp{:}, @sa
 @code{[^,;:()\t \n\r\@{\@}]+}
 @end table
 
-@subsection Compatibility
+@section Compatibility
 
 Low level Petri net files from earlier versions of LoLA (before version 2.0)
 can be read without any adjustments. High level Petri net files need to be
-translated into a low-level version first.
+translated into a low-level version first. This can be done using the 
+@code{-n} option available in LoLA 1.x.
 
+@node Modes of operation
+@chapter Modes of operation
+
+
+@cindex property
+
+You select the mode of operation using the
+@samp{--check=MODE} command line option where @samp{MODE} can be one of
+the values @samp{none}, @samp{full}, or @samp{modelchecking}. If no value is
+given, @samp{modelchecking} is used as default.
+
+
+
+@section Check nothing (@samp{--check=none})
+@anchor{Check nothing}
+
+@cindex @code{--check=none} parameter
+
+LoLA only performs preprocessing but does not do any actual state space
+exploration. This option is useful for checking whether the input is
+syntactically correct, or for getting information from preprocessing.
+
+@cartouche
+@smallexample
+@c lola --check=none phils10.lola
+$ lola --check=none phils10.lola
+lola: NET
+lola:   reading net from phils10.lola
+...
+lola: TASK
+lola:   checking nothing (--check=none)
+...
+@end smallexample
+@end cartouche
+
+@section Compute the state space (@samp{--check=full})
+@anchor{Compute the state space}
+
+@cindex @code{--check=full} parameter
+@cindex state space, compute
+
+LoLA explores the reachable states without evaluating any particular property.
+This option is useful for experiencing the size of a state space. It applies
+the selected state space reduction techniques. 
+
+@cartouche
+@smallexample
+@c lola --check=full phils10.lola 
+$ lola --check=full phils10.lola 
+lola: NET
+lola:   reading net from phils10.lola
+...
+lola: TASK
+lola:   creating the whole state space (--check=full)
+...
+lola: RESULT
+lola:   result: no
+lola:   State space generated.
+lola:   272 markings, 370 edges
+...
+@end smallexample
+@end cartouche
+
+Note that some reduction techniques are switched on by default and need to
+be switched off for getting the brute force state space.
+
+@cartouche
+@smallexample
+@c lola --check=full phils10.lola --stubborn=off
+$ lola --check=full phils10.lola --stubborn=off
+...
+lola: RESULT
+lola:   result: no
+lola:   State space generated.
+lola:   59048 markings, 393650 edges
+...
+@end smallexample
+@end cartouche
+
+
+
+@section Verify a property in temporal logic (@samp{--check=modelchecking}, default)
+@anchor{Temporal logic}
+
+@cindex @code{--check=modelchecking} parameter
+@cindex temporal logic
+@cindex model checking
+@cindex @code{--formula} parameter
+@cindex @code{--buechi} parameter
+
+LoLA evaluates a property (see below). The
+particular property is passed to LoLA by the command line option
+@samp{--formula=@var{FORMULA}}. The value @samp{@var{FORMULA}} is either a
+string that directly describes a formula, or file name that contains such a
+string. For linear time properties, the formula can be replaced by a B@"uchi
+automaton. In this case, LoLA searches for a path that is accepted by the given
+automaton. The automaton is passed to LoLA by the command line option
+@samp{--buechi=@var{STRING}} where @samp{@var{STRING}} is a file name
+containing the description of a B@"uchi automaton.
+
+@cartouche
+@smallexample
+@c lola --formula="EF ea.2 > 0" phils10.lola
+$ lola --formula="EF ea.2 > 0" phils10.lola
+lola: NET
+lola:   reading net from phils10.lola
+lola:   finished parsing
+lola:   closed net file phils10.lola
+lola:   90/65536 symbol table entries, 0 collisions
+lola:   preprocessing... 
+lola:   finding significant places
+lola:   50 places, 40 transitions, 30 significant places
+lola:   computing forward-conflicting sets
+lola:   computing back-conflicting sets
+lola:   60 transition conflict sets
+lola: TASK
+lola:   E (F ((1 <= ea.2)))
+lola:   E (F ((1 <= ea.2)))
+lola:   checking reachability
+lola:   Planning: workflow for reachability check: search (--findpath=off)
+lola:   processed formula: E (F ((1 <= ea.2)))
+lola:   processed formula length: 19
+lola:   1 rewrites
+lola: STORE
+lola:   using a bit-perfect encoder (--encoder=bit)
+lola:   using 4 bytes per marking, with 2 unused bits
+lola:   using a prefix tree store (--store=prefix)
+lola: SEARCH (state space)
+lola:   state space: using reachability  graph (--search=depth)
+lola:   state space: using reachability preserving stubborn set method with insertion algorithm (--stubborn=tarjan)
+lola: RUNNING
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The predicate is reachable.
+lola:   3 markings, 2 edges
+lola: memory consumption: 3224 KB
+lola: time consumption: 0 seconds
+@end smallexample
+@end cartouche
+
+@node Properties 
+@chapter Properties 
+
+There are two kinds of properties: properties specified in the
+temporal logic @acronym{CTL*}, and bound properties.
+For a @acronym{CTL*} property, LoLA computes its Boolean value.
+For a bound property, LoLA computes its numerical value. You can call
+LoLA with a @code{':'}-separated list of properties where @acronym{CTL*}
+and bound properties may be arbitrarily mixed. LoLA processes such a 
+list sequentially. For each property, a separative child process is spawned
+that produces its own state space. Only if a child process terminates, the
+next process is launched. This way,
+@itemize
+@item There is no competition for computing ressources among the child processes;
+@item The efforts for resetting data structures between two state space
+explorations are deferred to the operating system.
+@end itemize
+The given command line options refer to all listed properties. LoLA
+reports status and result separately for every property. After termination
+of all state space explorations, LoLA produces a summary of the individual
+results. If LoLA is aborted, it reports the results obtained so far.
+
+Example:
+
+@cartouche
+@smallexample
+> lola phils10.lola --formula="EF DEADLOCK : AGEF INITIAL : MAX(ea.1 + ea.2)"
+...
+lola:   ========================================
+lola:   ...considering subproblem: E (F (DEADLOCK))
+lola:   ========================================
+lola:   SUBTASK
+lola:     checking reachability of deadlocks
+...
+lola:   SUBRESULT
+lola:     result: yes
+lola:     produced by: state space
+lola:     The net has deadlock(s).
+...
+lola:   ========================================
+lola:   ...considering subproblem: A (G (E (F (((fo.10 <= 1) AND (1 <= fo.10) AN... (shortened)
+lola:   ========================================
+...
+lola:   SUBRESULT
+lola:     result: no
+lola:     produced by: CTL model checker
+lola:     The net does not satisfy the given formula.
+...
+lola:   ========================================
+lola:   ...considering subproblem: MAX(ea.1 + ea.2)
+lola:   ========================================
+...
+lola:   SUBRESULT
+lola:     result: 1
+lola:     produced by: state space
+lola:     The maximum value of the given expression is 1
+...
+lola: RESULT
+lola:   
+SUMMARY:  yes no 1
+...
+@end smallexample
+@end cartouche
 
 
 @section @acronym{CTL}* formulae
-@anchor{Formula syntax}
+
+@cindex temporal logic
+@cindex LTL
+@cindex CTL
+@cindex simple property
+
+Syntactically, LoLA can read (but not necessarily verify)
+any @acronym{CTL}* formula. After reading the formula, LoLA first rewrites
+the formula according to known tautologies of temporal logic. This way,
+the verification problem finally approached by LoLA may be simpler than the one
+originally given.
+
+In a second step, LoLA categorizes the resulting formula. For each category,
+dedicated verification routines are available. LoLA uses the following categories (@code{phi} represents a formula without temporal operators):
+@itemize
+@item CTL -- A formula in the @acronym{CTL} fragment of @acronym{CTL*}
+@item LTL -- A formula in the @acronym{LTL} fragment of @acronym{CTL*}
+@item Reachability -- A formula of shape @code{EF phi} 
+@item Invariance -- A formula of shape @code{AG phi}
+@item Deadlock -- A formula of shape @code{EF DEADLOCK}
+@item  NoDeadlock  -- A formula of shape @code{AG NOT DEADLOCK}
+@item Initial -- A formula of shape @code{phi}
+@item Liveness -- A formula of shape @code{AG EF phi}
+@item Possible Liveness -- A formula of shape @code{EF AG EF phi}
+@item Possible invariance -- A formula of shape @code{EF AG phi}
+@item Always possible invariance -- A formula of shape @code{AG EF AG phi}
+@end itemize
+
+If a formula happens to be a Boolean combination of subformulas,
+each subformula is categorized on its own. Furthermore, LoLA explores
+each such subformula separately (in sequence) using the technique that
+fits to the category of the respective subformula. 
+
+
+@cartouche
+@smallexample
+@c lola --formula="EF ea.2 > 0 AND FG hl.1 = 0" phils10.lola
+$ lola --formula="EF ea.2 > 0 AND FG hl.1 = 0" phils10.lola
+...
+lola: TASK
+lola:   (E (F ((1 <= ea.2))) AND F (G (((hl.1 <= 0)))))
+lola:   checking a Boolean combination of subproblems
+lola: RUNNING
+lola:   ========================================
+lola:   ...considering subproblem: E (F ((1 <= ea.2)))
+lola:   ========================================
+lola:   SUBTASK
+lola:     checking reachability
+...
+lola:   SUBRESULT
+lola:     result: yes
+lola:     produced by: state space
+lola:     The predicate is reachable.
+lola:     3 markings, 2 edges
+lola:   ========================================
+lola:   ========================================
+lola:   ...considering subproblem: F (G (((hl.1 <= 0))))
+lola:   ========================================
+lola:   SUBTASK
+lola:     checking stabilization
+...
+lola:   SUBRESULT
+lola:     result: no
+lola:     produced by: LTL model checker
+lola:     The net does not satisfy the given formula (language of the product automaton is nonempty).
+lola:     12 markings, 13 edges
+lola:   ========================================
+lola: RESULT
+lola:   result: no
+lola:   The Boolean predicate is false.
+...
+@end smallexample
+@end cartouche
+
+If a formula fits into more than one category, the more specific category
+is chosen. That is, @code{EF phi} is categorised as reachability although
+it is as well a valid @acronym{CTL} formula. If @acronym{LTL} and @acronym{CTL}
+are the remaining candidates, @acronym{LTL} is preferred. That is,
+input @code{AF phi} will be verified as the @acronym{LTL} formula
+@code{F phi}. The latter priority
+can be overridden by the user with the command line option @code{--preference=ctl}. The choice between @acronym{LTL} and @acronym{CTL} has a semantic consequence when the system contains deadlocks. In a deadlock state, LTL assumes that
+the system stutters in this state, that is, the deadlock state is assumed to be repeated forever. CTL evaluates the existential path quantifier to false and
+the universal path quantifier to true, interpreting a deadlock as a state
+that does not have any outgoing path. This means that, in a deadlock state,
+ "AX FALSE" evaluates
+to true in @acronym{CTL} and to false in @acronym{LTL}. 
+
+
+The categorisation of LoLA actually has a few more classes:
+@itemize
+@item Fairness -- A formula of shape @code{GF phi}
+@item Stabilisation -- A formula of shape @code{FG phi}
+@item Eventual occurrence -- A formula of shape @code{F phi}
+@end itemize 
+For these categories, no specific algorithm has been implemented yet, so the
+problems are all deferred to the general @acronym{LTL} model checker.
+
+If a given formula does not fall into any of the listed categories, LoLA cannot
+verify it and shall exit without producing a result.
+
+@section Bound properties
+
+@cindex bound property
+
+You can use LoLA for computing the maximum value that an expression can get. The expression is a formal sum of place names.
+Its evaluation in a marking yields an integer value.
+The result is the maximum value of the expression w.r.t. all reachable markings.
+
+@section Syntax for properties
+
+
+@subsection Constituents of a @acronym{CTL*} formulae
 
 @cindex grammar, formulae
-
-@subsection Informal description
-
-Syntactically, LoLA can read any @acronym{CTL}* formula. Internally, the given
-formula is then analyzed and the respective algorithm (reachability,
-@acronym{CTL}, or @acronym{LTL} checking) is called.
-
+@anchor{Formula syntax}
 A formula is built from the following elements:
 
 @itemize
@@ -801,11 +1164,7 @@ or @samp{E}) path quantifiers,
 @item and parentheses to override associativities.
 @end itemize
 
-A lot of example files are provided in the @file{examples} folder of the LoLA
-distribution and throughout this manual.
-
-
-@subsection @acronym{EBNF} grammar
+@subsection @acronym{EBNF} grammar for properties
 
 @smallexample
 @include grammars/formula.ebnf
@@ -830,7 +1189,7 @@ newlines).
 @code{[^,;:()\t \n\r\@{\@}]+}
 @end table
 
-@subsection Compatibility
+@section Compatibility
 @anchor{Property compatibility}
 
 Formulae from earlier versions of LoLA (version 1.x) are in principle
@@ -839,7 +1198,6 @@ temporal operator needs to be added:
 
 @multitable @columnfractions .3 .3 .3 .1
 @headitem mode in LoLA 1.x @tab formula in LoLA 1.x @tab formula in LoLA @value{VERSION} @tab notes
-@item @code{BOUNDEDGRAPH} @tab -- @tab not supported
 @item @code{BOUNDEDNET} @tab -- @tab -- @tab @footnote{Not directly supported, @pxref{boundedness}.}
 @item @code{BOUNDEDPLACE} @tab @code{ANALYSE PLACE @var{p}} @tab @code{AG @var{p} < oo} @tab @footnote{Together with option @samp{--search=cover}.}
 @item @code{DEADLOCK} @tab -- @tab @code{EF DEADLOCK}
@@ -858,107 +1216,6 @@ temporal operator needs to be added:
 @item @code{STATEPREDICATE} @tab @code{FORMULA @var{phi}} @tab @code{EF @var{phi}}
 @item @code{STATESPACE} @tab -- @tab not supported
 @end multitable
-
-
-
-@c =========================================================================
-@node Supported Properties
-@chapter Supported Properties
-
-@cindex temporal logic
-@cindex LTL
-@cindex CTL
-@cindex simple property
-
-Most properties supported by LoLA can be specified in temporal logic. LoLA
-supports specifications given in the branching time logic @acronym{CTL} as well
-as specifications in the linear time logic @acronym{LTL}. Specifying a property
-in temporal logic does not necessarily mean that LoLA runs a general
-@acronym{LTL} or @acronym{CTL} model checking algorithm. Instead, LoLA first
-checks whether the property can be reduced to a search for deadlocks, a simple
-reachability query (in CTL: EF @math{\phi}), or a liveness query (in CTL:
-AGEF @math{\phi}). If so, it runs state space exploration techniques that
-are optimized to that particular property. In fact, the techniques for such
-simple properties are the particular strength of LoLA. Here, it offers a number
-of unique approaches. For complex queries it basically applies the same
-techniques as any other explicit-state model checker.
-
-
-
-@section Explicitly supported properties
-
-@cindex property
-
-You select the kind of property to be verified using the
-@samp{--check=PROPERTY} command line option where @samp{PROPERTY} can be one of
-the values @samp{none}, @samp{full}, or @samp{modelchecking}. If no value is
-given, @samp{modelchecking} is used as default.
-
-
-
-@subsection Check nothing (@samp{--check=none})
-@anchor{Check nothing}
-
-@cindex @code{--check=none} parameter
-
-LoLA only performs preprocessing but does not do any actual state space
-exploration. This option is useful for checking whether the input is
-syntactically correct, or for getting information from preprocessing.
-
-@cartouche
-@smallexample
-@c lola --check=none phils10.lola
-@include outputs/output1.txt
-@end smallexample
-@end cartouche
-
-@subsection Compute the state space (@samp{--check=full})
-@anchor{Compute the state space}
-
-@cindex @code{--check=full} parameter
-@cindex state space, compute
-
-LoLA explores the reachable states without evaluating any particular property.
-This option is useful for experiencing the size of a state space.
-
-@cartouche
-@smallexample
-@c lola --check=full phils10.lola 
-@include outputs/output2.txt
-@end smallexample
-@end cartouche
-
-
-
-
-@subsection Verify a property in temporal logic (@samp{--check=modelchecking}, default)
-@anchor{Temporal logic}
-
-@cindex @code{--check=modelchecking} parameter
-@cindex temporal logic
-@cindex model checking
-@cindex @code{--formula} parameter
-@cindex @code{--buechi} parameter
-
-LoLA evaluates a property specified in @acronym{LTL} or in @acronym{CTL}. The
-particular property is passed to LoLA by the command line option
-@samp{--formula=@var{FORMULA}}. The value @samp{@var{FORMULA}} is either a
-string that directly describes a formula, or file name that contains such a
-string. For linear time properties, the formula can be replaced by a B@"uchi
-automaton. In this case, LoLA searches for a path that is accepted by the given
-automaton. The automaton is passed to LoLA by the command line option
-@samp{--buechi=@var{STRING}} where @samp{@var{STRING}} is a file name
-containing the description of a B@"uchi automaton.
-
-@cartouche
-@smallexample
-@c lola --formula="EF ea.2 > 0" phils10.lola
-@include outputs/output4.txt
-@end smallexample
-@end cartouche
-
-
-
 
 @section Implicitly supported properties
 
@@ -983,7 +1240,19 @@ reachability query and apply specialized techniques for its evaluation.
 @cartouche
 @smallexample
 @c lola --formula="EF (ea.2 > 0 AND ea.3 > 0)" phils10.lola
-@include outputs/output5.txt
+$ lola --formula="EF (ea.2 > 0 AND ea.3 > 0)" phils10.lola
+lola: NET
+lola:   reading net from phils10.lola
+...
+lola: TASK
+lola:   E (F (((1 <= ea.2) AND (1 <= ea.3))))
+lola:   checking reachability
+...
+lola: RESULT
+lola:   result: no
+lola:   produced by: state space
+lola:   The predicate is unreachable.
+...
 @end smallexample
 @end cartouche
 
@@ -1000,7 +1269,17 @@ reachable states, you should apply the command line option @samp{--formula="AG
 @cartouche
 @smallexample
 @c lola --formula="AG (ea.2 = 0 OR ea.3 = 0)" phils10.lola
-@include outputs/output6.txt
+$ lola --formula="AG (ea.2 = 0 OR ea.3 = 0)" phils10.lola
+...
+lola: TASK
+lola:   A (G ((((ea.2 <= 0)) OR  ((ea.3 <= 0)))))
+lola:   checking invariance
+...
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The predicate is invariant.
+...
 @end smallexample
 @end cartouche
 
@@ -1019,7 +1298,17 @@ found state can be reported.
 @cartouche
 @smallexample
 @c lola --formula="EF DEADLOCK" phils10.lola 
-@include outputs/output3.txt
+$ lola --formula="EF DEADLOCK" phils10.lola
+...
+lola: TASK
+lola:   E (F (DEADLOCK))
+lola:   checking reachability of deadlocks
+...
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The net has deadlock(s).
+...
 @end smallexample
 @end cartouche
 
@@ -1037,7 +1326,17 @@ evaluation.
 @cartouche
 @smallexample
 @c lola --formula="AG hl.3 <= 1" phils10.lola
-@include outputs/output7.txt
+$ lola --formula="AG hl.3 <= 1" phils10.lola
+...
+lola: TASK
+lola:   A (G ((hl.3 <= 1)))
+lola:   checking invariance
+...
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The predicate is invariant.
+...
 @end smallexample
 @end cartouche
 
@@ -1073,8 +1372,18 @@ graph, @pxref{Encoding,,Encoding}.
 
 @cartouche
 @smallexample
-@c lola --search=cover --encoder=full --formula="AG hl.3 <= oo" phils10.lola
-@include outputs/output12.txt
+@c lola --search=cover --encoder=full --formula="AG hl.3 < oo" phils10.lola
+$ lola --search=cover --encoder=full --formula="AG hl.3 < oo" phils10.lola
+...
+lola: TASK
+lola:   A (G ((hl.3 < oo)))
+lola:   checking invariance
+...
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The predicate is invariant.
+...
 @end smallexample
 @end cartouche
 
@@ -1111,7 +1420,18 @@ techniques for its evaluation.
 @cartouche
 @smallexample
 @c lola --formula="AG NOT FIREABLE(tl.[y=3])" phils10.lola
-@include outputs/output8.txt
+$ lola --search=cover --encoder=full --formula="AG NOT FIREABLE(tl.[y=3])" phils10.lola
+...
+lola: TASK
+lola:   A (G (NOT FIREABLE(tl.[y=3])))
+lola:   checking invariance
+...
+lola: RESULT
+lola:   result: no
+lola:   produced by: state space
+lola:   The predicate is not invariant.
+lola:   1 markings, 0 edges
+...
 @end smallexample
 @end cartouche
 
@@ -1138,15 +1458,22 @@ quite well manageable.
 
 A transition is @dfn{live} if it not dead in any reachable marking. If you want
 want to check whether a certain transition @math{t} is live, you should apply
-the command line option @samp{--formula="AGEF FIREABLE(@var{t})"}. In the
-current release, LoLA evaluates this query by a @acronym{CTL} model checking
-algorithm. However, upcoming releases will transform this formula into a
-specialized query, with dedicated state space reduction techniques.
+the command line option @samp{--formula="AGEF FIREABLE(@var{t})"}. 
 
 @cartouche
 @smallexample
 @c lola --formula="AGEF FIREABLE(tl.[y=3])" phils10.lola
-@include outputs/output9.txt
+$ lola --formula="AGEF FIREABLE(tl.[y=3])" phils10.lola
+...
+lola: TASK
+lola:   A (G (E (F (FIREABLE(tl.[y=3])))))
+lola:   checking liveness
+...
+lola: RESULT
+lola:   result: yes
+lola:   produced by: tscc_search
+lola:   The predicate is live.
+...
 @end smallexample
 @end cartouche
 
@@ -1181,7 +1508,18 @@ specialized query, with dedicated state space reduction techniques.
 @cartouche
 @smallexample
 @c lola --formula="AGEF hl.1 > 0" phils10.lola
-@include outputs/output10.txt
+$ lola --formula="AGEF hl.1 > 0" phils10.lola
+...
+lola: TASK
+lola:   A (G (E (F ((1 <= hl.1)))))
+lola:   A (G (E (F ((1 <= hl.1)))))
+lola:   checking liveness
+...
+lola: RESULT
+lola:   result: yes
+lola:   produced by: tscc_search
+lola:   The predicate is live.
+...
 @end smallexample
 @end cartouche
 
@@ -1200,7 +1538,17 @@ query, with dedicated state space reduction techniques.
 @cartouche
 @smallexample
 @c lola --formula="AGEF INITIAL" phils10.lola
-@include outputs/output11.txt
+$ lola --formula="AGEF INITIAL" phils10.lola
+...
+lola: TASK
+lola:   A (G (E (F (((fo.10 <= 1) AND (1 <= fo.10) AND (ea.1 <= 0) AND ...
+lola:   checking liveness
+...
+lola: RESULT
+lola:   result: no
+lola:   produced by: tscc_search
+lola:   The predicate is not live.
+...
 @end smallexample
 @end cartouche
 
@@ -1278,6 +1626,29 @@ precedence. The particular strength of LoLA is on reachability checking. Here,
 technology is most advanced, and the number of available methods is larger than
 for any other class of properties.
 
+@b{Approximate.}
+If your verification problem turns out to be too hard for LoLA, try
+verifying another property that implies the desired property or its negation.
+
+@b{Abstract.}
+You can also try to abstract your input system. Did you model details that
+are irrelevant for the property under investigation? Can you coarsen
+sequences of activities into a single activity?
+
+@b{Do not break symmetry.}
+If your model consists of replicated blocks, make sure that you do not
+break its symmetry, for instance by sequential initialisation of the
+components. Make sure that every detail of your model preserves the symmetry.
+
+@b{Keep concurrency.}
+Try to avoid side conditions in your model. A place is a side condition
+for a transition if there are arcs in both directions between these nodes.
+If you have plenty of side conditions, you probably think of a Petri nets
+in terms of an ordinary program. Let your transitions pass
+the permission that is represented by
+your side condition through the net. This way, you add concurrency and
+the reduction techniques in LoLA work better.
+
 
 @c =========================================================================
 
@@ -1342,49 +1713,31 @@ depth-first search (but peak memory usage can be smaller).
 
 @cartouche
 @smallexample
-@include outputs/output16.txt
-@end smallexample
-@end cartouche
-
-
-@subsection Memoryless search (@samp{--search=findpath})
-@anchor{Memoryless search}
-
-@cindex @code{--search=findpath} parameter
-@cindex @code{--depthlimit} parameter
-@cindex @code{--retrylimit} parameter
-
-LoLA explores the state space without recording visited states at all. It stops
-if, by chance, a state witnessing the given property is encountered. Witness
-paths produced by this method may contain cycles and are not necessarily the
-shortest possible witness paths. The search is not exhaustive.
-
-If a certain depth is exceeded, search resets to the initial state and explores
-another path (transitions are randomly selected). The depth at which LoLA
-resets to the initial state can be controlled using the
-@samp{--depthlimit=@var{DEPTH}} command line option where @samp{@var{DEPTH}} is
-any integer greater than 1. The default depth limit is one million.
-
-With another command line option, @samp{--retrylimit=@var{RETRIES}}, you can
-force LoLA to terminate after @samp{@var{RETRIES}} resets to the initial
-marking. In the result part, LoLA pretends that the desired marking has not
-been found (which may be wrong since search is not exhaustive). If
-@samp{@var{RETRIES}} is set to 0, LoLA goes on forever, exploring an unlimited
-number of paths each having length @samp{@var{DEPTH}} (unless the desired state
-is found). This search strategy is available only if the given property can be
-transformed into a simple reachability query. Otherwise, LoLA performs
-depth-first search anyway.
-
-@itemize
-@item Karsten Schmidt. @b{LoLA wird Pfadfinder.} @i{In 6. Workshop Algorithmen
-und Werkzeuge f@"ur Petrinetze (AWPN'99), Frankfurt, Germany}, October 11.-12.,
-1999, volume 26 of CEUR Workshop Proceedings, pages 48-53, October 1999.
-CEUR-WS.org.
-@end itemize
-
-@cartouche
-@smallexample
-@include outputs/output15.txt
+$ lola --formula="EF DEADLOCK" --search=sweep phils10.lola
+lola: NET
+lola:   reading net from phils10.lola
+...
+lola:   preprocessing... 
+...
+lola:   calculating the progress measure
+lola: TASK
+lola:   E (F (DEADLOCK))
+lola:   checking reachability of deadlocks
+lola:   Planning: workflow for deadlock check: search (--findpath=off,--siphontrap=off)
+lola: SEARCH (state space)
+lola:   state space: using sweep-line method (--search=sweep)
+lola:   state space: using deadlock preserving stubborn set method with insertion algorithm(--stubborn=tarjan)
+lola: RUNNING
+lola:   transition progress range [-3,1], transients in [-3,1]
+lola:   using 200 bytes per marking, including 0 wasted bytes
+lola:   using 4 bytes per marking, with 2 unused bits
+lola:   82 persistent markings, 27 transient markings (max)
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The net has deadlock(s).
+lola:   109 markings, 410 edges
+...
 @end smallexample
 @end cartouche
 
@@ -1623,6 +1976,213 @@ that problem, a heuristic parameter has been introduced that can be set by
 @samp{--cycleheuristic=K}. Small values produce less reduction but better
 run-time while large values cause better reduction but longer run-time.
 Correctness of the is independent of this value.
+
+@node Nonstandard Verification Techniques
+@chapter Nonstandard Verification Techniques
+
+@section Memoryless search (@samp{--findpath=ORDER})
+@anchor{Memoryless search}
+
+@cindex @code{--findpath} parameter
+@cindex @code{--depthlimit} parameter
+@cindex @code{--retrylimit} parameter
+
+Depending on @code{ORDER}, this technique is applied in parallel to (@samp{--findpath=par}), before (@samp{--findpath=seq}), or instead of (@samp{--findpath=alone}) state space exploration. By default, it is not applied at all (@samp{--findpath=off}).
+
+LoLA explores the state space without recording visited states at all. It stops
+if, by chance, a state witnessing the given property is encountered. Witness
+paths produced by this method may contain cycles and are not necessarily the
+shortest possible witness paths. The search is not exhaustive.
+
+If a certain depth is exceeded, search resets to the initial state and explores
+another path (transitions are randomly selected). The depth at which LoLA
+resets to the initial state can be controlled using the
+@samp{--depthlimit=@var{DEPTH}} command line option where @samp{@var{DEPTH}} is
+any integer greater than 1. The default depth limit is one million.
+
+With another command line option, @samp{--retrylimit=@var{RETRIES}}, you can
+force LoLA to terminate after @samp{@var{RETRIES}} resets to the initial
+marking.  If
+@samp{@var{RETRIES}} is set to 0, LoLA goes on forever, exploring an unlimited
+number of paths each having length @samp{@var{DEPTH}} (unless the desired state
+is found). If search is successful, LoLA terminates with the respective
+result. Parallel or subsequent search is cancelled. If the number of
+retries is reached without having found a state, subsequent or parallel
+search continue exploring the property. In the case, that the method is
+applied alone (@samp{--findpath=alone}), the value "unknown" is returned
+as result. If a parallel search finishes, memoryless search is cancelled.
+
+
+This method is available only if the given property can be
+transformed into a simple reachability query. Otherwise, LoLA performs
+depth-first search anyway. 
+
+@itemize
+@item Karsten Schmidt. @b{LoLA wird Pfadfinder.} @i{In 6. Workshop Algorithmen
+und Werkzeuge f@"ur Petrinetze (AWPN'99), Frankfurt, Germany}, October 11.-12.,
+1999, volume 26 of CEUR Workshop Proceedings, pages 48-53, October 1999.
+CEUR-WS.org.
+@end itemize
+
+@cartouche
+@smallexample
+$ lola --findpath=alone --formula="EF FIREABLE(t520)" vasy.lola
+...
+lola: TASK
+lola:   E (F (FIREABLE(t520)))
+lola:   checking reachability
+lola:   Planning: workflow for reachability check: findpath (--findpath=alone)
+lola: SEARCH (findpath)
+lola:   findpath: using reachability preserving stubborn set method with insertion algorithm (--stubborn=tarjan)
+lola: RUNNING
+lola:   findpath: starting randomized, memory-less exploration (--findpath)
+lola:   findpath: searching for paths with maximal depth 1000000 (--depthlimit)
+lola:   findpath: no retry limit given (--retrylimit)
+lola:   findpath: transitions are chosen hash-driven
+lola: RESULT
+lola:   result: yes
+lola:   produced by: findpath
+lola:   The predicate is reachable.
+...
+@end smallexample
+@end cartouche
+
+@section The state equation (@samp{--stateequation=ORDER})
+@anchor{state equation}
+
+@cindex @code{--stateequation} parameter
+@cindex state equation 
+
+
+Depending on @code{ORDER}, this technique is applied in parallel to (@samp{--stateequation=par}), before (@samp{--stateequation=seq}), or instead of (@samp{--stateequation=alone}) state space exploration. By default, it is not applied at all (@samp{--stateequation=off}).
+
+LoLA invokes the tool Sara that verifies reachability based on the Petri net
+state equation. The state equation is a linear system of equations that
+establishes a necessary condition for reachability. If the state equation has
+no solution, Sara returns false (and so does LoLA). If the state equation
+has a solution (which happens to be the transition count vector of a
+firing sequence), Sara checks whether an executable firing sequence fitting to the given
+count vector exists. If so, it returns true. Otherwise it checks for
+reasonable modifications to the state equation that yield alternative solutions.If no reasonable modifications exist, it returns false.
+
+If Sara returns, LoLA terminates with the respective
+result. Parallel or subsequent search is cancelled. 
+If parallel search finishes, Sara in cancelled.
+
+This method is available only if the given property can be
+transformed into a simple reachability query not containing any
+@code{DEADLOCK} atomic proposition. Otherwise, LoLA performs
+depth-first search anyway. 
+
+@itemize
+@item Harro Wimmel and Karsten Wolf. @b{Applying CEGAR to the Petri Net State Equation.} @i{ Logical Methods in Computer Science} 8(3) (2012)
+@end itemize
+
+@cartouche
+@smallexample
+$ lola --stateequation=par --formula="EF hr.1 > 1" phils10.lola 
+...
+lola: TASK
+lola:   E (F ((2 <= hr.1)))
+lola:   checking reachability
+lola:   Planning: workflow for reachability check: stateequation||search (--findpath=off)
+...
+lola: RUNNING
+lola:   state equation: Generated DNF with 1 literals and  1 conjunctive subformulas
+lola:   state equation: write sara problem file to stateEquationProblem.sara
+lola:   state equation: calling and running sara
+sara: try reading problem file stateEquationProblem.sara.
+sara: place or transition ordering is non-deterministic
+
+lola:   state equation: solution impossible
+lola: RESULT
+lola:   result: no
+lola:   produced by: state equation
+lola:   The predicate is unreachable.
+...
+@end smallexample
+@end cartouche
+
+
+
+@section The siphon/trap property (@samp{--siphontrap=ORDER})
+@anchor{siphon trap}
+
+@cindex @code{--siphontrap} parameter
+@cindex siphon 
+@cindex trap 
+
+
+Depending on @code{ORDER}, this technique is applied in parallel to (@samp{--siphontrap=par}), before (@samp{--siphontrap=seq}), or instead of (@samp{--siphontrap=alone}) state space exploration. By default, it is not applied at all (@samp{--siphontrap=off}).
+
+LoLA checks whether there exists a siphon in the given Petri net that does
+not contain a sufficiently marked trap. If such a siphon does not exist,
+and the net is homogenious (all arc multiplicities are the same), then
+the net is known to be deadlock-free. The check is executed by translating the problem into a Boolean formula and running an integrated SAT checker (MINISAT)
+on it. You can pass command line argument to MINISAT by chosing
+@samp{--minisatargs=STRING}. For valid arguments, refer to the Minisat documentation.
+
+
+If Minisat established deadlock freedom, LoLA terminates with the respective
+result. Parallel or subsequent search is cancelled. 
+Otherwise, parallel or subsequent search continues.
+In the case, that the method is
+applied alone (@samp{--stateequation=alone}), the value "unknown" is returned
+as result. If normal search yields a result, Minsat is cancelled.
+
+If Minisat finds a siphon without an initially marked trap, such a siphon 
+and its maximal included trap can
+be shown by LoLA using the parameter @samp{--siphonwitness[=FILE]}.
+
+Sometimes, the formula to be passed to Minisat gets so large that Minisat cannot
+handle it. For such situations, there is an option @samp{--siphondepth=INT} in LoLA. If this option is given, LoLA produces a shorter formula. For this
+formula, the Minisat check may result in one of the following values:
+@itemize
+@item All siphons contain an initially marked trap;
+@item There is a siphon without initially marked trap contained;
+@item The formula is too short to get any of the above answers.
+@end itemize
+In the third case, you may try a larger number for @samp{--siphondepth=INT}.
+The larger the value gets, the larger the generated formula becomes, and
+the more likely it is to get one of the first two answers in the above list.
+
+In any case, LoLA is fully aware of what is preserved by the formula and
+will never produce a wrong result.
+
+This method is available only if the given property can be
+transformed into a deadlock (@code{EF DEADLOCK})
+or @code{AG NOT DEADLOCK} query 
+Otherwise, LoLA performs depth-first search anyway. 
+
+
+@itemize
+@item Olivia Oanea, Harro Wimmel, and Karsten Wolf. @b{New Algorithms for Deciding the Siphon-Trap Property.} @i{Petri Nets} 2010: 267-286
+@end itemize
+
+@cartouche
+@smallexample
+$ lola --siphontrap=seq --formula="EF DEADLOCK" phils10.lola 
+...
+lola: TASK
+lola:   E (F (DEADLOCK))
+lola:   checking reachability of deadlocks
+lola:   Planning: workflow for deadlock check: siphon;search (--findpath=off,--siphontrap=seq)
+...
+lola: SEARCH (state space)
+lola:   state space: using reachability graph (--search=depth)
+lola:   state space: using deadlock preserving stubborn set method with insertion algorithm(--stubborn=tarjan)
+lola: RUNNING
+lola:   STP: formula with 4672 variables and 13424 clauses shipped to Minisat
+lola:   stp: The siphon/trap property does not hold
+lola: RESULT
+lola:   result: yes
+lola:   produced by: state space
+lola:   The net has deadlock(s).
+lola:   13 markings, 13 edges
+...
+@end smallexample
+@end cartouche
+
 
 @c =========================================================================
 
@@ -2464,6 +3024,7 @@ net_has_deadlock = result['analysis']['result']
 @c =========================================================================
 @node Utilities
 @chapter Utilities
+@anchor{Utilities}
 
 LoLA follows the @acronym{UNIX} principle of having one tool for one purpose.
 As such, several helper functions have been moved from the main tool into
@@ -2557,28 +3118,7 @@ $ lola garavel.lola --formula="EF FIREABLE(t553)" --remoteTermination
 lola: enabling remote termination (--remoteTermination)
 lola: setting up listener socket at port 5556 - secret is goodbye
 lola: reading net from garavel.lola
-lola: finished parsing
-lola: closed net file garavel.lola
-lola: 1261/65536 symbol table entries, 0 collisions
-lola: preprocessing net
-lola: computing forward-conflicting sets
-lola: computing back-conflicting sets
-lola: 962 transition conflict sets
-lola: finding significant places
-lola: 485 places, 776 transitions, 419 significant places
-lola: read: EF (FIREABLE(t553))
-lola: formula length: 19
-lola: checking reachability
-lola: processing formula
-lola: processed formula: (p.306 > 0 AND p.483 > 0)
-lola: processed formula length: 25
-lola: 8 rewrites
-lola: processed formula with 2 atomic propositions
-lola: formula mentions 2 of 485 places; total mentions: 2
-lola: using a bit-perfect encoder (--encoder)
-lola: using 1676 bytes per marking, with 0 unused bits
-lola: using a prefix store (--store)
-lola: checking a formula (--check=modelchecking)
+...
 lola: finished preprocessing
 lola:     205181 markings,     235592 edges,    41036 markings/sec,     0 secs
 lola:     403256 markings,     467135 edges,    39615 markings/sec,     5 secs
@@ -2595,6 +3135,34 @@ lola: killed listener thread
 $ lola: sending KILL packet (goodbye) to localhost:5556
 @end smallexample
 @end cartouche
+
+@section Translating PNML to LoLA
+
+Given a place/transition Petri net described in the Petri Net Markup Language (PNML), you may try the utility @code{pnml2lola} for translating it into the
+LoLA net file format. This tool is very simple and has been developed for the
+particular PNML files occurring in the yearly model checking contests (MCC).
+Most certainly, our tool is NOT robust w.r.t. all the bells and whistles
+generally permitted in XML documents.
+
+The tool reads from stdin and writes to stdout:
+
+@code{$ pnml2lola < given.pnml > produced.lola}
+
+It cannot process PNML documents that model a high-level Petri net. 
+
+@section Translating XML property files to LoLA
+
+Given an XML description of a property for place/transition nets 
+as used in the 2016 and 2017 editions
+of the MCC, a corresponding property file in LoLA can be generated. 
+The tool is called @code{formula2lola}. It reads from stdin and writes to stdout:
+
+@code{$ formula2lola < given.xml > produced.lolatask}
+
+It is NOT robust w.r.t. XML bells and whistles but seems to work fine for
+the property files automatically generated in  recent editions of the MCC.
+It cannot process formulas designed for high level nets.
+
 
 
 @c =========================================================================
@@ -3075,12 +3643,14 @@ quasi-liveness of transition @samp{t516} after generating 2607528 markings.
 
 
 @c =========================================================================
-@node From LoLA 1 to LoLA 2
-@chapter From LoLA 1 to LoLA 2
+@node Difference to Previous Releases
+@chapter Difference to Previous Releases
+
+@section From LoLA 1 to LoLA 2
 
 This chapter summarizes the differences since earlier versions of LoLA (1.x).
 
-@section General workflow
+@subsection General workflow
 
 In LoLA 1, you needed to specify the kind of property you wanted to verify
 (e.g. @samp{REACHABILITY} and the reduction techniques to be applied in a
@@ -3089,32 +3659,30 @@ several properties, this led to a huge pile of executables and some confusion
 about the configuration they represented. In LoLA 2, you just have a single
 executable, and all features are controlled through the command line.
 
-@section Net input
+@subsection Net input
 
 LoLA 2 does not support high level nets. As LoLA 1 is able to output a low
 level net when started on a high level net, a work-around is available, though.
 Future releases of LoLA 2 will provide support for high-level nets, but will
 use another language (closer to the C programming language).
 
-@section Property specification
+@subsection Property specification
 
 In LoLA 1, you had a long list of supported properties. In LoLA 2, you express
-all properties in the temporal logic @acronym{CTL}*. LoLA 2 rewrites your
+most properties in the temporal logic @acronym{CTL}*. LoLA 2 rewrites your
 formula and checks whether it can use a specialized check, or whether to run a
 general @acronym{CTL} or @acronym{LTL} model checking algorithm. The rewriting
 process also eliminates subformulas that it can prove to be tautologies or
 contradictions.
 
-@section Supported properties
+@subsection Supported properties
 
-Unlike LoLA 1, LoLA 2 has a complete @acronym{LTL} model checker. In the
-current release, however, partial order reduction is not available for general
-@acronym{LTL} and @acronym{CTL} model checking. There is no specific support
-for AGEF properties that was provided in LoLA 1. Home states are no longer
+Unlike LoLA 1, LoLA 2 has a complete @acronym{LTL} model checker. 
+Home states are no longer
 supported. See @ref{Property compatibility} for a complete comparison of the
 supported properties.
 
-@section Atomic propositions
+@subsection Atomic propositions
 
 In LoLA 1, atomic propositions compared places (i.e. the number of tokens on
 them) to constant values, such as @samp{p7 > 3}. In LoLA 2, you can compare
@@ -3127,43 +3695,110 @@ such as as @samp{p4 < oo} can be used. The symbol @samp{oo} represents the
 value @math{\omega} of coverability graph theory. See @ref{Formula syntax} for
 a complete overview of the syntax.
 
-@section Reduction Techniques
+@subsection Reduction Techniques
 
 In LoLA 2, the symmetry method is available for arbitrary properties, even for
 properties given as a formula. This was not supported in LoLA 1. On the other
 hand, most options concerning the way symmetries are used are no longer
-available.
+available as we support only the integration we found most successful.
 
-@section Computed information
+@subsection Computed information
 
 Output of a complete reachability graph is no longer supported. For most other
 bits of information, LoLA 2 offers a structured output using the @acronym{JSON}
 format, @pxref{JSON}.
 
-@section Progress messages
+@subsection Progress messages
 
 These messages have been reshaped. They are now emitted at given points in time
 (rather than given stages of computation). Messages can be suppressed, or
 deferred to a remote machine via socket communication, @pxref{Remote
 reporting}.
 
-@section Multicore Support
+@subsection Multicore Support
 
 Selected tasks in LoLA 2 can be spread over several cores.
 
-@section Internal Architecture
+@subsection Internal Architecture
 
 Benefitting from our experience with LoLA 1, LoLA 2 has a more convincing
 internal structure. This way, it is easier to extend and maintain LoLA 2.
 Furthermore, the interplay between properties, stores, search engines, etc. is
 aligned with the modular structure and therefore less error-prone.
 
-@section Code Quality
+@subsection Code Quality
 
 LoLA 2 is a complete re-implementation. Not a single line of code was copied
 from LoLA 1. For coding LoLA 2, we used a system that reveals test case
 coverage. In core modules, coverage is at or near one hundred percent. Most
 parts underwent code reviews. We have carefully hunted for memory leaks.
+
+@section From LoLA 2.0 to LoLA 2.1
+
+@subsection List of formulas
+
+You can now specify a @code{':'}-separated list of properties that is
+processed sequentially. With the @code{--localtimelimit} feature, you
+can distribute available runtime bounds to the individual queries.
+
+@subsection Boolean combinations
+
+If your property is a Boolean combination of subformulas, each subformula
+is evaluated separately (sequentially). If the value of the overall formula
+is determined, the remaining subformulas are not evaluated at all.
+
+@subsection Portfolio approach 
+
+While LoLA 2.0 offered memoryless search as one of the available search strategies, you can apply this in parallel to a regular state space exploration in LoLA 2.1. Furthermore, you can evaluate the siphon/trap property (for deadlock search) or a method based on the Petri net state equation before or in parallel to
+a state space exploration. The method that returns true or false first, determines the overall run time. 
+
+@subsection Partial order reduction for LTL and CTL model checking 
+
+Partial order reduction (the stubborn set method) was available only for reachability and deadlock queries in LoLA 2.0. In LoLA 2.1, LTL and CTL preserving stubborn sets are avaliable as well.
+
+@subsection New stubborn set approach for reachability and deadlock
+
+LoLA 2.0 offered two algorithms for computing stubborn sets. One was based on
+starting with a small set and adding transitions until all requirements are satisfied. The other was based on starting with all transitions and then deleting transitions as long as all requirements are satisfied. The first approach is equicker, the second leads to better reduction. LoLA 2.1 offers a combined approach
+where the starting point of the second approach is the result of the first one.
+With a few additional implementation tricks, the new method offers a new
+tradeoff between runtime and reduction power.
+
+@subsection Bound properties
+
+Given a formal sum of places, LoLA 2.1 can determine the maximum value that this sum can have for any reachable marking. A dedicated stubborn set method and the symmetry method are available for this feature.
+
+@subsection Efficiency improvements
+
+The LTL model checker has be completely re-implemented. It is now able to accept counterexamples much earlier than the approach in LoLA 2.0. 
+
+Computation of canonical representatives in the symmetry method has been
+modified and runs much faster than in LoLA 2.0.
+
+Stubborn set calculation now uses additional structural information (the conflict clusters of the Petri net) that is calculated during preprocessing.
+This way, calculation is often much faster, and smaller stubborn sets are returned.
+
+@subsection Scalability issues
+
+LoLA 2.0 had problems with translating large LTL formulas to Buchi automata, especially when the formula
+made excessive use of Boolean operators in atomic propositions. The translation in LoLA 2.1 scales much better and takes substantially less time.
+Furthermore, there LoLA 2.1 has additional capabilities for detecting
+duplicate formulas, tautologies, and contradictions in atomic formulas.
+This leads to smaller formulas, better run-time and less time for pre-processing.
+
+In LoLA 2.0, the rewriting system for formulas became very slow and would even crash if the formula made excessive use of Boolean operators in atomic proposition. This problem has been fixed.
+
+
+@subsection JSON output
+
+The structure of the JSON object has been reshaped. You can optionally
+include a lot of additional information.
+
+@subsection AG/EF properties
+
+For properties @code{AG EF phi}, @code{EF AG phi}, @code{AG EF AG phi}, and @code{EF AG EF phi} (where @code{phi} is a state predicate not containing temporal operators), LoLA 2.1 uses a dedicated verification technique that in essence is based on a quick detection of terminal strongly connected components in the state space. The corresponding stubborn set method is stronger than the general CTL preserving method. Note that any CTL property that piles up AG and EF operators
+in arbitrary alternation, reduces to the mentioned properties, to reachability,
+or to invariance (all with special support in LoLA 2.1).
 
 @section Did you know?
 

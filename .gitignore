@@ -9,6 +9,7 @@ settings.json
 *.o
 src/lola
 *.Po
+*.Tpo
 .vscode/tasks.json
 config.status
 config.log
@@ -22,3 +23,9 @@ build-aux/ltmain.sh
 utils/killer
 utils/listener
 utils/pyscript*
+lola2.mk
+doc/lola.log
+*.dirstamp
+*.old
+*.timestamp
+

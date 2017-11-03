@@ -73,7 +73,7 @@ public:
         {
             RT::rep->status("using a bit-perfect encoder (%s)", RT::rep->markup(MARKUP_PARAMETER,
                             "--encoder=bit").str());
-            RT::data["store"]["encoder"] = "bit-perfect";
+            RT::data["task"]["search"]["store"]["encoder"] = "bit-perfect";
             enc = new BitEncoder(number_of_threads);
             break;
         }
@@ -81,7 +81,7 @@ public:
         case encoder_arg_copy:
         {
             RT::rep->status("using a copy encoder (%s)", RT::rep->markup(MARKUP_PARAMETER, "--encoder=copy").str());
-            RT::data["store"]["encoder"] = "copy";
+            RT::data["task"]["search"]["store"]["encoder"] = "copy";
             enc = new CopyEncoder(number_of_threads);
             break;
         }
@@ -90,7 +90,7 @@ public:
         {
             RT::rep->status("using a simple compression encoder (%s)", RT::rep->markup(MARKUP_PARAMETER,
                             "--encoder=simplecompressed").str());
-            RT::data["store"]["encoder"] = "simple compression";
+            RT::data["task"]["search"]["store"]["encoder"] = "simple compression";
             enc = new SimpleCompressedEncoder(number_of_threads);
             break;
         }
@@ -99,7 +99,7 @@ public:
         {
             RT::rep->status("using a full copy encoder (%s)", RT::rep->markup(MARKUP_PARAMETER,
                             "--encoder=fullcopy").str());
-            RT::data["store"]["encoder"] = "full copy";
+            RT::data["task"]["search"]["store"]["encoder"] = "full copy";
             enc = new FullCopyEncoder(number_of_threads);
             break;
         }
@@ -119,7 +119,7 @@ public:
         case store_arg_comp:
         {
             RT::rep->status("using a compare store (%s)", RT::rep->markup(MARKUP_PARAMETER, "--store=comp").str());
-            RT::data["store"]["type"] = "compare";
+            RT::data["task"]["search"]["store"]["type"] = "compare";
             st = new CompareStore<T>(
                 new PluginStore<T>(enc, new PrefixTreeStore<T>(), number_of_threads),
                 new PluginStore<T>(enc, new VSTLStore<T>(number_of_threads), number_of_threads),
@@ -130,7 +130,7 @@ public:
         case store_arg_prefix:
         {
             RT::rep->status("using a prefix tree store (%s)", RT::rep->markup(MARKUP_PARAMETER, "--store=prefix").str());
-            RT::data["store"]["type"] = "prefix";
+            RT::data["task"]["search"]["store"]["type"] = "prefix";
             if (RT::args.bucketing_given)
             {
                 st = new PluginStore<T>(enc, new HashingWrapperStore<T>(new
@@ -146,7 +146,7 @@ public:
         case store_arg_stl:
         {
             RT::rep->status("using an STL store (%s)", RT::rep->markup(MARKUP_PARAMETER, "--store=stl").str());
-            RT::data["store"]["type"] = "stl";
+            RT::data["task"]["search"]["store"]["type"] = "stl";
             if (RT::args.bucketing_given)
             {
                 st = new PluginStore<T>(enc, new HashingWrapperStore<T>(new
@@ -163,7 +163,7 @@ public:
         {
             RT::rep->status("using a Bloom filter store (%s)", RT::rep->markup(MARKUP_PARAMETER,
                             "--store=bloom").str());
-            RT::data["store"]["type"] = "bloom";
+            RT::data["task"]["search"]["store"]["type"] = "bloom";
             st = createSpecializedStore(number_of_threads);
             break;
         }

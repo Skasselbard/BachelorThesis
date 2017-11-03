@@ -41,6 +41,9 @@ struct AtomicFormula : public CTLFormula
     bool check(Store<void *> &s, NetState &ns, Firelist &firelist,
                std::vector<int> &witness);
 
+    bool checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+               std::vector<int> &witness);
+
     void DEBUG_print();
 
     void gatherPayloadInformation(arrayindex_t &numDFS, arrayindex_t &numCachedResults);
@@ -50,4 +53,5 @@ struct AtomicFormula : public CTLFormula
     FormulaInfo *getInfo() const;
     /// returns the number of subformulas
     int countSubFormulas() const;
+    virtual void print();
 };

@@ -29,6 +29,7 @@
 #include <Planning/ReachabilitySearchTask.h>
 #include <Exploration/StatePredicateProperty.h>
 #include <Exploration/FirelistStubbornDeletion.h>
+#include <Exploration/FirelistStubbornCombinedDeadlock.h>
 #include <Exploration/FirelistStubbornStatePredicate.h>
 #include <Exploration/DFSExploration.h>
 #include <Exploration/ParallelExploration.h>
@@ -54,15 +55,14 @@ FullTask::FullTask()
     case search_arg_sweepline:
     {
         // dummy store for the sweepline method, only counts markings and calls
-        RT::data["store"]["type"] = "empty";
-        RT::data["store"]["search"] = "sweepline";
+        RT::data["task"]["search"]["type"] = "sweepline";
         store = new SweepEmptyStore();
 	covStore = NULL;
         break;
     }
     case search_arg_covergraph:
     {
-        RT::data["store"]["search"] = "covergraph";
+        RT::data["task"]["search"]["type"] = "cover";
         if (RT::args.encoder_arg != encoder_arg_fullcopy)
         {
             RT::rep->status("warning: encoder does not fully support coverability graphs");
@@ -73,7 +73,7 @@ FullTask::FullTask()
     }
     case search_arg_depth:
     {
-        RT::data["store"]["search"] = "depth_first_search";
+        RT::data["task"]["search"]["type"] = "dfs";
 
         // choose a store
 	store = StoreCreator<void>::createStore(number_of_threads);
@@ -86,31 +86,36 @@ FullTask::FullTask()
     // choose a simple property
         RT::rep->status("generating a state space (%s)",
                         RT::rep->markup(MARKUP_PARAMETER, "--check=full").str());
-        RT::data["analysis"]["type"] = "full";
-            p = new SimpleProperty();
+        p = new SimpleProperty();
 	RT::rep->indent(-2);
 	RT::rep->status("SEARCH");
 	RT::rep->indent(2);
-            if (RT::args.stubborn_arg == stubborn_arg_deletion)
-            {
-RT::rep->status("using deadlock preserving stubborn set method with deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
+	switch(RT::args.stubborn_arg)
+	{
+	case stubborn_arg_deletion:  
+		RT::data["task"]["search"]["stubborn"]["type"] = "deadlock/deletion";
+		RT::rep->status("using deadlock preserving stubborn set method with deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
                 fl = new FirelistStubbornDeletion();
-            }
-            else
-            {
-		if(RT::args.stubborn_arg == stubborn_arg_off)
-		{
-     			RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
-			fl = new Firelist();
-		}
-		else
-		{
-RT::rep->status("using deadlock preserving stubborn set method with insertion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
-			fl = new FirelistStubbornDeadlock();
-		}
-            }
-
+		break;
+	case stubborn_arg_off: 
+		RT::data["task"]["search"]["stubborn"]["type"] = "no";
+     		RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
+		fl = new Firelist();
+		break;
+	case stubborn_arg_tarjan:
+		RT::data["task"]["search"]["stubborn"]["type"] = "deadlock/insertion";
+		RT::rep->status("using deadlock preserving stubborn set method with insertion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
+		fl = new FirelistStubbornDeadlock();
+		break;
+	case stubborn_arg_combined:
+		RT::data["task"]["search"]["stubborn"]["type"] = "deadlock/combined";
+		RT::rep->status("using deadlock preserving stubborn set method with combined insertion/deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=combined").str());
+                fl = new FirelistStubbornCombinedDeadlock();
+		break;
+	default: assert(false);
+        }
     // set the correct exploration algorithm
+	RT::data["task"]["search"]["threads"] = number_of_threads;
             if (number_of_threads == 1)
             {
                 exploration = new DFSExploration();
@@ -200,15 +205,20 @@ void FullTask::interpreteResult(ternary_t result)
 	}
         const double k = RT::args.hashfunctions_arg;
         const double m = static_cast<double>(BLOOM_FILTER_SIZE);
+	const double prob = pow((1.0 - exp((-k * n) / m)), k);
+	const double opt_hash = log(m / n) / log(2.0);
         RT::rep->status("Bloom filter: probability of false positive is %.10lf",
-                        pow((1.0 - exp((-k * n) / m)), k));
+                       prob);
         RT::rep->status("Bloom filter: optimal number of hash functions is %.1f",
-                        log(m / n) / log(2.0));
+                        opt_hash);
+	RT::data["task"]["search"]["bloom"]["prob_false_positive"] = prob;
+	RT::data["task"]["search"]["bloom"]["optimal_hash_functions"] = opt_hash;
     }
      // result for full state space is always "no" (kind of dummy value)
     result = TERNARY_FALSE;
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+        RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = "search";
         RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "State space generated.").str());
 }
@@ -247,7 +257,7 @@ void FullTask::getStatistics()
 	{
 		assert(false);
 	}
-	RT::data["analysis"]["stats"]["states"] = static_cast<int>(markingcount);
+	RT::data["result"]["markings"] = static_cast<int>(markingcount);
 	uint64_t edgecount;
     if (store)
     {
@@ -261,7 +271,7 @@ void FullTask::getStatistics()
     {
 	assert(false);
     }
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int>(edgecount);
+    RT::data["result"]["edges"] = static_cast<int>(edgecount);
     RT::rep->status("%llu markings, %llu edges", markingcount, edgecount);
 } 
 

@@ -17,7 +17,7 @@
 
 /*!
 \file
-\author Gregor
+\author Karsten
 \status new
 
 \brief Evaluates an LTL Property
@@ -29,79 +29,69 @@
 #include <Exploration/SearchStack.h>
 #include <Stores/Store.h>
 
-class AutomataTree;
 class BuechiAutomata;
 class Path;
 class Firelist;
 class NetState;
+class LTLSearchStackEntry;
 
-struct fairness_assumptions
+class LTLPayload
 {
-    arrayindex_t card_strong;
-    arrayindex_t *strong_fairness;
-    arrayindex_t *strong_backlist;
-    arrayindex_t card_weak;
-    arrayindex_t *weak_fairness;
-    arrayindex_t *weak_backlist;
+	public:
+	LTLPayload();
+	~LTLPayload();
+	uint64_t dfsnum;
+	uint64_t lowlink;
+	LTLPayload* witnessstate; // the state defining this lowlink
+	arrayindex_t witness; // the transition that leads to the state
+			      // where this state gats its lowlink from
 };
 
-class LTLExploration
+class LTLExploration // In this version, we do not care about fairness!!!!!!!
 {
 public:
-    explicit LTLExploration(bool mode);
+    explicit LTLExploration();
 
-    bool checkProperty(BuechiAutomata &automata, Store<AutomataTree *> &store,
+    bool checkProperty(BuechiAutomata &automata, Store<LTLPayload> &store,
                        Firelist &firelist, NetState &ns);
 
-    /// a data structure to manage a counterexample/witness
-    SearchStack<arrayindex_t> witness;
-
     /// return a witness path
-    Path path();
-
-private:
-    fairness_assumptions assumptions;
-    arrayindex_t *forbidden_transitions;
-    arrayindex_t card_forbidden_transitions;
-
-    /// storage mode for automata trees, true means tree storage, false means flat storage
-    bool stateStorageMode;
-
-    dfsnum_t currentNextDepth;
-
-    bool searchFair(BuechiAutomata &automata, Store<AutomataTree *> &store,
-                    Firelist &firelist, NetState &ns, arrayindex_t currentAutomataState, AutomataTree *currentEntry,
-                    dfsnum_t depth, arrayindex_t currentNextDFS);
-    arrayindex_t checkFairness(BuechiAutomata &automata, Store<AutomataTree *> &store,
-                               Firelist &firelist, NetState &ns, arrayindex_t currentAutomataState,
-                               dfsnum_t depth, bool **enabledStrongTransitions, AutomataTree *currentStateEntry);
-    void produceWitness(BuechiAutomata &automata,
-                        Store<AutomataTree *> &store, Firelist &firelist, NetState &ns,
-                        arrayindex_t currentAutomataState, AutomataTree *currentStateEntry,
-                        dfsnum_t depth, dfsnum_t witness_depth, bool *fulfilledWeak, bool *fulfilledStrong,
-                        arrayindex_t fulfilled_conditions, bool acceptingStateFound, AutomataTree *targetPointer);
-
-    bool start_restricted_searches(BuechiAutomata &automata,
-                                   Store<AutomataTree *> &store, Firelist &firelist, NetState &ns,
-                                   arrayindex_t currentAutomataState, AutomataTree *currentStateEntry, dfsnum_t depth,
-                                   arrayindex_t currentNextDF);
-
-    void completeWitness(BuechiAutomata &automata,
-                         Store<AutomataTree *> &store, Firelist &firelist, NetState &ns,
-                         arrayindex_t currentAutomataState,  AutomataTree *targetPointer, dfsnum_t depth,
-                         dfsnum_t witness_depth,
-                         AutomataTree *currentStateEntry);
-
-    // helper functions
-    bool is_next_state_accepting(BuechiAutomata &automata, arrayindex_t currentAutomataState);
-    inline void get_next_transition(BuechiAutomata &automata, NetState &ns,
-                                    arrayindex_t *currentStateListEntry, arrayindex_t *currentFirelistEntry,
-                                    arrayindex_t *currentFirelist,
-                                    arrayindex_t stateListLength, arrayindex_t currentAutomataState);
-    inline bool initialize_transition(NetState &ns, Firelist &firelist, BuechiAutomata &automata,
-                                      arrayindex_t currentAutomataState,
-                                      arrayindex_t *currentFirelistEntry, arrayindex_t **currentFirelist,
-                                      arrayindex_t *currentStateListEntry,
-                                      arrayindex_t *currentStateListLength, arrayindex_t **currentStateList,
-                                      AutomataTree *currentStateEntry);
+    Path * path;
+void createWitness(LTLPayload * , SearchStack<LTLSearchStackEntry> *);
 };
+
+/// An entry in the LTL search stack
+class LTLSearchStackEntry
+{
+	public:
+        /// the firelist of stacked state
+	arrayindex_t * fl;
+	/// the most recently processed entry in firelist
+	arrayindex_t netIndex;
+	/// the buchi automaton state of stacked state
+	arrayindex_t buchiState;
+	/// the list of enabled buchi transitions
+	arrayindex_t * bl;
+	/// the length of bl
+	arrayindex_t  buchiLength;
+	/// the most recently processed transition in bl 
+	arrayindex_t buchiIndex;
+	/// link to state
+	LTLPayload * info;
+	LTLSearchStackEntry(arrayindex_t * f,arrayindex_t ni,arrayindex_t bs,arrayindex_t * bbl, arrayindex_t l, arrayindex_t bi, LTLPayload * inf)
+	{
+		fl = f;
+		netIndex = ni;
+		buchiState = bs;
+		bl = bbl;
+		buchiLength = l;
+		buchiIndex = bi;
+		info = inf;
+	}
+	~LTLSearchStackEntry()
+	{
+		delete fl;
+		delete bl;
+	}
+};
+

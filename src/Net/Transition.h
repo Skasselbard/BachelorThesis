@@ -79,6 +79,13 @@ public:
     /// The progress measure for the sweep line method
     static int32_t *ProgressMeasure;
 
+    /// the order in which we look for start transition of stubborn set
+    static arrayindex_t * StubbornPriority;
+
+    /// the first transtion in StubbornPriority that is not alone in its
+    /// conflict cluster
+    static arrayindex_t SingletonClusters;
+
     /// Check transition for activation
     static void checkEnabled(NetState &ns, arrayindex_t t);
 
@@ -102,4 +109,5 @@ public:
     static void deleteTransitions();
 
     static bool isCycle(arrayindex_t t);
+    static bool * Visible;
 };

@@ -27,16 +27,27 @@
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/DeadlockPredicate.h>
 #include <Net/Net.h>
+#include <Net/Transition.h>
 #include <Net/Place.h>
 #include <Net/NetState.h>
 #include <Net/Marking.h>
 #include <CoverGraph/CoverGraph.h>
 #include <Formula/FormulaInfo.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 
 DeadlockPredicate::DeadlockPredicate(bool ssign) :
     sign(ssign)
 {
+	literals = 0;
 	parent = NULL;
+	if(sign)
+	{
+		magicnumber = MAGIC_NUMBER_DEADLOCK;
+	}
+	else	
+	{
+		magicnumber = MAGIC_NUMBER_NODEADLOCK;
+	}
 }
 
 /*!
@@ -161,6 +172,7 @@ StatePredicate *DeadlockPredicate::copy(StatePredicate *parent)
     af->value = value;
     af->position = position;
     af->parent = parent;
+    af->magicnumber = magicnumber;
     return af;
 }
 
@@ -172,6 +184,7 @@ arrayindex_t DeadlockPredicate::getSubs(const StatePredicate *const **) const
 StatePredicate *DeadlockPredicate::negate()
 {
     DeadlockPredicate *af = new DeadlockPredicate(!sign);
+    af -> magicnumber = -magicnumber;
     return af;
 }
 
@@ -211,4 +224,30 @@ char * DeadlockPredicate::toString()
 		sprintf(result,"NODEADLOCK");
 		return result;
 	}
+}
+
+void DeadlockPredicate::setVisible()
+{
+	for(arrayindex_t i = 0; i < Net::Card[TR]; i++)
+	{
+		Transition::Visible[i] = true;
+	}
+}
+
+AtomicBooleanPredicate * DeadlockPredicate::DNF()
+{
+	return NULL; // cannot create DNF for DEADLOCK
+}
+
+FormulaStatistics * DeadlockPredicate::count(FormulaStatistics * fs)
+{
+	if(sign)
+	{
+		fs -> dl++;
+	}
+	else
+	{
+		fs -> nodl++;
+	}
+	return fs;
 }

@@ -12,7 +12,6 @@ union KC_YYSTYPE {
     kc::tDisjunction_list yt_tDisjunction_list;
     kc::tAtomicProposition yt_tAtomicProposition;
     kc::tTerm yt_tTerm;
-    kc::tProduct_list yt_tProduct_list;
     kc::tBuechiAutomata yt_tBuechiAutomata;
     kc::tBuechiRules yt_tBuechiRules;
     kc::tTransitionRules yt_tTransitionRules;

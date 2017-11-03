@@ -50,6 +50,7 @@ This class wraps the possible liveness check by statespace exploration
 extern kc::tFormula TheFormula;
 EFAGEFTask::EFAGEFTask()
 {
+	taskname = "tscc_search";
         // extract state predicate from formula
         TheFormula = TheFormula->rewrite(kc::singletemporal);
         TheFormula = TheFormula->rewrite(kc::simpleneg);
@@ -64,7 +65,7 @@ EFAGEFTask::EFAGEFTask()
 
         TheFormula->unparse(myprinter, kc::internal);
         spFormula = TheFormula->formula;
-// Task::outputFormulaAsProcessed();
+ Task::outputFormulaAsProcessed();
 
 
        previousNrOfMarkings = 0; // this value is needed for status messages
@@ -78,7 +79,7 @@ EFAGEFTask::EFAGEFTask()
     {
     case search_arg_covergraph:
     {
-        RT::data["store"]["search"] = "covergraph";
+        RT::data["task"]["search"]["type"] = "cover";
         if (RT::args.encoder_arg != encoder_arg_fullcopy)
         {
             RT::rep->status("warning: encoder does not fully support coverability graphs");
@@ -88,7 +89,7 @@ EFAGEFTask::EFAGEFTask()
     }
     default:
     {
-        RT::data["store"]["search"] = "depth_first_search";
+        RT::data["task"]["search"]["type"] = "dfs/tscc";
 
         // choose a store
 	store = StoreCreator<statenumber_t>::createStore(number_of_threads);
@@ -100,18 +101,19 @@ EFAGEFTask::EFAGEFTask()
     RT::rep->status("SEARCH");
     RT::rep->indent(2);
     // choose a simple property
-        RT::data["analysis"]["type"] = "modelchecking";
             p = new StatePredicateProperty(spFormula);
     // choose a firelist generator
 	    if(RT::args.stubborn_arg == stubborn_arg_off)
             {
 	RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
+RT::data["task"]["search"]["stubborn"]["type"] = "no";
 		fl = new Firelist();
 	    }
 	    else
             {
 		RT::rep->status("using tscc preserving stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn").str());
                 fl = new FirelistStubbornTsccAlwaysUpset(p);
+RT::data["task"]["search"]["stubborn"]["type"] = "tscc preserving/always up";
             }
             exploration = new TSCCExplorationEGAGEF();
 }
@@ -159,26 +161,34 @@ void EFAGEFTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+	RT::rep->status("produced by: %s", taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The predicate is possibly live.").str());
 
+RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
         break;
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
 
+	RT::rep->status("produced by: %s", taskname);
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The predicate is not possibly live.").str());
+RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
+
+
             break;
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
 
+        RT::data["result"]["produced_by"] = std::string(taskname);
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The predicate may or may not be possibly live.").str());
+RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
         break;
     }
 
@@ -219,7 +229,7 @@ void EFAGEFTask::getStatistics()
 	{
 		assert(false);
 	}
-	RT::data["analysis"]["stats"]["states"] = static_cast<int>(markingcount);
+	RT::data["result"]["markings"] = static_cast<int>(markingcount);
 	uint64_t edgecount;
     if (store)
     {
@@ -233,7 +243,7 @@ void EFAGEFTask::getStatistics()
     {
 	assert(false);
     }
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int>(edgecount);
+    RT::data["result"]["stats"]["edges"] = static_cast<int>(edgecount);
     RT::rep->status("%llu markings, %llu edges", markingcount, edgecount);
 } 
 

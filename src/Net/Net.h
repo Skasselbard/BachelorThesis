@@ -94,6 +94,7 @@ struct Net
     /// calculates the incidence matrix of the net
     static Matrix getIncidenceMatrix(node_t line_type = PL);
 
+    static void computeConflictClusters();
 private:
     // calculates DeltaT and DeltaHash for each transition
     static void preprocess_organizeDeltas();

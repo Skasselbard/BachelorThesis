@@ -1,4 +1,8 @@
-formula ::= 'FORMULA'? statepredicate ';'?
+list ::= 'FORMULA'? property (':' property)* ';'?
+
+property ::= bound | statepredicate
+
+bound ::= 'MAX' '(' term ')'
 
 statepredicate ::= '(' statepredicate ')'
               | atomic_proposition

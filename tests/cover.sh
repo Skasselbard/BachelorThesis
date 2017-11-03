@@ -24,7 +24,7 @@ case $COVER in
     # invokations of this script for the same test
     dir=`pwd`
     TESTNAME=`basename $dir`
-    COVERDIR=/home/tom/Development/lola-2.0/tests/cover/$TESTNAME-$RANDOM
+    COVERDIR=/Users/karsten/Documents/tpp/tools/lola2/tests/cover/$TESTNAME-$RANDOM
     mkdir -p $COVERDIR
 
     # set flags for gcov to store all runtime cover information in the cover

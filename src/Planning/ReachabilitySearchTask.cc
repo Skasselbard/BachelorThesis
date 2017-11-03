@@ -34,6 +34,7 @@
 #include <Exploration/FirelistStubbornStatePredicate.h>
 #include <Exploration/DFSExploration.h>
 #include <Exploration/ParallelExploration.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 
 
 
@@ -48,6 +49,7 @@ extern kc::tFormula TheFormula;
 
 ReachabilitySearchTask::ReachabilitySearchTask()
 {
+    taskname = "state space";
     goStatus = false;
     // extract state predicate from formula
     assert(TheFormula);
@@ -55,22 +57,14 @@ ReachabilitySearchTask::ReachabilitySearchTask()
     // check is also used
     kc::tFormula TheFormulaRS;
     TheFormulaRS = reinterpret_cast<kc::tFormula> (TheFormula->copy(true));
-    assert(TheFormulaDNF);
     TheFormulaRS = TheFormulaRS->rewrite(kc::singletemporal);
     TheFormulaRS = TheFormulaRS->rewrite(kc::simpleneg);
     TheFormulaRS = TheFormulaRS->rewrite(kc::booleanlists);
-    // prepare counting of place in the formula
-    extern bool *place_in_formula;
-    extern unsigned int places_mentioned;
-    extern unsigned int unique_places_mentioned;
-    place_in_formula = new bool[Net::Card[PL]]();
-    places_mentioned = 0;
-    unique_places_mentioned = 0;
+	Task::outputFormulaAsProcessed();
 
 	unparsed.clear();
         TheFormulaRS->unparse(myprinter, kc::internal);      
         spFormula = TheFormulaRS->formula;
-// Task::outputFormulaAsProcessed();
 
 	previousNrOfMarkings = 0;
 	// set the net
@@ -83,18 +77,17 @@ ReachabilitySearchTask::ReachabilitySearchTask()
 
 
         // dummy store for the sweepline method, only counts markings and calls
-        RT::data["store"]["type"] = "empty";
-        RT::data["store"]["search"] = "sweepline";
+        RT::data["task"]["search"]["type"] = "sweepline";
         store = new SweepEmptyStore();
 	covStore = NULL;
         break;
     }
     case search_arg_covergraph:
     {
-        RT::data["store"]["search"] = "covergraph";
+        RT::data["task"]["search"]["type"] = "cover";
         if (RT::args.encoder_arg != encoder_arg_fullcopy)
         {
-            RT::rep->status("warning: encoder does not fully support coverability graphs");
+            RT::rep->status("state space: warning: encoder does not fully support coverability graphs");
         }
         covStore = StoreCreator<CoverPayload>::createStore(number_of_threads);
 	store = NULL;
@@ -102,7 +95,7 @@ ReachabilitySearchTask::ReachabilitySearchTask()
     }
     case search_arg_depth:
     {
-        RT::data["store"]["search"] = "depth_first_search";
+        RT::data["task"]["search"]["type"] = "dfs";
 
         // choose a store
 	store = StoreCreator<void>::createStore(number_of_threads);
@@ -113,7 +106,7 @@ ReachabilitySearchTask::ReachabilitySearchTask()
         assert(false);
     }
 	    RT::rep->indent(-2);
-	    RT::rep->status("SEARCH");
+	    RT::rep->status("SEARCH (state space)");
 	    RT::rep->indent(2);
 
     switch (RT::args.search_arg)
@@ -121,18 +114,18 @@ ReachabilitySearchTask::ReachabilitySearchTask()
     case search_arg_sweepline:
     {
 
-	    RT::rep->status("using sweepline method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--search=sweep").str());
+	    RT::rep->status("state space: using sweepline method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--search=sweep").str());
 
         break;
     }
     case search_arg_covergraph:
     {
-            RT::rep->status("warning: encoder does not fully support coverability graphs");
+            RT::rep->status("state space: warning: encoder does not fully support coverability graphs");
         break;
     }
     case search_arg_depth:
     {
-	    RT::rep->status("using reachability  graph (%s)", RT::rep->markup(MARKUP_PARAMETER, "--search=depth").str());
+	    RT::rep->status("state space: using reachability  graph (%s)", RT::rep->markup(MARKUP_PARAMETER, "--search=depth").str());
         break;
     }
     case search__NULL:
@@ -140,26 +133,30 @@ ReachabilitySearchTask::ReachabilitySearchTask()
     }
 
     // choose a simple property
-        RT::data["analysis"]["type"] = "modelchecking";
             p = new StatePredicateProperty(spFormula);
             switch(RT::args.stubborn_arg)
             {
 	    case stubborn_arg_deletion:
-RT::rep->status("using reachability preserving stubborn set method with deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
+	RT::data["task"]["search"]["stubborn"]["type"] = "reachability preserving/deletion";
+RT::rep->status("state space: using reachability preserving stubborn set method with deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
                 fl = new FirelistStubbornDeletion(spFormula);
 		break;
 	    case stubborn_arg_tarjan:
-RT::rep->status("using reachability preserving stubborn set method with insertion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
+	    case stubborn_arg_combined:
+	RT::data["task"]["search"]["stubborn"]["type"] = "reachability preserving/insertion";
+RT::rep->status("state space: using reachability preserving stubborn set method with insertion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
                 fl = new FirelistStubbornStatePredicate(spFormula);
 		break;
 	    case stubborn_arg_off:
-RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
+	RT::data["task"]["search"]["stubborn"]["type"] = "no";
+RT::rep->status("state space: not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
 		fl = new Firelist();
 		break;
 	    default: assert(false); // exhaustive enumeration
             }
 
     // set the correct exploration algorithm
+	RT::data["task"]["search"]["threads"] = number_of_threads;
             if (number_of_threads == 1)
             {
                 exploration = new DFSExploration();
@@ -178,13 +175,21 @@ ReachabilitySearchTask::~ReachabilitySearchTask()
     delete covStore;
     delete p;
     //delete spFormula;
-	RT::rep->status("h6");
-	RT::rep->status("h7");
 #endif
 }
 
 ternary_t ReachabilitySearchTask::getResult()
 {
+    // quick check based on magic number
+
+    if(spFormula->magicnumber == MAGIC_NUMBER_TRUE)
+    {
+	return TERNARY_TRUE;
+    }
+    if(spFormula->magicnumber == MAGIC_NUMBER_FALSE)
+    {
+	return TERNARY_FALSE;
+    }
     bool bool_result(false);
     ternary_t result(TERNARY_FALSE);
 
@@ -247,10 +252,14 @@ void ReachabilitySearchTask::interpreteResult(ternary_t result)
 	}
         const double k = RT::args.hashfunctions_arg;
         const double m = static_cast<double>(BLOOM_FILTER_SIZE);
+	const double prob = pow((1.0 - exp((-k * n) / m)), k);
+	const double opt_hash = log(m / n) / log(2.0);
         RT::rep->status("Bloom filter: probability of false positive is %.10lf",
-                        pow((1.0 - exp((-k * n) / m)), k));
+                        prob);
         RT::rep->status("Bloom filter: optimal number of hash functions is %.1f",
-                        log(m / n) / log(2.0));
+                        opt_hash);
+	RT::data["task"]["search"]["bloom"]["prob_false_positive"] = prob;
+	RT::data["task"]["search"]["bloom"]["optimal_hash_functions"] = opt_hash;
     }
     // if the Bloom store did not find anything, the result is unknown
     if (RT::args.store_arg == store_arg_bloom)
@@ -264,7 +273,9 @@ void ReachabilitySearchTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The predicate is reachable.").str());
 
@@ -272,7 +283,9 @@ void ReachabilitySearchTask::interpreteResult(ternary_t result)
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The predicate is unreachable.").str());
@@ -280,7 +293,9 @@ void ReachabilitySearchTask::interpreteResult(ternary_t result)
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+        RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The predicate may or may not be reachable.").str());
@@ -332,7 +347,7 @@ void ReachabilitySearchTask::getStatistics()
 	{
 		assert(false);
 	}
-	RT::data["analysis"]["stats"]["states"] = static_cast<int>(markingcount);
+	RT::data["result"]["markings"] = static_cast<int>(markingcount);
 	uint64_t edgecount;
     if (store)
     {
@@ -346,7 +361,7 @@ void ReachabilitySearchTask::getStatistics()
     {
 	assert(false);
     }
-    RT::data["analysis"]["stats"]["edges"] = static_cast<int>(edgecount);
+    RT::data["result"]["edges"] = static_cast<int>(edgecount);
     RT::rep->status("%llu markings, %llu edges", markingcount, edgecount);
 } 
 

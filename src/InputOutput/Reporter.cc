@@ -66,6 +66,10 @@ void ReporterSocket::message(const char *format, ...) const
     va_start(args, format);
     vsprintf(buffer, format, args);
     mySocket.send(buffer);
+    if(RT::log)
+	{
+		RT::data["log"] += std::string(buffer);
+	}
     va_end(args);
 }
 
@@ -85,6 +89,10 @@ void ReporterSocket::status(const char *format, ...) const
     va_start(args, format);
     vsprintf(buffer, format, args);
     mySocket.send(buffer);
+    if(RT::log)
+	{
+		RT::data["log"] += std::string(buffer);
+	}
     va_end(args);
 }
 
@@ -193,6 +201,15 @@ void ReporterStream::message(const char *format, ...) const
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
+    if(RT::log)
+    {
+	    char buffer[UDP_BUFFER_SIZE];
+	    va_list args;
+	    va_start(args, format);
+	    vsprintf(buffer, format, args);
+	    va_end(args);
+	    RT::data["log"] += std::string(buffer);
+    }
     va_end(args);
 
     fprintf(stderr, "\n");
@@ -219,8 +236,16 @@ void ReporterStream::status(const char *format, ...) const
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
-
     fprintf(stderr, "\n");
+    if(RT::log)
+    {
+	    char buffer[UDP_BUFFER_SIZE];
+	    va_list args;
+	    va_start(args, format);
+	    vsprintf(buffer, format, args);
+	    va_end(args);
+	    RT::data["log"] += std::string(buffer);
+    }
     pthread_mutex_unlock(&statusmutex);
 }
 

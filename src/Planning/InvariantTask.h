@@ -40,6 +40,7 @@ public:
     /// run the actual verification algorithm
     ternary_t getResult() {
 	ternary_t result = D -> getResult();
+	taskname = D -> taskname;
 	switch(result)
 	{
 	case TERNARY_TRUE: return TERNARY_FALSE;
@@ -56,7 +57,9 @@ public:
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+  RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The predicate is invariant.").str());
 
@@ -64,7 +67,9 @@ public:
 
     case TERNARY_FALSE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_BAD, "no").str());
-        RT::data["analysis"]["result"] = false;
+  RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = false;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_BAD,
                                                   "The predicate is not invariant.").str());
@@ -72,7 +77,9 @@ public:
 
     case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+  RT::rep->status("produced by: %s", taskname);
+        RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
 
             RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The predicate may or may not be invariant.").str());

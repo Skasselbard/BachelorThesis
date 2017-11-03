@@ -46,6 +46,9 @@ public:
     /// a global reporter
     static Reporter *rep;
 
+    /// Shall we copy log message to JSON?
+    static bool log;
+
     /// the command line parameters
     static gengetopt_args_info args;
 

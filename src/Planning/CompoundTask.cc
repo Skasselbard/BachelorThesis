@@ -73,7 +73,8 @@ ternary_t CompoundTask::getResult()
 
 void CompoundTask::interpreteResult(ternary_t result)
 {
-        RT::rep->status("summary: %s", RT::rep->markup(MARKUP_GOOD, RT::interim_result.c_str()).str());
+        RT::rep->status("\nSUMMARY: %s", RT::rep->markup(MARKUP_GOOD, RT::interim_result.c_str()).str());
+	RT::data["result"]["value"] = RT::interim_result;
 }
  
 Task * CompoundTask::buildTask()

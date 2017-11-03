@@ -56,4 +56,5 @@ public:
     virtual FormulaInfo *getInfo() const = 0;
     /// returns the number of subformulas
     virtual int countSubFormulas() const = 0;
+    virtual void print() = 0;
 };

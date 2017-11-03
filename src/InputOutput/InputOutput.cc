@@ -115,7 +115,7 @@ IO::IO(FILE *fp, std::string kind, std::string filename) :
 {
     assert(r);
 
-    RT::data["files"][kind]["filename"] = filename;
+    RT::data["files"][kind] = filename;
 
     // fopen returns NULL on error
     // LCOV_EXCL_START

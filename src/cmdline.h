@@ -39,15 +39,16 @@ extern "C" {
 #endif
 
 enum enum_check { check__NULL = -1, check_arg_none = 0, check_arg_full, check_arg_modelchecking };
+enum enum_preference { preference__NULL = -1, preference_arg_none = 0, preference_arg_ltl, preference_arg_ctl };
 enum enum_search { search__NULL = -1, search_arg_depth = 0, search_arg_sweepline, search_arg_covergraph };
 enum enum_findpath { findpath__NULL = -1, findpath_arg_seq = 0, findpath_arg_par, findpath_arg_alone, findpath_arg_off };
-enum enum_stubborn { stubborn__NULL = -1, stubborn_arg_tarjan = 0, stubborn_arg_deletion, stubborn_arg_off };
+enum enum_stubborn { stubborn__NULL = -1, stubborn_arg_tarjan = 0, stubborn_arg_deletion, stubborn_arg_combined, stubborn_arg_off };
 enum enum_ltlstubborn { ltlstubborn__NULL = -1, ltlstubborn_arg_off = 0, ltlstubborn_arg_on };
 enum enum_siphontrap { siphontrap__NULL = -1, siphontrap_arg_off = 0, siphontrap_arg_seq, siphontrap_arg_par, siphontrap_arg_alone };
 enum enum_stateequation { stateequation__NULL = -1, stateequation_arg_off = 0, stateequation_arg_seq, stateequation_arg_par, stateequation_arg_alone };
 enum enum_pathshape { pathshape__NULL = -1, pathshape_arg_linear = 0, pathshape_arg_run, pathshape_arg_fullrun, pathshape_arg_eventstructure };
 enum enum_reporter { reporter__NULL = -1, reporter_arg_stream = 0, reporter_arg_socket, reporter_arg_silent };
-enum enum_jsoninclude { jsoninclude__NULL = -1, jsoninclude_arg_path = 0, jsoninclude_arg_state };
+enum enum_jsoninclude { jsoninclude__NULL = -1, jsoninclude_arg_path = 0, jsoninclude_arg_state, jsoninclude_arg_log, jsoninclude_arg_formula, jsoninclude_arg_formulastat, jsoninclude_arg_siphon, jsoninclude_arg_net };
 enum enum_store { store__NULL = -1, store_arg_comp = 0, store_arg_prefix, store_arg_stl, store_arg_bloom };
 enum enum_encoder { encoder__NULL = -1, encoder_arg_bit = 0, encoder_arg_copy, encoder_arg_simplecompressed, encoder_arg_fullcopy };
 enum enum_ltlmode { ltlmode__NULL = -1, ltlmode_arg_tree = 0, ltlmode_arg_flat };
@@ -62,12 +63,17 @@ struct gengetopt_args_info
   enum enum_check check_arg;	/**< @brief Verify a property (default='modelchecking').  */
   char * check_orig;	/**< @brief Verify a property original value given at command line.  */
   const char *check_help; /**< @brief Verify a property help description.  */
+  enum enum_preference preference_arg;	/**< @brief Preferred logic fragment (default='none').  */
+  char * preference_orig;	/**< @brief Preferred logic fragment original value given at command line.  */
+  const char *preference_help; /**< @brief Preferred logic fragment help description.  */
   char * formula_arg;	/**< @brief Check a formula.  */
   char * formula_orig;	/**< @brief Check a formula original value given at command line.  */
   const char *formula_help; /**< @brief Check a formula help description.  */
   char * buechi_arg;	/**< @brief Check a linear time property specified as a Büchi automaton.  */
   char * buechi_orig;	/**< @brief Check a linear time property specified as a Büchi automaton original value given at command line.  */
   const char *buechi_help; /**< @brief Check a linear time property specified as a Büchi automaton help description.  */
+  int fair_flag;	/**< @brief Take care of fairness constraints. (default=off).  */
+  const char *fair_help; /**< @brief Take care of fairness constraints. help description.  */
   enum enum_search search_arg;	/**< @brief Search the state space using a particular strategy (default='depth').  */
   char * search_orig;	/**< @brief Search the state space using a particular strategy original value given at command line.  */
   const char *search_help; /**< @brief Search the state space using a particular strategy help description.  */
@@ -81,6 +87,9 @@ struct gengetopt_args_info
   const char *cycle_help; /**< @brief Apply transition invariant based reduction. help description.  */
   int symmetry_flag;	/**< @brief Apply symmetry reduction. (default=off).  */
   const char *symmetry_help; /**< @brief Apply symmetry reduction. help description.  */
+  int symmetrydepth_arg;	/**< @brief Control the complexity of computing canonical representatives (default='1073741824').  */
+  char * symmetrydepth_orig;	/**< @brief Control the complexity of computing canonical representatives original value given at command line.  */
+  const char *symmetrydepth_help; /**< @brief Control the complexity of computing canonical representatives help description.  */
   enum enum_ltlstubborn ltlstubborn_arg;	/**< @brief Apply computing stubborn sets for LTL. (default='off').  */
   char * ltlstubborn_orig;	/**< @brief Apply computing stubborn sets for LTL. original value given at command line.  */
   const char *ltlstubborn_help; /**< @brief Apply computing stubborn sets for LTL. help description.  */
@@ -206,13 +215,16 @@ struct gengetopt_args_info
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int check_given ;	/**< @brief Whether check was given.  */
+  unsigned int preference_given ;	/**< @brief Whether preference was given.  */
   unsigned int formula_given ;	/**< @brief Whether formula was given.  */
   unsigned int buechi_given ;	/**< @brief Whether buechi was given.  */
+  unsigned int fair_given ;	/**< @brief Whether fair was given.  */
   unsigned int search_given ;	/**< @brief Whether search was given.  */
   unsigned int findpath_given ;	/**< @brief Whether findpath was given.  */
   unsigned int stubborn_given ;	/**< @brief Whether stubborn was given.  */
   unsigned int cycle_given ;	/**< @brief Whether cycle was given.  */
   unsigned int symmetry_given ;	/**< @brief Whether symmetry was given.  */
+  unsigned int symmetrydepth_given ;	/**< @brief Whether symmetrydepth was given.  */
   unsigned int ltlstubborn_given ;	/**< @brief Whether ltlstubborn was given.  */
   unsigned int siphontrap_given ;	/**< @brief Whether siphontrap was given.  */
   unsigned int siphondepth_given ;	/**< @brief Whether siphondepth was given.  */
@@ -392,6 +404,7 @@ int cmdline_parser_required (struct gengetopt_args_info *args_info,
   const char *prog_name);
 
 extern const char *cmdline_parser_check_values[];  /**< @brief Possible values for check. */
+extern const char *cmdline_parser_preference_values[];  /**< @brief Possible values for preference. */
 extern const char *cmdline_parser_search_values[];  /**< @brief Possible values for search. */
 extern const char *cmdline_parser_findpath_values[];  /**< @brief Possible values for findpath. */
 extern const char *cmdline_parser_stubborn_values[];  /**< @brief Possible values for stubborn. */

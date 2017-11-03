@@ -28,6 +28,8 @@
 #include <Core/Runtime.h>
 #include <InputOutput/InputOutput.h>
 #include <InputOutput/Socket.h>
+#include <iostream>
+#include <ctime>
 
 /*!
 A JSON data store to collect all kinds of structured information in a key/value
@@ -65,6 +67,8 @@ Input *RT::currentInputFile = NULL;
 int RT::saraPID = 0;
 
 int RT::childpid = 0;
+
+bool RT::log = false;
 
 bool RT::needLocalTimeLimit = true;
 
@@ -165,30 +169,47 @@ void RT::initialize(int argc, char **argv)
     Handlers::installExitHandler();
 
     // initialize JSON data
-    data["call"]["package_version"] = PACKAGE_VERSION;
-    data["call"]["svn_version"] = VERSION_SVN;
-    data["call"]["build_system"] = CONFIG_BUILDSYSTEM;
-    data["call"]["hostname"] = CONFIG_HOSTNAME;
-    data["call"]["architecture"] = SIZEOF_VOIDP * 8;
+    data["build"]["package_version"] = PACKAGE_VERSION;
+    data["build"]["svn_version"] = VERSION_SVN;
+    data["build"]["build_system"] = CONFIG_BUILDSYSTEM;
+    data["build"]["build_hostname"] = CONFIG_HOSTNAME;
+    data["build"]["architecture"] = SIZEOF_VOIDP * 8;
 #ifdef NDEBUG
-    data["call"]["assertions"] = false;
+    data["build"]["assertions"] = false;
 #else
-    data["call"]["assertions"] = true;
+    data["build"]["assertions"] = true;
 #endif
 #ifdef USE_PERFORMANCE
-    data["call"]["optimizations"] = true;
+    data["build"]["optimizations"] = true;
 #else
-    data["call"]["optimizations"] = false;
+    data["build"]["optimizations"] = false;
 #endif
     for (int i = 1; i < argc; ++i)
     {
         data["call"]["parameters"] += argv[i];
     }
-    data["call"]["signal"] = JSON::null;
-    data["call"]["error"] = JSON::null;
+    const time_t ttt = RT::startTime;
+    data["call"]["starttime"] = std::string(ctime(&ttt));
+    char hname[1024];
+    gethostname(hname,1024);
+    data["call"]["exec_host"] = std::string(hname);
+    data["exit"]["signal"] = JSON::null;
+    data["exit"]["error"] = JSON::null;
+    data["exit"]["timelimitreached"] = false;
+    data["child"]=JSON();
 
     // parse the command line parameters
     evaluateParameters(argc, argv);
+
+    // check for json include for logging
+    for (unsigned int i = 0; i < RT::args.jsoninclude_given; ++i)
+    {
+        if (RT::args.jsoninclude_arg[i] == jsoninclude_arg_log)
+        {
+		RT::log = true;
+		data["log"] = JSON();
+        }
+    }
 
     // install termination handler for ordered premature termination
     Handlers::installTerminationHandlers();
@@ -198,6 +219,7 @@ void RT::initialize(int argc, char **argv)
 
     if (args.timelimit_given)
     {
+	data["call"]["timelimit"] = args.timelimit_arg;
         rep->status("LoLA will run for %d seconds at most (%s)",
                 args.timelimit_arg, RT::rep->markup(MARKUP_PARAMETER, "--timelimit").str());
         const int ret = pthread_create(&reporter_thread, NULL, reporter_internal, NULL);
@@ -209,6 +231,10 @@ void RT::initialize(int argc, char **argv)
         }
         // LCOV_EXCL_STOP
     }
+   else
+    {
+	data["call"]["timelimit"] = -1;
+    }
 }
 
 /*!
@@ -219,6 +245,7 @@ signal.
 void *RT::reporter_internal(void *)
 {
     sleep(args.timelimit_arg);
+    data["exit"]["timelimitreached"] = true;
     RT::rep->status(RT::rep->markup(MARKUP_IMPORTANT, "time limit reached - aborting").str());
 
     // first kill child if any
@@ -230,7 +257,7 @@ void *RT::reporter_internal(void *)
     // second kill sara if running
     if (RT::saraPID > 0)
     {
-        kill(RT::saraPID,SIGUSR1);
+        kill(RT::saraPID,SIGKILL);
     }
     
     // abort LoLA by sending SIGUSR1 signal
@@ -245,19 +272,24 @@ void *RT::reporter_internal(void *)
 
 void *RT::local_reporter_internal(void *)
 {
+    data["exit"]["localtimelimitreached"] = false;
     int last_type,last_state;
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&last_type);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&last_state);
     if (RT::localTimeLimitDynamic > 0)
     {
         // use dynamic localtimelimit
+	data["call"]["localtimelimit"] = RT::localTimeLimitDynamic;
         sleep(RT::localTimeLimitDynamic); 
     }
     else
     {
         // use for localtimelimit the passed argument
-        sleep(RT::args.localtimelimit_arg);
+
+	data["call"]["localtimelimit"] = RT::args.localtimelimit_arg;
+	    sleep(RT::args.localtimelimit_arg);
     }
+    data["exit"]["localtimelimitreached"] = true;
     RT::rep->status(RT::rep->markup(MARKUP_IMPORTANT, 
             "local time limit reached - aborting").str());
 
@@ -270,11 +302,12 @@ void *RT::local_reporter_internal(void *)
     // second kill sara if running
     if (RT::saraPID > 0)
     {
-        kill(RT::saraPID,SIGUSR1);
+        kill(RT::saraPID,SIGKILL);
     }
 
     // abort LoLA child by sending SIGUSR2 signal
     //kill(getpid(), SIGUSR2);
+     Handlers::exitHandler();
     _exit(0);
 
     // static pthread_t internal_thread;

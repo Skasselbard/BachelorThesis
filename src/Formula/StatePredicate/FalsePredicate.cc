@@ -26,13 +26,17 @@
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/FalsePredicate.h>
 #include <Formula/StatePredicate/TruePredicate.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
 #include <Formula/FormulaInfo.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 
 
 FalsePredicate::FalsePredicate()
 {
+    literals = 0;
     value = false;
     unknown = false;
+    magicnumber = MAGIC_NUMBER_FALSE;
 }
 
 /*!
@@ -47,8 +51,9 @@ onstack.
 returned set of transitions has the property that it is impossible to turn the
 predicate true without firing one of the transitions.
 */
-arrayindex_t FalsePredicate::getUpSet(arrayindex_t *, bool *, bool *) const
+arrayindex_t FalsePredicate::getUpSet(arrayindex_t *, bool *, bool * needEnabled) const
 {
+    * needEnabled = false;
     return 0;
 }
 
@@ -92,11 +97,12 @@ arrayindex_t FalsePredicate::collectDeadlock(DeadlockPredicate **)
 /*!
 \param parent  the parent predicate for the new, copied, object
 */
-StatePredicate *FalsePredicate::copy(StatePredicate *parent)
+ StatePredicate *FalsePredicate::copy(StatePredicate *parent)
 {
     StatePredicate *p = new FalsePredicate();
     p->parent = parent;
     p->position = position;
+    p->magicnumber = magicnumber;
     return p;
 }
 
@@ -136,4 +142,17 @@ char * FalsePredicate::toString()
 	char * result = (char *) malloc(6 * sizeof(char));
 	sprintf(result,"FALSE");
 	return result;
+}
+
+AtomicBooleanPredicate * FalsePredicate::DNF()
+{
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(false); // empty disjunction
+	result -> magicnumber = magicnumber;
+	return result;
+}
+
+FormulaStatistics * FalsePredicate::count(FormulaStatistics * fs)
+{
+	fs -> cont++;
+	return fs;
 }

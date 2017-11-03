@@ -31,7 +31,7 @@ class AutomataTree;
 /*!
 \brief the verification task
 
-This class collects all information for executing a CTL model checking
+This class collects all information for executing an LTL model checking
 procedure.
 
 */
@@ -40,7 +40,7 @@ class LTLTask: public Task
 {
 public:
     NetState * ns;
-    Store<AutomataTree *> *ltlStore;
+    Store<LTLPayload> * ltlStore;
     Firelist * fl;
     LTLExploration * ltlExploration;
     BuechiAutomata * bauto;

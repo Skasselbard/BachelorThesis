@@ -13,15 +13,26 @@ lola_SOURCES = $(KCSOURCES)                                           \
                CoverGraph/CoverGraph.cc                               \
                CoverGraph/CoverGraph.h                                \
                CoverGraph/CoverPayload.h                              \
+			   EstimateMaxMarking/CreateLP.cc						  \
                Exploration/AutomataTree.cc                            \
                Exploration/AutomataTree.h                             \
                Exploration/CTLExploration.cc                          \
                Exploration/CTLExploration.h                           \
                Exploration/ChooseTransition.h                         \
+               Exploration/FirelistStubbornCTL.h             \
+               Exploration/FirelistStubbornCTL.cc            \
+               Exploration/FirelistStubbornLTLTarjan.h             \
+               Exploration/FirelistStubbornLTLTarjan.cc            \
+               Exploration/FirelistStubbornCombinedDeadlock.h             \
+               Exploration/FirelistStubbornCombinedDeadlock.cc            \
                Exploration/FirelistStubbornComputeBound.h             \
                Exploration/FirelistStubbornComputeBound.cc            \
+               Exploration/FirelistStubbornComputeBoundCombined.h             \
+               Exploration/FirelistStubbornComputeBoundCombined.cc            \
                Exploration/ComputeBoundExploration.h                  \
                Exploration/ComputeBoundExploration.cc                 \
+               Exploration/ComputePlacesBounds.h					  \
+               Exploration/ComputePlacesBounds.cc					  \
                Exploration/ChooseTransitionHashDriven.cc              \
                Exploration/ChooseTransitionHashDriven.h               \
                Exploration/ChooseTransitionRandomly.cc                \
@@ -37,8 +48,6 @@ lola_SOURCES = $(KCSOURCES)                                           \
                Exploration/DeadlockExploration.h                      \
                Exploration/Firelist.cc                                \
                Exploration/Firelist.h                                 \
-               Exploration/FirelistStubbornLTL.cc		      \
-               Exploration/FirelistStubbornLTL.h	              \
                Exploration/FirelistStubbornTsccAlwaysUpset.h          \
                Exploration/FirelistStubbornTsccAlwaysUpset.cc         \
                Exploration/FirelistStubbornTsccUpset.h                \
@@ -95,6 +104,13 @@ lola_SOURCES = $(KCSOURCES)                                           \
                Formula/LTL/rewrt.c                                    \
                Formula/LTL/set.c                                      \
                Formula/LTL/trans.c                                    \
+               Formula/StatePredicate/FormulaStatistics.h        \
+               Formula/StatePredicate/Term.cc         \
+               Formula/StatePredicate/Term.h          \
+               Formula/StatePredicate/MagicNumber.cc         \
+               Formula/StatePredicate/MagicNumber.h          \
+               Formula/StatePredicate/AtomicBooleanPredicate.cc         \
+               Formula/StatePredicate/AtomicBooleanPredicate.h          \
                Formula/StatePredicate/AtomicStatePredicate.cc         \
                Formula/StatePredicate/AtomicStatePredicate.h          \
                Formula/StatePredicate/ConjunctionStatePredicate.cc    \
@@ -144,7 +160,7 @@ lola_SOURCES = $(KCSOURCES)                                           \
                InputOutput/Socket.cc                                  \
                InputOutput/Socket.h                                   \
                InputOutput/vasprintf.c                                \
-               InputOutput/vasprintf.h                                \
+               InputOutput/vasprintf.h           					  \
                Net/LinearAlgebra.cc                                   \
                Net/LinearAlgebra.h                                    \
                Net/Marking.cc                                         \
@@ -159,7 +175,7 @@ lola_SOURCES = $(KCSOURCES)                                           \
                Net/Transition.h                                       \
                Planning/LTLTask.cc                                    \
                Planning/ComputeBoundTask.cc                           \
-               Planning/ComputeBoundTask.h                            \
+               Planning/ComputeBoundTask.h                            \             
                Planning/CompoundTask.cc                               \
                Planning/CompoundTask.h                                \
                Planning/ConjunctionTask.cc                            \
@@ -281,7 +297,8 @@ lola_SOURCES = $(KCSOURCES)                                           \
 	ThirdParty/minisat/utils/System.cc \
 	ThirdParty/minisat/ThirdParty/zlib/zconf.h \
 	ThirdParty/minisat/ThirdParty/zlib/zlib.h
-	
+
+lola_LDADD = $(top_builddir)/libs/lp_solve_5.5/liblpsolve55.la
 
 #############################################################################
 # EVERYTHING BELOW THIS LINE IS GENERIC - YOU MUST NOT CHANGE ANYTHING BELOW

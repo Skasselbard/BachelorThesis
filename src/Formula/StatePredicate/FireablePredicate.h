@@ -93,6 +93,10 @@ public:
     arrayindex_t collectFireable(FireablePredicate **);
 
     // copy function
-    StatePredicate *copy(StatePredicate *parent);
+    virtual StatePredicate *copy(StatePredicate *);
     virtual char * toString();
+    virtual void adjust(arrayindex_t,arrayindex_t){}
+	void setVisible();
+	virtual AtomicBooleanPredicate * DNF();
+   virtual FormulaStatistics * count(FormulaStatistics *);
 };

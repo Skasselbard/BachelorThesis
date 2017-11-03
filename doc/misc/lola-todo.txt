@@ -1,0 +1,49 @@
+# Todo
+
+- im JSON: stores.encoder: Bit-Länge
+- reduction in JSON
+- JSON im Fehlerfall - Fehler einfügen
+
+- Testfälle schlagen bei --enable-optimized fehl
+
+- Never use sprintf.  Use snprintf instead.
+- SunOS: kein vasprintf
+
+- alle “sizeofs” entfernen
+
+- Testfälle in vernünftige Reihenfolge bringen
+
+- Fehler bei "AGA/AGE" erkennen
+- Testfall für "AGA/AGE"-Fehler
+
+- perfekte Welt: Fehler bei Lesen von Kommandozeile auch in error highlighten
+
+- cm als standard
+
+- verteilte Abläufe und unsichere Markierungen
+
+
+# Ideen
+
+- Netze Base64-codiert in die JSON-Datei schreiben
+- Parameter von gengetopt in die JSON-Datei übernehmen
+- remote termination raus
+- remote reporter raus (beides in NodeJS-Scripte)
+
+- statt X phi kann G phi gecheckt werden - falls dies gilt, dann auch X phi
+
+# Fragen an Harro
+
+- kann FirelistStubbornDeletion::getFirelist() voll überdeckt werden?
+- kann FirelistStubbornDeletion::deletion() voll überdeckt werden?
+- wer ruft FirelistStubbornDeletion::createNewFireList()?
+
+# Fragen an ???
+
+- kann LTLExploration.cc LTLExploration::get_next_transition() voll überdeckt werden?
+- kann LTLExploration::checkFairness() voll überdeckt werden?
+- kann LTLExploration::start_restricted_searches() voll überdeckt werden?
+- kann LTLExploration::searchFair() voll überdeckt werden?
+- kann LTLExploration::produceWitness() voll überdeckt werden?
+
+[ ] "--enable-optimized" -> "--enable-debug" oder ähnliches

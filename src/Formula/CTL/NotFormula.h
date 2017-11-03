@@ -46,10 +46,14 @@ private:
     bool check(Store<void *> &s, NetState &ns, Firelist &firelist,
                std::vector<int> &witness);
 
+    bool checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+               std::vector<int> &witness);
+
     void DEBUG_print();
 
     void gatherPayloadInformation(arrayindex_t &numDFS, arrayindex_t &numCachedResults);
     void setPayloadInformation(arrayindex_t cachedResultOffset, size_t payloadSize);
 
     CTLFormula *inner;
+    virtual void print();
 };

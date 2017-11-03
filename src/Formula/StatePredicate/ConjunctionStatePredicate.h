@@ -98,4 +98,11 @@ private:
     /// create a new state predicate by copy this object.
     virtual StatePredicate *copy(StatePredicate *parent);
     virtual char * toString();
+    virtual StatePredicate * negate();
+    virtual void adjust(arrayindex_t,arrayindex_t);
+   void setVisible();
+
+	// DNF generated on AtomicBooleanPredicate only
+	virtual AtomicBooleanPredicate * DNF(){return NULL;}
+   virtual FormulaStatistics * count(FormulaStatistics *) {return NULL;}
 };

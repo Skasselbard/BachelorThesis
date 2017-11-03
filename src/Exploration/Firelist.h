@@ -60,7 +60,7 @@ public:
 
     /// the following data structure is needed by selectScapegoat
  
-    static uint64_t * usedAsScapegoat;
+    static arrayindex_t * usedAsScapegoat;
     static uint64_t timestampScapegoat;
     void scapegoatNewRound();
 };

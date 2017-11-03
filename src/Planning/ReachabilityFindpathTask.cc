@@ -48,46 +48,47 @@ extern kc::tFormula TheFormula;
 
 ReachabilityFindpathTask::ReachabilityFindpathTask()
 {
+	taskname = "findpath";
         // extract state predicate from formula
-        TheFormula = TheFormula->rewrite(kc::singletemporal);
-        TheFormula = TheFormula->rewrite(kc::simpleneg);
-        TheFormula = TheFormula->rewrite(kc::booleanlists);
-    // prepare counting of place in the formula
-    extern bool *place_in_formula;
-    extern unsigned int places_mentioned;
-    extern unsigned int unique_places_mentioned;
-    place_in_formula = new bool[Net::Card[PL]]();
-    places_mentioned = 0;
-    unique_places_mentioned = 0;
+    kc::tFormula TheFormulaFP;
+    TheFormulaFP = reinterpret_cast<kc::tFormula> (TheFormula->copy(true));
+        TheFormulaFP = TheFormulaFP->rewrite(kc::singletemporal);
+        TheFormulaFP = TheFormulaFP->rewrite(kc::simpleneg);
 
-        TheFormula->unparse(myprinter, kc::internal);
-        spFormula = TheFormula->formula;
- //Task::outputFormulaAsProcessed();
+        TheFormulaFP->unparse(myprinter, kc::internal);
+        spFormula = TheFormulaFP->formula;
+        //Task::outputFormulaAsProcessed();
 
     // set the net
     ns = NetState::createNetStateFromInitial();
     store = new EmptyStore<void>(number_of_threads);
       p = new StatePredicateProperty(spFormula);
 	RT::rep->indent(-2);
-	RT::rep->status("SEARCH");
+	RT::rep->status("SEARCH (findpath)");
 	RT::rep->indent(2);
             switch(RT::args.stubborn_arg)
             {
 	    case stubborn_arg_deletion:
-RT::rep->status("using reachability preserving stubborn set method with deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
+	RT::data["task"]["findpath"]["stubborn"]["type"] = "reachability preserving/deletion";
+RT::rep->status("findpath: using reachability preserving stubborn set method with deletion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=deletion").str());
                 fl = new FirelistStubbornDeletion(spFormula);
 		break;
 	    case stubborn_arg_tarjan:
-RT::rep->status("using reachability preserving stubborn set method with insertion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
+	    case stubborn_arg_combined:
+	RT::data["task"]["findpath"]["stubborn"]["type"] = "reachability preserving/insertion";
+RT::rep->status("findpath: using reachability preserving stubborn set method with insertion algorithm (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=tarjan").str());
                 fl = new FirelistStubbornStatePredicate(spFormula);
 		break;
 	    case stubborn_arg_off:
-RT::rep->status("not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
+	RT::data["task"]["findpath"]["stubborn"]["type"] = "no";
+RT::rep->status("findpath: not using stubborn set method (%s)", RT::rep->markup(MARKUP_PARAMETER, "--stubborn=off").str());
 		fl = new Firelist();
 		break;
 	    default:
 		assert(false); // exhaustive enumeration
             }
+
+	RT::data["task"]["findpath"]["threads"] = number_of_threads;
      if (number_of_threads == 1)
             {
                 exploration = new DFSExploration();
@@ -112,21 +113,24 @@ ternary_t ReachabilityFindpathTask::getResult()
 {
 	
     bool bool_result;
-    RT::rep->status("starting randomized, memory-less exploration (%s)",
+    RT::rep->status("findpath: starting randomized, memory-less exploration (%s)",
     RT::rep->markup(MARKUP_PARAMETER, "--findpath").str());
 
-    RT::rep->status("searching for paths with maximal depth %d (%s)",
+    RT::rep->status("findpath: searching for paths with maximal depth %d (%s)",
 		    RT::args.depthlimit_arg,
 		    RT::rep->markup(MARKUP_PARAMETER, "--depthlimit").str());
+	RT::data["task"]["findpath"]["depthlimit"]=RT::args.depthlimit_arg;
 
     if (RT::args.retrylimit_arg == 0)
     {
-	RT::rep->status("no retry limit given (%s)",
+	RT::data["task"]["findpath"]["retrylimit"]=JSON::null;
+	RT::rep->status("findpath: no retry limit given (%s)",
 	RT::rep->markup(MARKUP_PARAMETER, "--retrylimit").str());
     }
     else
     {
-	RT::rep->status("restarting search at most %d times (%s)",
+	RT::data["task"]["findpath"]["retrylimit"]=RT::args.retrylimit_arg;
+	RT::rep->status("findpath: restarting search at most %d times (%s)",
 		RT::args.retrylimit_arg,
 		RT::rep->markup(MARKUP_PARAMETER, "--retrylimit").str());
     }
@@ -134,7 +138,7 @@ ternary_t ReachabilityFindpathTask::getResult()
     // added a scope to allow a local definition of choose
     {
 	ChooseTransition *choose = NULL;
-	RT::rep->status("transitions are chosen hash-driven");
+	RT::rep->status("findpath: transitions are chosen hash-driven");
 	choose = new ChooseTransitionHashDriven();
 	bool_result = exploration->find_path(*p, *ns, RT::args.retrylimit_arg,
 		     RT::args.depthlimit_arg, *fl, *((EmptyStore<void> *)store), *choose);
@@ -160,7 +164,9 @@ void ReachabilityFindpathTask::interpreteResult(ternary_t result)
     {
     case TERNARY_TRUE:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_GOOD, "yes").str());
-        RT::data["analysis"]["result"] = true;
+        RT::rep->status("produced by: %s",taskname);
+        RT::data["result"]["value"] = true;
+        RT::data["result"]["produced_by"] = std::string(taskname);
         RT::rep->status("%s", RT::rep->markup(MARKUP_GOOD, "The predicate is reachable.").str());
 
         break;
@@ -169,7 +175,9 @@ void ReachabilityFindpathTask::interpreteResult(ternary_t result)
             break;
 case TERNARY_UNKNOWN:
         RT::rep->status("result: %s", RT::rep->markup(MARKUP_WARNING, "unknown").str());
-        RT::data["analysis"]["result"] = JSON::null;
+        RT::rep->status("produced by: %s",taskname);
+        RT::data["result"]["value"] = JSON::null;
+        RT::data["result"]["produced_by"] = std::string(taskname);
         RT::rep->status("%s", RT::rep->markup(MARKUP_WARNING,
                                                   "The predicate may or may not be reachable.").str());
         break;
@@ -200,10 +208,10 @@ capacity_t *ReachabilityFindpathTask::getMarking()
 void ReachabilityFindpathTask::getStatistics()
 {
 	uint64_t markingcount = store->get_number_of_markings();
-	RT::data["analysis"]["stats"]["states"] = static_cast<int>(result);
+	RT::data["result"]["markings"] = static_cast<int>(result);
 	uint64_t edgecount = store->get_number_of_calls();
 
-        RT::data["analysis"]["stats"]["edges"] = static_cast<int>(result);
+        RT::data["result"]["edges"] = static_cast<int>(result);
 }
  
 Task * ReachabilityFindpathTask::buildTask()

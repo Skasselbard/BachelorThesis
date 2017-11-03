@@ -26,6 +26,7 @@
 #include <config.h>
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/FireablePredicate.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
 #include <Net/Net.h>
 #include <Net/Place.h>
 #include <Net/Transition.h>
@@ -33,11 +34,22 @@
 #include <Net/Marking.h>
 #include <CoverGraph/CoverGraph.h>
 #include <Formula/FormulaInfo.h>
+#include <Formula/StatePredicate/MagicNumber.h>
 
 FireablePredicate::FireablePredicate(arrayindex_t tt, bool ssign) :
     t(tt),sign(ssign)
 {
-parent = NULL;
+        literals = 1;
+	parent = NULL;
+	if(sign)
+	{	
+		magicnumber = MAGIC_NUMBER_FIREABLE(t);
+	}
+	else
+	{
+		magicnumber = MAGIC_NUMBER_UNFIREABLE(t);
+		
+	}
 }
 
 /*!
@@ -48,6 +60,7 @@ parent = NULL;
 */
 arrayindex_t FireablePredicate::getUpSet(arrayindex_t * stack, bool * onstack, bool *need_enabled) const
 {
+    * need_enabled = false;
     if (sign) // fireable
     {
 	if(onstack[t])
@@ -178,12 +191,13 @@ bool FireablePredicate::DEBUG__consistency(NetState &)
 /*!
 \param parent  the parent predicate for the new, copied, object
 */
-StatePredicate *FireablePredicate::copy(StatePredicate *parent)
+ StatePredicate *FireablePredicate::copy(StatePredicate *parent)
 {
     FireablePredicate *af = new FireablePredicate(t,sign);
     af->value = value;
     af->position = position;
     af->parent = parent;
+    af->magicnumber = magicnumber;
     return af;
 }
 
@@ -195,6 +209,7 @@ arrayindex_t FireablePredicate::getSubs(const StatePredicate *const **) const
 StatePredicate *FireablePredicate::negate()
 {
     FireablePredicate *af = new FireablePredicate(t,!sign);
+    af -> magicnumber = - magicnumber;
     return af;
 }
 
@@ -203,20 +218,20 @@ FormulaInfo *FireablePredicate::getInfo() const
     FormulaInfo *Info = new FormulaInfo();
     if (sign)
     {
-        Info->tag = formula_deadlock;
+        Info->tag = formula_fireable;
     }
     else
     {
-        Info->tag = formula_nodeadlock;
+        Info->tag = formula_unfireable;
     }
-    Info->cardChildren = 0;
+    Info->cardChildren = 1;
     Info->f = NULL;
     return Info;
 }
 
 int FireablePredicate::countSubFormulas() const
 {
-    return 1;
+    return 0;
 }
 
 char * FireablePredicate::toString()
@@ -234,4 +249,95 @@ char * FireablePredicate::toString()
 		sprintf(result,"NOT FIREABLE(%s)",Net::Name[TR][t]);
 		return result;
 	}
+}
+
+void FireablePredicate::setVisible()
+{
+	for(arrayindex_t i = 0; i < Net::CardArcs[TR][PRE][t];i++)
+	{
+		arrayindex_t p = Net::Arc[TR][PRE][t][i];
+		for(arrayindex_t j = 0; j < Net::CardArcs[PL][PRE][p];j++)
+		{
+			Transition::Visible[Net::Arc[PL][PRE][p][j]] = true;
+		}
+		for(arrayindex_t j = 0; j < Net::CardArcs[PL][POST][p];j++)
+		{
+			Transition::Visible[Net::Arc[PL][POST][p][j]] = true;
+		}
+	}
+}
+
+AtomicBooleanPredicate * FireablePredicate::DNF()
+{
+	if(sign)
+	{
+		// FIREABLE: result is conjunction
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+		for(arrayindex_t i = 0; i < Net::CardArcs[TR][PRE][t];i++)
+		{
+			arrayindex_t p = Net::Arc[TR][PRE][t][i];
+			arrayindex_t m = Net::Mult[TR][PRE][t][i];
+			AtomicStatePredicate * A = new AtomicStatePredicate(0,1,-m); // 0 pos places, 1 neg place, threshold -m
+			A -> negPlaces[0] = p;
+			A -> negMult[0] = 1;  // (-1)p <= -m => p >= m
+			if(m == 1)
+			{
+				A->magicnumber = MAGIC_NUMBER_MARKED(p);
+			}
+			else
+			{
+				A->magicnumber = MagicNumber::assign();
+			}
+			result -> addSub(A);
+		}
+		result -> magicnumber = magicnumber;
+		return result;
+	}
+	else
+	{
+		// UNFIREABLE: result is disjunction
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(false);
+		for(arrayindex_t i = 0; i < Net::CardArcs[TR][PRE][t];i++)
+		{
+			AtomicBooleanPredicate * rr = new AtomicBooleanPredicate(true);
+			arrayindex_t p = Net::Arc[TR][PRE][t][i];
+			arrayindex_t m = Net::Mult[TR][PRE][t][i];
+			AtomicStatePredicate * A = new AtomicStatePredicate(1,0,m-1); // 1 pos places, 0 neg place, threshold m-1
+			A -> posPlaces[0] = p;
+			A -> posMult[0] = 1;  // p <= m-1 => p < m
+			if(m == 1)
+			{
+				A->magicnumber = MAGIC_NUMBER_EMPTY(p);
+			}
+			else
+			{
+				A->magicnumber = MagicNumber::assign();
+			}
+			rr -> addSub(A);
+			rr -> magicnumber = A->magicnumber;
+			result -> addSub(rr);
+			result -> magicnumber = rr -> magicnumber;
+		}
+		result -> magicnumber = magicnumber;
+		return result;
+	}
+}
+
+FormulaStatistics * FireablePredicate::count(FormulaStatistics * fs)
+{
+	if(sign)
+	{
+		fs -> fir++;
+	}
+	else
+	{
+		fs -> unfir++;
+	}
+	fs->transition_references++;
+	if(!(fs->mentioned_transition[t]))
+	{
+		fs->mentioned_transition[t] = true;
+		fs->visible_transitions++;
+	}
+	return fs;
 }

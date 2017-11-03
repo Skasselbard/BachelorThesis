@@ -38,7 +38,7 @@ public:
      ternary_t intermediate;
      Task * first;
      Task * second;
-     SequentialTask(Task* f, Task *s){ first = f; second = s; second_started = false;
+     SequentialTask(Task* f, Task *s){ taskname = "sequential"; first = f; second = s; second_started = false;
                                         intermediate = TERNARY_UNKNOWN;}
     ~SequentialTask(){delete first; delete second;}
 
@@ -47,10 +47,12 @@ public:
 	intermediate = first -> getResult();
 	if(intermediate != TERNARY_UNKNOWN)
 	{
+		taskname = first -> taskname;
 		return intermediate;
 	}
  	first -> getStatistics();
 	second_started = true;
+	taskname = second->taskname;
 	return second -> getResult();
     }
 

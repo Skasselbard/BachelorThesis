@@ -87,6 +87,28 @@ bool ConjunctionFormula::check(Store<void *> &s, NetState &ns,
     return true;
 }
 
+
+bool ConjunctionFormula::checkfair(Store<void *> &s, NetState &ns,
+                               Firelist &firelist, std::vector<int> &witness)
+{
+    // check every subformula
+    for (arrayindex_t i = 0; i < cardSubs; i++)
+    {
+        if (not subs[i]->checkfair(s, ns, firelist, witness))
+        {
+            // we found an unsatisfied subformula -> conjunction is false
+            return false;
+        }
+
+        // the current subformula is true - it does not provide information for
+        // a counterexample
+        witness.clear();
+    }
+
+    // we did not find a counterexample -> conjunction is true
+    return true;
+}
+
 // LCOV_EXCL_START
 void ConjunctionFormula::DEBUG_print()
 {
@@ -140,3 +162,13 @@ int ConjunctionFormula::countSubFormulas() const
     return sum;
 }
 
+void ConjunctionFormula::print()
+{
+	for(arrayindex_t i = 0; i < cardSubs;i++)
+	{
+		std::cout << " && ";
+		subs[i]->print();
+		std::cout << " && ";
+	}
+
+}

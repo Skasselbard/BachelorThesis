@@ -34,6 +34,15 @@ Parses a Büchi automaton in LoLA syntax.
 #include <Frontend/Parser/error.h>
 #include <Frontend/Parser/ast-system-k.h>       // for kc namespace
 #include <Frontend/Parser/ast-system-yystype.h> // for YYSTYPE
+#include <Formula/StatePredicate/DeadlockPredicate.h>
+#include <Formula/StatePredicate/AtomicBooleanPredicate.h>
+#include <Formula/StatePredicate/FireablePredicate.h>
+#include <Formula/StatePredicate/TruePredicate.h>
+#include <Formula/StatePredicate/FalsePredicate.h>
+#include <Formula/StatePredicate/MagicNumber.h>
+#include <Net/Place.h>
+#include <Net/Marking.h>
+
 
 #include <limits.h>
 #include <libgen.h>
@@ -44,6 +53,7 @@ Parses a Büchi automaton in LoLA syntax.
 
 extern ParserPTNet* symbolTables;
 extern SymbolTable* buechiStateTable;
+tShape ooppShape(tShape s);
 %}
 
 %error-verbose /* more verbose and specific error message string */
@@ -60,7 +70,7 @@ extern SymbolTable* buechiStateTable;
 %type <yt_tAtomicProposition> atomic_proposition
 %type <yt_tTerm> term
 %type <yt_integer> NUMBER
-%type <yt_casestring> IDENTIFIER
+%type <yt_casestring> IDENTIFIER identifier
 
 %token IDENTIFIER          "identifier"
 %token NUMBER              "number"
@@ -72,6 +82,7 @@ extern SymbolTable* buechiStateTable;
 %token _then_              "transition =>"
 %token _colon_             "colon"
 %token _INITIAL_           "keyword INITIAL"
+%token _DEADLOCK_           "keyword DEADLOCK"
 %token _AND_               "Boolean conjuction"
 %token _NOT_               "Boolean negation"
 %token _OR_                "Boolean disjunction"
@@ -105,10 +116,6 @@ extern SymbolTable* buechiStateTable;
 %left _plus_ _minus_
 %left _times_
 %right _NOT_
-%right _ALWAYS_ _EVENTUALLY_ _NEXTSTATE_
-%right _UNTIL_
-%right _ALLPATH_ _EXPATH_
-%right _REACHABLE_ _INVARIANT_ _IMPOSSIBLE_
 
 %{
 // parser essentials
@@ -201,74 +208,776 @@ statepredicate:
   _leftparenthesis_ statepredicate _rightparenthesis_
     { $$ = $2; }
 | atomic_proposition
-    { $$ = AtomicProposition($1); }
+    { 
+	if($1->pred->magicnumber == MAGIC_NUMBER_TRUE)
+	{
+		delete $1->pred;
+		$1 -> pred = new TruePredicate();
+	}
+	else if($1->pred->magicnumber == MAGIC_NUMBER_FALSE)
+	{
+		delete $1->pred;
+		$1 -> pred = new FalsePredicate();
+	}
+	$$ = AtomicProposition($1); 
+	$$ -> shape = $1 -> shape;
+	$$ -> formula = $1 -> pred;
+    }
 | _NOT_ statepredicate
-    { $$ = Negation($2); }
+    { 
+	switch($2 -> shape)
+	{
+	case AT_TEMP: 	$$ = Negation($2); 
+			break;
+	case AT_DL:
+	case AT_FIR:
+	case AT_COMP: 	$2 -> formula = $2 -> formula -> negate(); 
+			$$ = $2; 
+			break;
+	case AT_TRUE: 	delete($2 -> formula);
+			$2 -> formula = new FalsePredicate();
+			$2 -> shape = AT_FALSE;
+			$$ = $2;
+			break;
+	case AT_FALSE: 	delete($2 -> formula);
+			$2 -> formula = new TruePredicate();
+			$2 -> shape = AT_TRUE;
+			$$ = $2;
+			break;
+	case AT_AND: 	$2 -> formula -> negate();
+			$$ = $2;
+			$$ -> shape = AT_OR;
+			break;
+	case AT_OR: 	$2 -> formula -> negate();
+			$$ = $2;
+			$$ -> shape = AT_AND;
+			break;
+	}
+    }
 | statepredicate _AND_ statepredicate
-    { $$ = Conjunction($1, $3); }
+    { 
+	if($1 -> shape == AT_TEMP || $3 -> shape == AT_TEMP)
+	{
+		$$ = Conjunction($1, $3); 
+		$$ -> shape = AT_TEMP;
+	}
+	else if($1 -> shape == AT_FALSE || $3 -> shape == AT_FALSE)
+	{
+		delete $1 -> formula;
+		delete $3 -> formula;
+		$$ = $1;
+		$$ -> formula = new FalsePredicate();
+		$$ -> shape = AT_FALSE;
+	}
+	else if($1 -> shape == AT_TRUE)
+	{
+		$$ = $3;
+		$$ -> shape = $3 -> shape;
+	}
+	else if($3 -> shape == AT_TRUE)
+	{
+		$$ = $1;
+		$$ -> shape = $1 -> shape;
+	} 
+	else if(($1->shape == AT_AND) && (($3 -> shape == AT_OR) || ($3 -> shape == AT_FIR) || ($3 -> shape == AT_COMP) || ($3->shape == AT_DL)))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>($1 -> formula) -> addSub($3->formula);
+		$$ = $1;
+	}
+	else if(($3->shape == AT_AND) && (($1 -> shape == AT_OR) || ($1 -> shape == AT_COMP) || ($1 -> shape == AT_DL) || ($1 -> shape == AT_FIR)))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula) -> addSub($1->formula);
+		$$ = $3;
+	}
+	else if(($1->shape == AT_AND) && ($3 -> shape == AT_AND))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>($1->formula));
+		$$ = $3;
+	}
+	else // both $1 and $3 are AT_FIR, AT_COMP, AT_DL or AT_OR
+	{
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+		result -> addSub($1->formula);
+		result -> addSub($3->formula);
+		$$ = $1;
+		$$ -> formula = result;
+		$$ -> shape = AT_AND;
+	}
+    }
 | statepredicate _OR_ statepredicate
-    { $$ = Disjunction($1, $3); }
+    { 
+	if($1 -> shape == AT_TEMP || $3 -> shape == AT_TEMP)
+	{
+		$$ = Disjunction($1, $3); 
+		$$ -> shape = AT_TEMP;
+	}
+	else if($1 -> shape == AT_TRUE || $3 -> shape == AT_TRUE)
+	{
+		delete $1 -> formula;
+		delete $3 -> formula;
+		$$ = $1;
+		$$ -> formula = new TruePredicate();
+		$$ -> shape = AT_TRUE;
+	}
+	else if($1 -> shape == AT_FALSE)
+	{
+		$$ = $3;
+		$$ -> shape = $3 -> shape;
+	}
+	else if($3 -> shape == AT_FALSE)
+	{
+		$$ = $1;
+		$$ -> shape = $1 -> shape;
+	} 
+	else if(($1->shape == AT_OR) && (($3 -> shape == AT_AND) || ($3 -> shape == AT_COMP) || ($3 -> shape == AT_FIR) || ($3->shape == AT_DL) ))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>($1 -> formula) -> addSub($3->formula);
+		
+		$$ = $1;
+	}
+	else if(($3->shape == AT_OR) && (($1 -> shape == AT_AND) || ($1 -> shape == AT_COMP) || ($1->shape == AT_FIR) || ($1->shape == AT_DL)))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula) -> addSub($1->formula);
+		$$ = $3;
+	}
+	else if(($1->shape == AT_OR) && ($3 -> shape == AT_OR))
+	{
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>($1->formula));
+		$$ = $3;
+	}
+	else // both $1 and $3 are AT_COMP,AT_FIR,AT_DL or AT_OR
+	{
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(false);
+		result -> addSub($1->formula);
+		result -> addSub($3->formula);
+		$$ = $1;
+		$$ -> formula = result;
+		$$ -> shape = AT_OR;
+	}
+    }
 | statepredicate _XOR_ statepredicate
-    { $$ = ExclusiveDisjunction($1, $3); }
+    { 
+	// translate into (p & -q) | (-p & q)
+
+	if($1 -> shape == AT_TEMP || $3 -> shape == AT_TEMP)
+	{
+		$$ = ExclusiveDisjunction($1, $3); 
+		$$ -> shape = AT_TEMP;
+	}
+	else if($1 -> shape == AT_TRUE)
+	{
+		$3 -> formula = $3 -> formula -> negate();
+		$$ = $3;
+		$$ -> shape = ooppShape($3->shape);
+	}
+	else if($3 -> shape == AT_TRUE)
+	{
+		$1 -> formula = $1 -> formula -> negate();
+		$$ = $1;
+		$$ -> shape = ooppShape($1->shape);
+	}
+	else if($3 -> shape == AT_FALSE)
+	{
+		$$ = $1;
+	}
+	else if($1 -> shape == AT_FALSE)
+	{
+		$$ = $3;
+	}
+	else if(($1 -> shape == AT_AND) && (($3 -> shape == AT_COMP)|| ($3->shape == AT_FIR) || ($3->shape == AT_DL)))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_*
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub($3->formula); // d = (-p & q)
+		reinterpret_cast<AtomicBooleanPredicate *>($1 -> formula) ->addSub(b);     // $1 = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub($1->formula);
+		a -> addSub(d); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if((($1 -> shape == AT_COMP)||($1->shape == AT_FIR) || ($1->shape == AT_DL)) && ($3 -> shape == AT_AND))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub($1->formula); // d = (p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula) ->addSub(b);     // $3 = (-p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub($3->formula); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if((($1 -> shape == AT_COMP)||($1->shape == AT_FIR) || ($1->shape == AT_DL)) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub($1 -> formula); // c = p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub($3->formula); // d = (-p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_OR) && (($3 -> shape == AT_COMP)||($3->shape == AT_FIR) || ($3->shape == AT_DL)))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub($3 -> formula); // c = -p & q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub($1->formula); // d = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if((($1 -> shape == AT_COMP)||($1->shape == AT_FIR) || ($1->shape == AT_DL)) && (($3 -> shape == AT_COMP)|| ($3->shape == AT_FIR)||($3->shape==AT_DL)))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub($1->formula); // d = (p & -q)
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub($3->formula); // d = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(e); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_AND) && ($3 -> shape == AT_AND))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_OR
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub($1->formula); // d = (p & -q)
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub($3->formula); // d = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(e); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_AND) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_AND
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub($1->formula); // p & -q
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub($3->formula); // e = (-p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(e); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_OR) && ($3 -> shape == AT_AND))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub($3->formula); // -p & q
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub(c);
+		e -> addSub($1->formula); // e = (p & -q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(e); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else // (($1 -> shape == AT_OR) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub($3->formula); // -p & q
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub($1->formula); // p & -q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(c); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+    }
 | statepredicate _implies_ statepredicate
-    { $$ = Implication($1, $3); }
+    { 
+	if($1 -> shape == AT_TEMP || $3 -> shape == AT_TEMP)
+	{
+		$$ = Implication($1, $3); 
+		$$ -> shape = AT_TEMP;
+	}
+	else if($1 -> shape == AT_FALSE || $3 -> shape == AT_TRUE)
+	{
+		delete $1 -> formula;
+		delete $3 -> formula;
+		$$ = $1;
+		$$ -> formula = new TruePredicate();
+		$$ -> shape = AT_TRUE;
+	}
+	else if($1 -> shape == AT_TRUE)
+	{
+		$$ = $3;
+		$$ -> shape = $3 -> shape;
+	}
+	else if($3 -> shape == AT_FALSE)
+	{
+		$1->formula = $1 -> formula -> negate();
+		$$ = $1;
+		$$ -> shape = ooppShape($1 -> shape);
+	} 
+	else if(($1->shape == AT_AND) && (($3 -> shape == AT_AND) || ($3 -> shape == AT_COMP)|| ($3->shape == AT_FIR) || ($3->shape == AT_DL)))
+	{
+		 $1 -> formula = $1 -> formula ->negate();
+		reinterpret_cast<AtomicBooleanPredicate *>($1 -> formula) -> addSub($3->formula);
+		$$ = $1;
+		$$ -> shape = AT_OR;
+	}
+	else if(($3->shape == AT_OR) && (($1 -> shape == AT_AND) || ($1 -> shape == AT_COMP)||($1->shape == AT_FIR) || ($1->shape == AT_DL)))
+	{
+		$1 -> formula = $1-> formula -> negate();
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula) -> addSub($1->formula);
+		$$ = $3;
+	}
+	else if(($1->shape == AT_AND) && ($3 -> shape == AT_OR))
+	{
+		$1 -> formula = $1 -> formula -> negate();
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>($1->formula));
+		$$ = $3;
+	}
+	else // both $1 and $3 are AT_* or AT_OR
+	{
+		$1 -> formula = $1 -> formula -> negate();
+		AtomicBooleanPredicate * result = new AtomicBooleanPredicate(false);
+		result -> addSub($1->formula);
+		result -> addSub($3->formula);
+		$$ = $1;
+		$$ -> formula = result;
+		$$ -> shape = AT_OR;
+	}
+    }
 | statepredicate _iff_ statepredicate
-    { $$ = Equivalence($1, $3); }
+    { 
+	// translate into (p & q) | (-p & -q)
+
+	if($1 -> shape == AT_TEMP || $3 -> shape == AT_TEMP)
+	{
+		$$ = Equivalence($1, $3); 
+		$$ -> shape = AT_TEMP;
+	}
+	else if($1 -> shape == AT_FALSE)
+	{
+		$3 -> formula = $3 -> formula -> negate();
+		$$ = $3;
+		$$ -> shape = ooppShape($3->shape);
+	}
+	else if($3 -> shape == AT_FALSE)
+	{
+		$1 -> formula = $1 -> formula -> negate();
+		$$ = $1;
+		$$ -> shape = ooppShape($1->shape);
+	}
+	else if($3 -> shape == AT_TRUE)
+	{
+		$$ = $1;
+	}
+	else if($1 -> shape == AT_TRUE)
+	{
+		$$ = $3;
+	}
+	else if(($1 -> shape == AT_AND) && (($3 -> shape == AT_COMP)||($3->shape == AT_FIR) || ($3->shape == AT_DL)))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub(b); // d = (-p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>($1 -> formula) ->addSub($3->formula);     // $1 = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub($1->formula);
+		a -> addSub(d); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if((($1 -> shape == AT_COMP)|| ($1->shape == AT_FIR) || ($1->shape == AT_DL)) && ($3 -> shape == AT_AND))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(c);
+		d -> addSub(b); // d = (-p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>($3 -> formula) ->addSub($1->formula);     // $3 = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub($3->formula); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if((($1 -> shape == AT_COMP)||($1->shape == AT_FIR) || ($1->shape == AT_DL)) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_ELEM
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub(b); // c = -p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub($1->formula);
+		d -> addSub($3->formula); // d = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_OR) && (($3 -> shape == AT_COMP)||($3->shape==AT_FIR) || ($3->shape == AT_DL)))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(c) -> addSub(b); // c = -p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub($3->formula);
+		d -> addSub($1->formula); // d = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(c); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if((($1 -> shape == AT_COMP)|| ($1->shape == AT_FIR) || ($1->shape == AT_DL)) && (($3 -> shape == AT_COMP)||($3->shape == AT_FIR)||($3->shape == AT_DL)))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_ELEM
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_AND
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub(c); // d = (-p & -q)
+		AtomicBooleanPredicate * e = new AtomicBooleanPredicate(true);
+		e -> addSub($1->formula);
+		e -> addSub($3->formula); // e = (p & q)
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub(e); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_AND) && ($3 -> shape == AT_AND))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_OR
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub(b);
+		d -> addSub(c); // d = (-p & -q)
+		reinterpret_cast<AtomicBooleanPredicate *>($1->formula)->merge(reinterpret_cast<AtomicBooleanPredicate *>($3->formula)); //$1 = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(d);
+		a -> addSub($1->formula); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_AND) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = $3 -> formula -> copy(NULL);
+		b = b -> negate();  //  -q, AT_AND
+		StatePredicate * c = $1->formula -> copy(NULL);
+		c = c -> negate(); // -p, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub(c); // -p & -q
+		reinterpret_cast<AtomicBooleanPredicate *>($1->formula)->addSub($3->formula); // $1 = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub($1->formula); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else if(($1 -> shape == AT_OR) && ($3 -> shape == AT_AND))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_OR
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> addSub(c); // -p & -q
+		reinterpret_cast<AtomicBooleanPredicate *>($3->formula)->addSub($1->formula); //$3 = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub($3->formula); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+	else // (($1 -> shape == AT_OR) && ($3 -> shape == AT_OR))
+	{
+		StatePredicate * b = $1 -> formula -> copy(NULL);
+		b = b -> negate();  //  -p, AT_AND
+		StatePredicate * c = $3->formula -> copy(NULL);
+		c = c -> negate(); // -q, AT_AND
+		reinterpret_cast<AtomicBooleanPredicate *>(b) -> merge(reinterpret_cast<AtomicBooleanPredicate *>(c)); // -p & -q
+		AtomicBooleanPredicate * d = new AtomicBooleanPredicate(true);
+		d -> addSub($1->formula);
+		d -> addSub($3->formula); // d = p&q
+		AtomicBooleanPredicate * a = new AtomicBooleanPredicate(false);
+		a -> addSub(b);
+		a -> addSub(d); // a = result
+		$$ = $1;
+		$$ -> formula = a;
+		$$ -> shape = AT_OR;
+	}
+    }
 ;
 
 atomic_proposition:
   term _equals_ term
-    { $$ = EqualsAtomicProposition($1, $3); }
+    { 
+	$3 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	Term * T = $1 -> ttt -> copy();
+	T -> multiply(-1);
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	result -> addSub(new AtomicStatePredicate($1->ttt));	
+	result -> addSub(new AtomicStatePredicate(T));	
+	$$ = Elementary();
+	$$ -> shape = AT_AND;
+	$$ -> pred = result;
+    }
 | term _notequal_ term
-    { $$ = NotEqualsAtomicProposition($1, $3); }
+    { 
+	$3 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	Term * T = $1 -> ttt -> copy();
+	T -> multiply(-1);
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	result -> addSub(new AtomicStatePredicate($1->ttt));	
+	result -> addSub(new AtomicStatePredicate(T));	
+	result = (AtomicBooleanPredicate *) result -> negate();
+	$$ = Elementary();
+	$$ -> shape = AT_OR;
+	$$ -> pred = result;
+    }
 | term _greaterthan_ term
-    { $$ = GreaterAtomicProposition($1, $3); }
+    { 
+	$1 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	Term * T = new Term();
+	T -> place = Net::Card[PL];
+	T -> mult = 1;
+	$1 -> ttt -> append(T);
+	AtomicStatePredicate * result = new AtomicStatePredicate($1->ttt);
+	$$ = Elementary();
+	$$ -> shape = AT_COMP;
+	$$ -> pred = result;
+	
+    }
 | term _greaterorequal_ term
-    { $$ = GreaterEqualAtomicProposition($1, $3); }
+    { 
+	$1 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	AtomicStatePredicate * result = new AtomicStatePredicate($1->ttt);
+	$$ = Elementary();
+	$$ -> shape = AT_COMP;
+	$$ -> pred = result;
+    }
 | term _lessthan_ term
-    { $$ = LessAtomicProposition($1, $3); }
+    { 
+	$3 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	Term * T = new Term();
+	T -> place = Net::Card[PL];
+	T -> mult = 1;
+	$1 -> ttt -> append(T);
+	AtomicStatePredicate * result = new AtomicStatePredicate($1->ttt);
+	$$ = Elementary();
+	$$ -> shape = AT_COMP;
+	$$ -> pred = result;
+    }
 | term _lessorequal_ term
-    { $$ = LessEqualAtomicProposition($1, $3); }
+    { 
+	$3 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	AtomicStatePredicate * result = new AtomicStatePredicate($1->ttt);
+	$$ = Elementary();
+	$$ -> shape = AT_COMP;
+	$$ -> pred = result;
+    }
 | _TRUE_
-    { $$ = True(); }
+    { 
+	TruePredicate * result = new TruePredicate();
+	$$ = Elementary();
+	$$ -> shape = AT_TRUE;
+	$$ -> pred = result;
+    }
 | _FALSE_
-    { $$ = False(); }
-| _FIREABLE_ _leftparenthesis_ IDENTIFIER _rightparenthesis_
+    { 
+	FalsePredicate * result = new FalsePredicate();
+	$$ = Elementary();
+	$$ -> shape = AT_FALSE;
+	$$ -> pred = result;
+    }
+| _FIREABLE_ _leftparenthesis_ identifier _rightparenthesis_
     {
         Symbol *t = symbolTables->TransitionTable->lookup($3->name);
         if (UNLIKELY(t == NULL))
         {
             yyerrors($3->name, @3, "transition '%s' unknown", $3->name);
         }
-        $$ = Fireable(mkinteger(t->getIndex()));
+	FireablePredicate * result = new FireablePredicate(t->getIndex(),true);
+	$$ = Elementary();
+	$$ -> shape = AT_FIR;
+	$$ -> pred = result;
     }
 | _INITIAL_
-    { $$ = Initial(); }
+    { 
+	AtomicBooleanPredicate * result = new AtomicBooleanPredicate(true);
+	for(arrayindex_t i = 0; i < Place::CardSignificant;i++)
+	{
+		capacity_t m0 = Marking::Initial[i];
+	
+		// insert p <= m0
+		Term * T1 = new Term();
+		T1 -> place  = i;
+		T1 -> mult = 1;
+		Term * T2 = new Term();
+		T2 -> place = Net::Card[PL];
+		T2 -> mult = -m0;
+		T1 -> append(T2);
+		result -> addSub(new AtomicStatePredicate(T1));
+
+		// insert p >= m0
+		T1 = new Term();
+		T1 -> place = i;
+		T1 -> mult = -1;
+		T2 = new Term();
+		T2 -> place = Net::Card[PL];
+		T2 -> mult = m0;
+		T1 -> append(T2);
+		result -> addSub(new AtomicStatePredicate(T1));
+	}
+	$$ = Elementary(); 
+	$$ -> shape = AT_AND;
+	$$ -> pred = result;
+    }
+| _DEADLOCK_
+    { 
+	DeadlockPredicate * result = new DeadlockPredicate(true);
+	$$ = Elementary(); 
+	$$ -> shape = AT_DL;
+	$$ -> pred = result;
+    }
 ;
 
 term:
   _leftparenthesis_ term _rightparenthesis_
     { $$ = $2; }
-| IDENTIFIER
+| identifier
     {
         Symbol *p = symbolTables->PlaceTable->lookup($1->name);
         if (UNLIKELY(p == NULL))
         {
             yyerrors($1->name, @1, "place '%s' unknown", $1->name);
         }
-        $$ = Node(mkinteger(p->getIndex()));
+	$$ = Complex();
+	$$ -> ttt = new Term();
+	$$ -> ttt -> place = p -> getIndex();
+	$$ -> ttt -> mult = 1;
     }
 | NUMBER
-    { $$ = Number($1); }
+    { 
+	$$ = Complex(); 
+	$$ -> ttt = new Term();
+	$$ -> ttt -> place = Net::Card[PL];
+	$$ -> ttt -> mult = $1 -> value;
+    }
 | term _plus_ term
-    { $$ = Sum($1, $3); }
+    { 
+	$1 -> ttt -> append($3 -> ttt);
+	$$ = $1; 
+    }
 | term _minus_ term
-    { $$ = Difference($1, $3); }
+    { 
+	$3 -> ttt -> multiply(-1);
+	$1 -> ttt -> append($3 -> ttt);
+	$$ = $1; 
+    }
 | NUMBER _times_ term
-    { $$ = Product($1, $3); }
+    { 
+	$3 -> ttt->multiply($1->value);
+	$$ = $3; 
+    }
+;
+
+identifier:
+  IDENTIFIER     { $$ = $1; }
 ;
 
 %%
+
+tShape ooppShape(tShape s)
+{
+	switch(s)
+	{
+	case AT_COMP: return AT_COMP;
+	case AT_FIR: return AT_FIR;
+	case AT_DL: return AT_DL;
+	case AT_TEMP: return AT_TEMP;
+	case AT_AND: return AT_OR;
+	case AT_OR: return AT_AND;
+	case AT_TRUE: return AT_FALSE;
+	case AT_FALSE: return AT_TRUE;
+	}
+}
 
 /// display a parser error and exit
 void ptbuechi_error(char const* mess) __attribute__((noreturn));

@@ -86,6 +86,28 @@ bool DisjunctionFormula::check(Store<void *> &s, NetState &ns,
     return false;
 }
 
+
+bool DisjunctionFormula::checkfair(Store<void *> &s, NetState &ns,
+                               Firelist &firelist, std::vector<int> &witness)
+{
+    // check every subformula
+    for (arrayindex_t i = 0; i < cardSubs; i++)
+    {
+        if (subs[i]->checkfair(s, ns, firelist, witness))
+        {
+            // we found a satisfied subformula -> conjunction is true
+            return true;
+        }
+
+        // the current subformula is false - it does not provide information for
+        // a witness path
+        witness.clear();
+    }
+
+    // we did not find a witness -> disjunction is false
+    return false;
+}
+
 // LCOV_EXCL_START
 void DisjunctionFormula::DEBUG_print()
 {
@@ -137,4 +159,14 @@ int DisjunctionFormula::countSubFormulas() const
         sum += subs[i]->countSubFormulas();
     }
     return sum;
+}
+
+void DisjunctionFormula::print()
+{
+	for(arrayindex_t i = 0; i < cardSubs; i++)
+	{
+		std::cout << " || ";
+		subs[i] -> print();
+		std::cout << " || ";
+	}
 }

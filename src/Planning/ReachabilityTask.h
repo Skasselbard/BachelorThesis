@@ -25,6 +25,7 @@
 #include <Planning/SequentialTask.h>
 #include <Planning/ParallelTask.h>
 #include <Planning/StateEquationTask.h>
+#include <Net/Net.h>
 
 
 /*!
@@ -60,6 +61,7 @@ public:
 	// variant 1: (findpath||stateequation);search
 	if ((RT::args.findpath_arg == findpath_arg_seq) && (RT::args.stateequation_arg == stateequation_arg_seq))
 	{
+		RT::data["task"]["workflow"] = "findpath||stateequation";
 		RT::rep->status("Planning: workflow for reachability check: (findpath||statequation);search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=seq").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=seq").str());
                 return SequentialTask::buildTask(ParallelTask::buildTask(ReachabilityFindpathTask::buildTask(), StateEquationTask::buildTask()), ReachabilitySearchTask::buildTask());
@@ -68,6 +70,7 @@ public:
 	// variant 2: findpath||stateequation||search
 	else if ((RT::args.findpath_arg == findpath_arg_par) && (RT::args.stateequation_arg == stateequation_arg_par))
 	{
+		RT::data["task"]["workflow"] = "findpath||stateequation||search";
 		RT::rep->status("Planning: workflow for reachability check: findpath||stateequation||search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=par").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=par").str());
 				return ParallelTask::buildTask(StateEquationTask::buildTask(), ParallelTask::buildTask(ReachabilityFindpathTask::buildTask(), ReachabilitySearchTask::buildTask()));
@@ -78,6 +81,7 @@ public:
 		((RT::args.findpath_arg == findpath_arg_par) && (RT::args.stateequation_arg == stateequation_arg_alone)) ||
 		((RT::args.findpath_arg == findpath_arg_alone) && (RT::args.stateequation_arg == stateequation_arg_par)))
 	{
+		RT::data["task"]["workflow"] = "findpath||stateequation";
 		RT::rep->status("Planning: workflow for reachability check: findpath||stateequation (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=alone|par").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=alone|par").str());
                 return ParallelTask::buildTask(StateEquationTask::buildTask(), ReachabilityFindpathTask::buildTask());
@@ -86,6 +90,7 @@ public:
 	// variant 4: search
 	else if ((RT::args.findpath_arg == findpath_arg_off) && (RT::args.stateequation_arg == stateequation_arg_off))
 	{
+		RT::data["task"]["workflow"] = "search";
 		RT::rep->status("Planning: workflow for reachability check: search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=off").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=off").str());
                 return ReachabilitySearchTask::buildTask();
@@ -94,6 +99,7 @@ public:
 	// variant 5: findpath;(stateequation||search)
 	else if ((RT::args.findpath_arg == findpath_arg_seq) && (RT::args.stateequation_arg == stateequation_arg_par))
 	{
+		RT::data["task"]["workflow"] = "findpath;(stateequation||search)";
 		RT::rep->status("Planning: workflow for reachability check: findpath;(stateequation||search) (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=seq").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=par").str());
 				return SequentialTask::buildTask(ReachabilityFindpathTask::buildTask(), ParallelTask::buildTask(StateEquationTask::buildTask(), ReachabilitySearchTask::buildTask()));
@@ -102,6 +108,7 @@ public:
 	// variant 6: findpath
 	else if ((RT::args.findpath_arg == findpath_arg_alone) && (RT::args.stateequation_arg == stateequation_arg_off))
 	{
+		RT::data["task"]["workflow"] = "findpath";
 		RT::rep->status("Planning: workflow for reachability check: findpath (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=alone").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=off").str());
 				return ReachabilityFindpathTask::buildTask();
@@ -110,6 +117,7 @@ public:
 	// variant 7: stateequation;search
 	else if ((RT::args.findpath_arg == findpath_arg_off) && (RT::args.stateequation_arg == stateequation_arg_seq))
 	{
+		RT::data["task"]["workflow"] = "stateequation;search";
 		RT::rep->status("Planning: workflow for reachability check: stateequation;search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=off").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=seq").str());
 				return SequentialTask::buildTask(StateEquationTask::buildTask(), ReachabilitySearchTask::buildTask());
@@ -118,6 +126,7 @@ public:
 	// variant 8: findpath;stateequation
 	else if ((RT::args.findpath_arg == findpath_arg_seq) && (RT::args.stateequation_arg == stateequation_arg_alone))
 	{
+		RT::data["task"]["workflow"] = "findpath;stateequation";
 		RT::rep->status("Planning: workflow for reachability check: findpath;stateequation (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=seq").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=alone").str());
 				return SequentialTask::buildTask(ReachabilityFindpathTask::buildTask(), StateEquationTask::buildTask());
@@ -126,6 +135,7 @@ public:
 	// variant 9: findpath||search
 	else if ((RT::args.findpath_arg == findpath_arg_par) && (RT::args.stateequation_arg == stateequation_arg_off))
 	{
+		RT::data["task"]["workflow"] = "findpath||search";
 		RT::rep->status("Planning: workflow for reachability check: findpath||search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=par").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=off").str());
 				return ParallelTask::buildTask(ReachabilityFindpathTask::buildTask(), ReachabilitySearchTask::buildTask());
@@ -134,6 +144,7 @@ public:
 	// variant 10: stateequation;findpath
 	else if ((RT::args.findpath_arg == findpath_arg_alone) && (RT::args.stateequation_arg == stateequation_arg_seq))
 	{
+		RT::data["task"]["workflow"] = "stateequation;findpath";
 		RT::rep->status("Planning: workflow for reachability check: stateequation;findpath (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=alone").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=seq").str());
 				return SequentialTask::buildTask(StateEquationTask::buildTask(), ReachabilityFindpathTask::buildTask());
@@ -142,6 +153,7 @@ public:
 	// variant 11: stateequation||search
 	else if ((RT::args.findpath_arg == findpath_arg_off) && (RT::args.stateequation_arg == stateequation_arg_par))
 	{
+		RT::data["task"]["workflow"] = "stateequation||search";
 		RT::rep->status("Planning: workflow for reachability check: stateequation||search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=off").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=par").str());
 				return ParallelTask::buildTask(StateEquationTask::buildTask(), ReachabilitySearchTask::buildTask());
@@ -150,6 +162,7 @@ public:
 	// variant 12: findpath;search
 	else if ((RT::args.findpath_arg == findpath_arg_seq) && (RT::args.stateequation_arg == stateequation_arg_off))
 	{
+		RT::data["task"]["workflow"] = "findpath;search";
 		RT::rep->status("Planning: workflow for reachability check: findpath;search (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=seq").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=off").str());
 				return SequentialTask::buildTask(ReachabilityFindpathTask::buildTask(), ReachabilitySearchTask::buildTask());
@@ -158,6 +171,7 @@ public:
 	// variant 13: stateequation;(findpath||search)
 	else if ((RT::args.findpath_arg == findpath_arg_par) && (RT::args.stateequation_arg == stateequation_arg_seq))
 	{
+		RT::data["task"]["workflow"] = "findpath||search";
 		RT::rep->status("Planning: workflow for reachability check: stateequation;(findpath||search) (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=par").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=seq").str());
 		return SequentialTask::buildTask(StateEquationTask::buildTask(), ParallelTask::buildTask(ReachabilityFindpathTask::buildTask(), ReachabilitySearchTask::buildTask()));
@@ -166,6 +180,7 @@ public:
 	// variant 14: stateequation
 	else if ((RT::args.findpath_arg == findpath_arg_off) && (RT::args.stateequation_arg == stateequation_arg_alone))
 	{
+		RT::data["task"]["workflow"] = "stateequation";
 		RT::rep->status("Planning: workflow for reachability check: stateequation (%s)", RT::rep->markup(MARKUP_PARAMETER, "--findpath=off").str(),
 		RT::rep->markup(MARKUP_PARAMETER, "--stateequation=alone").str());
 				return StateEquationTask::buildTask();

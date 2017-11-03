@@ -1,0 +1,20 @@
+# T-Invarianten
+
+- Reduktion mit jedem anderen Store verknüpfen? Momentan wird stets derselbe Store ausgeprägt.
+- TODO: Herausfinden, ob man seine searchAndInsert in andere Stores einbauen kann
+
+- gengetopt direkt nutzen und nicht Kopien der Variablen machen
+
+- statt Tiefe SearchStack::StackPointer nutzen (zunächst global; relativ evtl. durch Kopie des StackPointers in der T-Invarianten-Klasse)
+
+- Array TransitionInv::u ins Netz holen und nur Speicher ausfassen, wenn Technik auch genutzt wird
+
+- Zusammenhang zwischen TransitionInv::u und isSignificant ansehen
+
+- Muss enabled wirklich ausgerechnet werden -- ist enabled-Vektor des Netzes schon auf neuer oder noch auf alter Markierung?
+
+- statt using_k zu testen stets mit großem k initialisiert ist
+
+[X] alle Stores mit noinsert erweitern
+
+- in StoreCreator generisch bei T-Invarianten Store wrappen

@@ -26,6 +26,7 @@
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/StatePredicate.h>
 #include <Formula/StatePredicate/DisjunctionStatePredicate.h>
+#include <Formula/StatePredicate/ConjunctionStatePredicate.h>
 #include <Formula/FormulaInfo.h>
 #include <Net/Net.h>
 
@@ -453,4 +454,30 @@ char * DisjunctionStatePredicate::toString()
 	}
 	sprintf(result+strlen(result),")");
 	return result;
+}
+
+StatePredicate * DisjunctionStatePredicate::negate()
+{
+	ConjunctionStatePredicate * result = new ConjunctionStatePredicate(cardSub);
+	for(arrayindex_t i = 0; i < cardSub; i++)
+	{
+		result -> addSub(i,sub[i]->negate());
+	}
+	return result;
+}
+
+void DisjunctionStatePredicate::adjust(arrayindex_t old,arrayindex_t nw)
+{
+	for(arrayindex_t i = 0; i < cardSub; i++)
+	{
+		sub[i]->adjust(old,nw);
+	}
+}
+
+void DisjunctionStatePredicate::setVisible()
+{
+	for(arrayindex_t i = 0; i < cardSub; i++)
+	{
+		sub[i]->setVisible();
+	}
 }

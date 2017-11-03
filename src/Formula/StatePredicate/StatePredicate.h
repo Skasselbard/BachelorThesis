@@ -26,11 +26,13 @@
 #pragma once
 
 #include <Core/Dimensions.h>
+#include <Formula/FormulaStatistics.h>
 
 class DeadlockPredicate;
 class FormulaInfo;
 class NetState;
 class AtomicStatePredicate;
+class AtomicBooleanPredicate;
 class FireablePredicate;
 
 /*!
@@ -111,4 +113,15 @@ public:
     virtual int countSubFormulas() const = 0;
 
     virtual char * toString() = 0;
+   virtual StatePredicate * negate() = 0;
+   virtual void adjust(arrayindex_t,arrayindex_t) = 0;
+   virtual void setVisible() = 0;
+
+	/// DNF computation
+   /// every atom gets a unique id for duplicate detection in elementary conj 
+   /// will be set in recursive descent
+   virtual AtomicBooleanPredicate * DNF()=0;
+	int64_t magicnumber;
+	arrayindex_t literals;
+   virtual FormulaStatistics * count(FormulaStatistics *) = 0;
 };

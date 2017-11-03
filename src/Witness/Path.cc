@@ -110,6 +110,10 @@ void Path::print(FILE *const o) const
         {
             fprintf(o, "===end of cycle===\n");
         }
+        else if (*i == Net::Card[TR])
+        {
+            fprintf(o, "(tau)\n");
+        }
         else
         {
             fprintf(o, "%s\n", Net::Name[TR][*i]);

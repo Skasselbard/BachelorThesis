@@ -60,6 +60,9 @@ struct CTLFormula
     virtual bool check(Store<void *> &s, NetState &ns, Firelist &firelist,
                        std::vector<int> &witness) = 0;
 
+    virtual bool checkfair(Store<void *> &s, NetState &ns, Firelist &firelist,
+                       std::vector<int> &witness) = 0;
+
     virtual void DEBUG_print() = 0;
 
     virtual void gatherPayloadInformation(arrayindex_t &numDFS, arrayindex_t &numCachedResults) = 0;
@@ -68,4 +71,5 @@ struct CTLFormula
     virtual FormulaInfo *getInfo() const = 0;
     /// returns the number of subformulas
     virtual int countSubFormulas() const = 0;
+    virtual void print() = 0;
 };

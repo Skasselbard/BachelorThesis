@@ -139,7 +139,7 @@ typedef const rview_class& c_rview;
 #define kc_tag_voidptr__VoidPtr impl_voidptr__VoidPtr
 #define kc_phylum_tFormula phylum_tFormula
 #define kc_tag_tFormula_StatePredicateFormula impl_tFormula_StatePredicateFormula
-#define kc_tag_tFormula_ComputeBound impl_tFormula_ComputeBound
+#define kc_tag_tFormula_CompBound impl_tFormula_CompBound
 #define kc_tag_tFormula_Compound impl_tFormula_Compound
 #define kc_phylum_tStatePredicate phylum_tStatePredicate
 #define kc_tag_tStatePredicate_AtomicProposition impl_tStatePredicate_AtomicProposition
@@ -175,29 +175,14 @@ typedef const rview_class& c_rview;
 #define kc_tag_tDisjunction_list_NiltDisjunction_list impl_tDisjunction_list_NiltDisjunction_list
 #define kc_tag_tDisjunction_list_ConstDisjunction_list impl_tDisjunction_list_ConstDisjunction_list
 #define kc_phylum_tAtomicProposition phylum_tAtomicProposition
-#define kc_tag_tAtomicProposition_EqualsAtomicProposition impl_tAtomicProposition_EqualsAtomicProposition
-#define kc_tag_tAtomicProposition_NotEqualsAtomicProposition impl_tAtomicProposition_NotEqualsAtomicProposition
-#define kc_tag_tAtomicProposition_GreaterAtomicProposition impl_tAtomicProposition_GreaterAtomicProposition
-#define kc_tag_tAtomicProposition_GreaterEqualAtomicProposition impl_tAtomicProposition_GreaterEqualAtomicProposition
-#define kc_tag_tAtomicProposition_LessAtomicProposition impl_tAtomicProposition_LessAtomicProposition
-#define kc_tag_tAtomicProposition_LessEqualAtomicProposition impl_tAtomicProposition_LessEqualAtomicProposition
+#define kc_tag_tAtomicProposition_Elementary impl_tAtomicProposition_Elementary
+#define kc_tag_tAtomicProposition_NNegation impl_tAtomicProposition_NNegation
 #define kc_tag_tAtomicProposition_True impl_tAtomicProposition_True
 #define kc_tag_tAtomicProposition_False impl_tAtomicProposition_False
 #define kc_tag_tAtomicProposition_NoDeadlock impl_tAtomicProposition_NoDeadlock
 #define kc_tag_tAtomicProposition_Deadlock impl_tAtomicProposition_Deadlock
-#define kc_tag_tAtomicProposition_Initial impl_tAtomicProposition_Initial
-#define kc_tag_tAtomicProposition_Fireable impl_tAtomicProposition_Fireable
-#define kc_tag_tAtomicProposition_Unfireable impl_tAtomicProposition_Unfireable
 #define kc_phylum_tTerm phylum_tTerm
-#define kc_tag_tTerm_Node impl_tTerm_Node
-#define kc_tag_tTerm_Number impl_tTerm_Number
-#define kc_tag_tTerm_Sum impl_tTerm_Sum
-#define kc_tag_tTerm_Difference impl_tTerm_Difference
-#define kc_tag_tTerm_Product impl_tTerm_Product
-#define kc_tag_tTerm_ProductList impl_tTerm_ProductList
-#define kc_phylum_tProduct_list phylum_tProduct_list
-#define kc_tag_tProduct_list_NiltProduct_list impl_tProduct_list_NiltProduct_list
-#define kc_tag_tProduct_list_ConstProduct_list impl_tProduct_list_ConstProduct_list
+#define kc_tag_tTerm_Complex impl_tTerm_Complex
 #define kc_phylum_tBuechiAutomata phylum_tBuechiAutomata
 #define kc_tag_tBuechiAutomata_BuechiAutomaton impl_tBuechiAutomata_BuechiAutomaton
 #define kc_tag_tBuechiAutomata_BuechiNull impl_tBuechiAutomata_BuechiNull
@@ -395,48 +380,47 @@ typedef enum { one_before_first_phylum = 0 ,
     phylum_tDisjunction_list = 9,
     phylum_tAtomicProposition = 10,
     phylum_tTerm = 11,
-    phylum_tProduct_list = 12,
-    phylum_tBuechiAutomata = 13,
-    phylum_tBuechiRules = 14,
-    phylum_tTransitionRules = 15,
-    phylum_tAcceptingSet = 16,
-    phylum_net = 17,
-    phylum_definitionsList = 18,
-    phylum_definitions = 19,
-    phylum_type = 20,
-    phylum_optionalNumber = 21,
-    phylum_identList = 22,
-    phylum_idents = 23,
-    phylum_structTypeList = 24,
-    phylum_structType = 25,
-    phylum_varOrArray = 26,
-    phylum_arrayList = 27,
-    phylum_functionParametersList = 28,
-    phylum_functionParameters = 29,
-    phylum_expression = 30,
-    phylum_leftvalue = 31,
-    phylum_expressionlist = 32,
-    phylum_initializerList = 33,
-    phylum_expressionListColon = 34,
-    phylum_placeblocklist = 35,
-    phylum_optSafe = 36,
-    phylum_place = 37,
-    phylum_placelist = 38,
-    phylum_placeblock = 39,
-    phylum_marking = 40,
-    phylum_transition = 41,
-    phylum_fairness = 42,
-    phylum_variable = 43,
-    phylum_varOrArrayList = 44,
-    phylum_guard = 45,
-    phylum_identExprList = 46,
-    phylum_block = 47,
-    phylum_declarationOrStatement = 48,
-    phylum_declaration = 49,
-    phylum_statement = 50,
-    phylum_switchCase = 51,
-    phylum_switchCaseList = 52,
-    last_phylum = 53
+    phylum_tBuechiAutomata = 12,
+    phylum_tBuechiRules = 13,
+    phylum_tTransitionRules = 14,
+    phylum_tAcceptingSet = 15,
+    phylum_net = 16,
+    phylum_definitionsList = 17,
+    phylum_definitions = 18,
+    phylum_type = 19,
+    phylum_optionalNumber = 20,
+    phylum_identList = 21,
+    phylum_idents = 22,
+    phylum_structTypeList = 23,
+    phylum_structType = 24,
+    phylum_varOrArray = 25,
+    phylum_arrayList = 26,
+    phylum_functionParametersList = 27,
+    phylum_functionParameters = 28,
+    phylum_expression = 29,
+    phylum_leftvalue = 30,
+    phylum_expressionlist = 31,
+    phylum_initializerList = 32,
+    phylum_expressionListColon = 33,
+    phylum_placeblocklist = 34,
+    phylum_optSafe = 35,
+    phylum_place = 36,
+    phylum_placelist = 37,
+    phylum_placeblock = 38,
+    phylum_marking = 39,
+    phylum_transition = 40,
+    phylum_fairness = 41,
+    phylum_variable = 42,
+    phylum_varOrArrayList = 43,
+    phylum_guard = 44,
+    phylum_identExprList = 45,
+    phylum_block = 46,
+    phylum_declarationOrStatement = 47,
+    phylum_declaration = 48,
+    phylum_statement = 49,
+    phylum_switchCase = 50,
+    phylum_switchCaseList = 51,
+    last_phylum = 52
 } enum_phyla;
 
 typedef enum { one_before_first_operator = 0 ,
@@ -446,7 +430,7 @@ typedef enum { one_before_first_operator = 0 ,
     sel__Int = 4,
     sel__VoidPtr = 5,
     sel_StatePredicateFormula = 6,
-    sel_ComputeBound = 7,
+    sel_CompBound = 7,
     sel_Compound = 8,
     sel_AtomicProposition = 9,
     sel_Negation = 10,
@@ -478,158 +462,144 @@ typedef enum { one_before_first_operator = 0 ,
     sel_ConstConjunction_list = 36,
     sel_NiltDisjunction_list = 37,
     sel_ConstDisjunction_list = 38,
-    sel_EqualsAtomicProposition = 39,
-    sel_NotEqualsAtomicProposition = 40,
-    sel_GreaterAtomicProposition = 41,
-    sel_GreaterEqualAtomicProposition = 42,
-    sel_LessAtomicProposition = 43,
-    sel_LessEqualAtomicProposition = 44,
-    sel_True = 45,
-    sel_False = 46,
-    sel_NoDeadlock = 47,
-    sel_Deadlock = 48,
-    sel_Initial = 49,
-    sel_Fireable = 50,
-    sel_Unfireable = 51,
-    sel_Node = 52,
-    sel_Number = 53,
-    sel_Sum = 54,
-    sel_Difference = 55,
-    sel_Product = 56,
-    sel_ProductList = 57,
-    sel_NiltProduct_list = 58,
-    sel_ConstProduct_list = 59,
-    sel_BuechiAutomaton = 60,
-    sel_BuechiNull = 61,
-    sel_EmptyBuechiRules = 62,
-    sel_BuechiRule = 63,
-    sel_ExpandedBuechiRule = 64,
-    sel_BuechiRules = 65,
-    sel_EmptyTransitionRules = 66,
-    sel_TransitionRule = 67,
-    sel_TransitionRules = 68,
-    sel_EmptyAcceptingSet = 69,
-    sel_AcceptingState = 70,
-    sel_AcceptingSet = 71,
-    sel_Net = 72,
-    sel_EmptyDefinitionsList = 73,
-    sel_DefinitionsList = 74,
-    sel_Constant = 75,
-    sel_Sort = 76,
-    sel_Function = 77,
-    sel_TypeBool = 78,
-    sel_TypeEnum = 79,
-    sel_TypeIdent = 80,
-    sel_TypeIntInterval = 81,
-    sel_TypeStruct = 82,
-    sel_TypeInt = 83,
-    sel_TypeMultiset = 84,
-    sel_TypeArray = 85,
-    sel_TypeBlack = 86,
-    sel_EmptyOptNumber = 87,
-    sel_OptNumber = 88,
-    sel_EmptyIdentList = 89,
-    sel_IdentList = 90,
-    sel_Idents = 91,
-    sel_EmptyStructTypeList = 92,
-    sel_StructTypeList = 93,
-    sel_StructType = 94,
-    sel_VarOrArray = 95,
-    sel_EmptyArrayList = 96,
-    sel_ArrayList = 97,
-    sel_EmptyFunctionParametersList = 98,
-    sel_FunctionParametersList = 99,
-    sel_FunctionParameters = 100,
-    sel_ExprLeftvalue = 101,
-    sel_ExprInitializerList = 102,
-    sel_AssignEqual = 103,
-    sel_AssignPlus = 104,
-    sel_AssignMinus = 105,
-    sel_AssignTimes = 106,
-    sel_AssignDivide = 107,
-    sel_AssignMod = 108,
-    sel_IncrementVal = 109,
-    sel_DecrementVal = 110,
-    sel_ValIncrement = 111,
-    sel_ValDecrement = 112,
-    sel_PositiveExpr = 113,
-    sel_NegativeExpr = 114,
-    sel_ExprAddition = 115,
-    sel_ExprSubtraction = 116,
-    sel_ExprMultiplication = 117,
-    sel_ExprDivision = 118,
-    sel_ExprModulo = 119,
-    sel_ExprNumber = 120,
-    sel_NotExpr = 121,
-    sel_ExprAnd = 122,
-    sel_ExprOr = 123,
-    sel_ExprTrue = 124,
-    sel_ExprFalse = 125,
-    sel_ExprEquivalent = 126,
-    sel_ExprNotEqual = 127,
-    sel_ExprLessThan = 128,
-    sel_ExprGreaterThan = 129,
-    sel_ExprLessOrEqual = 130,
-    sel_ExprGreaterOrEqual = 131,
-    sel_FunctionCall = 132,
-    sel_ExprCommaSeparated = 133,
-    sel_ExprOtherIf = 134,
-    sel_ExprAll = 135,
-    sel_LeftValIdent = 136,
-    sel_LeftValBrackets = 137,
-    sel_LeftValDot = 138,
-    sel_EmptyExpressionList = 139,
-    sel_ExpressionList = 140,
-    sel_ExprInBraces = 141,
-    sel_ExprInBracesColon = 142,
-    sel_EmptyExpressionListColon = 143,
-    sel_ExpressionListColon = 144,
-    sel_EmptyPlaceBlockList = 145,
-    sel_PlaceBlockList = 146,
-    sel_EmptySafe = 147,
-    sel_Safe = 148,
-    sel_Place = 149,
-    sel_EmptyPlaceList = 150,
-    sel_PlaceList = 151,
-    sel_PlaceBlock = 152,
-    sel_EmptyMarking = 153,
-    sel_Marking = 154,
-    sel_EmptyTransition = 155,
-    sel_Transition = 156,
-    sel_EmptyFairness = 157,
-    sel_WeakFair = 158,
-    sel_StrongFair = 159,
-    sel_EmptyVariable = 160,
-    sel_Variable = 161,
-    sel_EmptyVarOrArrayList = 162,
-    sel_VarOrArrayList = 163,
-    sel_Guard = 164,
-    sel_EmptyIdentExprList = 165,
-    sel_IdentExprList = 166,
-    sel_Block = 167,
-    sel_EmptyDeclarationOrStatement = 168,
-    sel_DeclOrStatemDeclaration = 169,
-    sel_DeclOrStatemStatement = 170,
-    sel_Declaration = 171,
-    sel_StatementBlock = 172,
-    sel_StatementExprSemicolon = 173,
-    sel_StatementIf = 174,
-    sel_StatementWhile = 175,
-    sel_StatementDoWhile = 176,
-    sel_StatementForExpr = 177,
-    sel_StatementForTypeExpr = 178,
-    sel_StatementForIdentColon = 179,
-    sel_StatementForAll = 180,
-    sel_StatementSwitch = 181,
-    sel_StatementBreak = 182,
-    sel_StatementContinue = 183,
-    sel_StatementReturn = 184,
-    sel_StatementSkip = 185,
-    sel_SwitchCase = 186,
-    sel_SwitchDefault = 187,
-    sel_EmptySwitchCaseList = 188,
-    sel_SwitchCaseList = 189,
-    last_operator = 190
+    sel_Elementary = 39,
+    sel_NNegation = 40,
+    sel_True = 41,
+    sel_False = 42,
+    sel_NoDeadlock = 43,
+    sel_Deadlock = 44,
+    sel_Complex = 45,
+    sel_BuechiAutomaton = 46,
+    sel_BuechiNull = 47,
+    sel_EmptyBuechiRules = 48,
+    sel_BuechiRule = 49,
+    sel_ExpandedBuechiRule = 50,
+    sel_BuechiRules = 51,
+    sel_EmptyTransitionRules = 52,
+    sel_TransitionRule = 53,
+    sel_TransitionRules = 54,
+    sel_EmptyAcceptingSet = 55,
+    sel_AcceptingState = 56,
+    sel_AcceptingSet = 57,
+    sel_Net = 58,
+    sel_EmptyDefinitionsList = 59,
+    sel_DefinitionsList = 60,
+    sel_Constant = 61,
+    sel_Sort = 62,
+    sel_Function = 63,
+    sel_TypeBool = 64,
+    sel_TypeEnum = 65,
+    sel_TypeIdent = 66,
+    sel_TypeIntInterval = 67,
+    sel_TypeStruct = 68,
+    sel_TypeInt = 69,
+    sel_TypeMultiset = 70,
+    sel_TypeArray = 71,
+    sel_TypeBlack = 72,
+    sel_EmptyOptNumber = 73,
+    sel_OptNumber = 74,
+    sel_EmptyIdentList = 75,
+    sel_IdentList = 76,
+    sel_Idents = 77,
+    sel_EmptyStructTypeList = 78,
+    sel_StructTypeList = 79,
+    sel_StructType = 80,
+    sel_VarOrArray = 81,
+    sel_EmptyArrayList = 82,
+    sel_ArrayList = 83,
+    sel_EmptyFunctionParametersList = 84,
+    sel_FunctionParametersList = 85,
+    sel_FunctionParameters = 86,
+    sel_ExprLeftvalue = 87,
+    sel_ExprInitializerList = 88,
+    sel_AssignEqual = 89,
+    sel_AssignPlus = 90,
+    sel_AssignMinus = 91,
+    sel_AssignTimes = 92,
+    sel_AssignDivide = 93,
+    sel_AssignMod = 94,
+    sel_IncrementVal = 95,
+    sel_DecrementVal = 96,
+    sel_ValIncrement = 97,
+    sel_ValDecrement = 98,
+    sel_PositiveExpr = 99,
+    sel_NegativeExpr = 100,
+    sel_ExprAddition = 101,
+    sel_ExprSubtraction = 102,
+    sel_ExprMultiplication = 103,
+    sel_ExprDivision = 104,
+    sel_ExprModulo = 105,
+    sel_ExprNumber = 106,
+    sel_NotExpr = 107,
+    sel_ExprAnd = 108,
+    sel_ExprOr = 109,
+    sel_ExprTrue = 110,
+    sel_ExprFalse = 111,
+    sel_ExprEquivalent = 112,
+    sel_ExprNotEqual = 113,
+    sel_ExprLessThan = 114,
+    sel_ExprGreaterThan = 115,
+    sel_ExprLessOrEqual = 116,
+    sel_ExprGreaterOrEqual = 117,
+    sel_FunctionCall = 118,
+    sel_ExprCommaSeparated = 119,
+    sel_ExprOtherIf = 120,
+    sel_ExprAll = 121,
+    sel_LeftValIdent = 122,
+    sel_LeftValBrackets = 123,
+    sel_LeftValDot = 124,
+    sel_EmptyExpressionList = 125,
+    sel_ExpressionList = 126,
+    sel_ExprInBraces = 127,
+    sel_ExprInBracesColon = 128,
+    sel_EmptyExpressionListColon = 129,
+    sel_ExpressionListColon = 130,
+    sel_EmptyPlaceBlockList = 131,
+    sel_PlaceBlockList = 132,
+    sel_EmptySafe = 133,
+    sel_Safe = 134,
+    sel_Place = 135,
+    sel_EmptyPlaceList = 136,
+    sel_PlaceList = 137,
+    sel_PlaceBlock = 138,
+    sel_EmptyMarking = 139,
+    sel_Marking = 140,
+    sel_EmptyTransition = 141,
+    sel_Transition = 142,
+    sel_EmptyFairness = 143,
+    sel_WeakFair = 144,
+    sel_StrongFair = 145,
+    sel_EmptyVariable = 146,
+    sel_Variable = 147,
+    sel_EmptyVarOrArrayList = 148,
+    sel_VarOrArrayList = 149,
+    sel_Guard = 150,
+    sel_EmptyIdentExprList = 151,
+    sel_IdentExprList = 152,
+    sel_Block = 153,
+    sel_EmptyDeclarationOrStatement = 154,
+    sel_DeclOrStatemDeclaration = 155,
+    sel_DeclOrStatemStatement = 156,
+    sel_Declaration = 157,
+    sel_StatementBlock = 158,
+    sel_StatementExprSemicolon = 159,
+    sel_StatementIf = 160,
+    sel_StatementWhile = 161,
+    sel_StatementDoWhile = 162,
+    sel_StatementForExpr = 163,
+    sel_StatementForTypeExpr = 164,
+    sel_StatementForIdentColon = 165,
+    sel_StatementForAll = 166,
+    sel_StatementSwitch = 167,
+    sel_StatementBreak = 168,
+    sel_StatementContinue = 169,
+    sel_StatementReturn = 170,
+    sel_StatementSkip = 171,
+    sel_SwitchCase = 172,
+    sel_SwitchDefault = 173,
+    sel_EmptySwitchCaseList = 174,
+    sel_SwitchCaseList = 175,
+    last_operator = 176
 } enum_operators;
 
 class impl_abstract_phylum;
@@ -658,7 +628,6 @@ class impl_tConjunction_list;
 class impl_tDisjunction_list;
 class impl_tAtomicProposition;
 class impl_tTerm;
-class impl_tProduct_list;
 class impl_tBuechiAutomata;
 class impl_tBuechiRules;
 class impl_tTransitionRules;
@@ -769,8 +738,6 @@ typedef impl_tAtomicProposition *tAtomicProposition;
 typedef const impl_tAtomicProposition *c_tAtomicProposition;
 typedef impl_tTerm *tTerm;
 typedef const impl_tTerm *c_tTerm;
-typedef impl_tProduct_list *tProduct_list;
-typedef const impl_tProduct_list *c_tProduct_list;
 typedef impl_tBuechiAutomata *tBuechiAutomata;
 typedef const impl_tBuechiAutomata *c_tBuechiAutomata;
 typedef impl_tBuechiRules *tBuechiRules;
@@ -852,7 +819,7 @@ typedef const impl_switchCase *c_switchCase;
 typedef impl_switchCaseList *switchCaseList;
 typedef const impl_switchCaseList *c_switchCaseList;
 
-#define KC_NO_OF_OPERATORS 190
+#define KC_NO_OF_OPERATORS 176
 
 
 } // namespace kc
@@ -862,6 +829,8 @@ using namespace kc;
 #line 19 "Frontend/Parser/formula_abstract.k"
 #include <Core/Dimensions.h>
 #include <Formula/StatePredicate/StatePredicate.h>
+#include <Formula/FormulaStatistics.h>
+#include <Formula/StatePredicate/Term.h>
 #include <Formula/LTL/BuechiAutomata.h>
 #include <Formula/LTL/BuechiFromLTL.h>
 #include <Formula/CTL/CTLFormula.h>
@@ -871,6 +840,7 @@ using namespace kc;
 #include <Planning/Task.h>
 
 // required, because the abstract grammar does not allow pointer types
+typedef FormulaStatistics * FS_p;
 typedef Task* Task_p;
 typedef StatePredicate* StatePredicate_p;
 typedef BuechiAutomata* BuechiAutomata_p;
@@ -878,13 +848,15 @@ typedef CTLFormula* CTLFormula_p;
 typedef tl_Node* LTLTree_p;
 typedef char* char_p;
 typedef enum{UNDEF,BOOL,NUMB}checkName;
+typedef enum{AT_TRUE,AT_FALSE,AT_AND,AT_OR,AT_COMP,AT_DL,AT_FIR,AT_TEMP} tShape;
 typedef void ** voidstar;
+typedef Term * TermP;
 typedef kc::type type_t;
 
 // don't use hash sets, since they are deprecated and unordered sets are not yet supported by Kimwitu++
 #define DONT_USE_HASHSET
 
-#line  888 "ast-system-k.h"
+#line  860 "ast-system-k.h"
 /* end included stuff */
 
 
@@ -927,7 +899,7 @@ inline nocasestring NoCaseStr( const kc_char_t * cc) { return mknocasestring(cc)
 inline integer _Int( const INTEGER cc) { return mkinteger(cc); }
 inline real _Real( const REAL cc) { return mkreal(cc); }
 class impl_tFormula_StatePredicateFormula* StatePredicateFormula (tStatePredicate);
-class impl_tFormula_ComputeBound* ComputeBound (tAtomicProposition);
+class impl_tFormula_CompBound* CompBound ();
 class impl_tFormula_Compound* Compound (tFormula, tFormula);
 class impl_tStatePredicate_AtomicProposition* AtomicProposition (tAtomicProposition);
 class impl_tStatePredicate_Negation* Negation (tStatePredicate);
@@ -959,27 +931,13 @@ tConjunction_list NiltConjunction_list();
 tConjunction_list ConstConjunction_list(tStatePredicate,tConjunction_list);
 tDisjunction_list NiltDisjunction_list();
 tDisjunction_list ConstDisjunction_list(tStatePredicate,tDisjunction_list);
-class impl_tAtomicProposition_EqualsAtomicProposition* EqualsAtomicProposition (tTerm, tTerm);
-class impl_tAtomicProposition_NotEqualsAtomicProposition* NotEqualsAtomicProposition (tTerm, tTerm);
-class impl_tAtomicProposition_GreaterAtomicProposition* GreaterAtomicProposition (tTerm, tTerm);
-class impl_tAtomicProposition_GreaterEqualAtomicProposition* GreaterEqualAtomicProposition (tTerm, tTerm);
-class impl_tAtomicProposition_LessAtomicProposition* LessAtomicProposition (tTerm, tTerm);
-class impl_tAtomicProposition_LessEqualAtomicProposition* LessEqualAtomicProposition (tTerm, tTerm);
+class impl_tAtomicProposition_Elementary* Elementary ();
+class impl_tAtomicProposition_NNegation* NNegation (tAtomicProposition);
 class impl_tAtomicProposition_True* True ();
 class impl_tAtomicProposition_False* False ();
 class impl_tAtomicProposition_NoDeadlock* NoDeadlock ();
 class impl_tAtomicProposition_Deadlock* Deadlock ();
-class impl_tAtomicProposition_Initial* Initial ();
-class impl_tAtomicProposition_Fireable* Fireable (integer);
-class impl_tAtomicProposition_Unfireable* Unfireable (integer);
-class impl_tTerm_Node* Node (integer);
-class impl_tTerm_Number* Number (integer);
-class impl_tTerm_Sum* Sum (tTerm, tTerm);
-class impl_tTerm_Difference* Difference (tTerm, tTerm);
-class impl_tTerm_Product* Product (integer, tTerm);
-class impl_tTerm_ProductList* ProductList (tProduct_list);
-tProduct_list NiltProduct_list();
-tProduct_list ConstProduct_list(tTerm,tProduct_list);
+class impl_tTerm_Complex* Complex ();
 class impl_tBuechiAutomata_BuechiAutomaton* BuechiAutomaton (tBuechiRules, tAcceptingSet);
 class impl_tBuechiAutomata_BuechiNull* BuechiNull ();
 class impl_tBuechiRules_EmptyBuechiRules* EmptyBuechiRules ();
@@ -1285,18 +1243,16 @@ class impl_tFormula: public impl_abstract_phylum{
 public:
     static const enum_phyla phylum_sel_;
     void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
+    FS_p fs;
     formula_t type;
     StatePredicate_p formula;
     CTLFormula_p ctl_formula;
     LTLTree_p ltl_tree;
     bool cannotcompute;
     Task_p task;
-    int containsDeadlock;
     double length;
-    double number_of_or_dnf;
-    double number_of_or;
-    double number_of_and;
     bool only_fireable;
+    bool containsNext;
     tFormula rewrite(rview) =0;
 };
 class impl_tFormula_Compound:public impl_tFormula{
@@ -1313,16 +1269,13 @@ public:
 private:
     void do_unparse(printer_functor, uview);
 };
-class impl_tFormula_ComputeBound:public impl_tFormula{
+class impl_tFormula_CompBound:public impl_tFormula{
 public:
     enum_operators prod_sel() const
-	{ return sel_ComputeBound; }
-    explicit impl_tFormula_ComputeBound(tAtomicProposition);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
+	{ return sel_CompBound; }
+    explicit impl_tFormula_CompBound();
 
     tFormula rewrite( rview );
-    impl_tAtomicProposition* tAtomicProposition_1;
 private:
     void do_unparse(printer_functor, uview);
 };
@@ -1343,6 +1296,9 @@ class impl_tStatePredicate: public impl_abstract_phylum{
 public:
     static const enum_phyla phylum_sel_;
     void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
+    FS_p fs;
+    tShape shape;
+    StatePredicate_p formula;
     bool containsTemporal;
     bool validCTLPathFormula;
     bool validCTLStateFormula;
@@ -1351,12 +1307,8 @@ public:
     Task_p task;
     int priority;
     formula_t type;
-    int containsDeadlock;
-    double length;
-    double number_of_or_dnf;
-    double number_of_or;
-    double number_of_and;
     bool only_fireable;
+    bool containsNext;
     tStatePredicate rewrite(rview) =0;
 };
 class impl_tStatePredicate_DisjunctionList:public impl_tStatePredicate{
@@ -1712,7 +1664,8 @@ class impl_tConjunction_list: public impl_abstract_list{
 public:
     static const enum_phyla phylum_sel_;
     void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
-    int containsDeadlock;
+    FS_p fs;
+    bool containsNext;
     enum_operators prod_sel() const{
 	return is_nil() ? sel_NiltConjunction_list: sel_ConstConjunction_list;
     }
@@ -1741,7 +1694,8 @@ class impl_tDisjunction_list: public impl_abstract_list{
 public:
     static const enum_phyla phylum_sel_;
     void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
-    int containsDeadlock;
+    FS_p fs;
+    bool containsNext;
     enum_operators prod_sel() const{
 	return is_nil() ? sel_NiltDisjunction_list: sel_ConstDisjunction_list;
     }
@@ -1770,45 +1724,12 @@ class impl_tAtomicProposition: public impl_abstract_phylum{
 public:
     static const enum_phyla phylum_sel_;
     void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
+    FS_p fs;
+    tShape shape;
+    StatePredicate_p pred;
     bool only_fireable;
-    int containsDeadlock;
+    bool containsNext;
     tAtomicProposition rewrite(rview) =0;
-};
-class impl_tAtomicProposition_Unfireable:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Unfireable; }
-    explicit impl_tAtomicProposition_Unfireable(integer);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tAtomicProposition rewrite( rview );
-    impl_integer* integer_1;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tAtomicProposition_Fireable:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Fireable; }
-    explicit impl_tAtomicProposition_Fireable(integer);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tAtomicProposition rewrite( rview );
-    impl_integer* integer_1;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tAtomicProposition_Initial:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Initial; }
-    explicit impl_tAtomicProposition_Initial();
-
-    tAtomicProposition rewrite( rview );
-private:
-    void do_unparse(printer_functor, uview);
 };
 class impl_tAtomicProposition_Deadlock:public impl_tAtomicProposition{
 public:
@@ -1850,87 +1771,26 @@ public:
 private:
     void do_unparse(printer_functor, uview);
 };
-class impl_tAtomicProposition_LessEqualAtomicProposition:public impl_tAtomicProposition{
+class impl_tAtomicProposition_NNegation:public impl_tAtomicProposition{
 public:
     enum_operators prod_sel() const
-	{ return sel_LessEqualAtomicProposition; }
-    explicit impl_tAtomicProposition_LessEqualAtomicProposition(tTerm, tTerm);
+	{ return sel_NNegation; }
+    explicit impl_tAtomicProposition_NNegation(tAtomicProposition);
     abstract_phylum subphylum(int) const;
     void set_subphylum(int, abstract_phylum);
 
     tAtomicProposition rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
+    impl_tAtomicProposition* tAtomicProposition_1;
 private:
     void do_unparse(printer_functor, uview);
 };
-class impl_tAtomicProposition_LessAtomicProposition:public impl_tAtomicProposition{
+class impl_tAtomicProposition_Elementary:public impl_tAtomicProposition{
 public:
     enum_operators prod_sel() const
-	{ return sel_LessAtomicProposition; }
-    explicit impl_tAtomicProposition_LessAtomicProposition(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
+	{ return sel_Elementary; }
+    explicit impl_tAtomicProposition_Elementary();
 
     tAtomicProposition rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tAtomicProposition_GreaterEqualAtomicProposition:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_GreaterEqualAtomicProposition; }
-    explicit impl_tAtomicProposition_GreaterEqualAtomicProposition(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tAtomicProposition rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tAtomicProposition_GreaterAtomicProposition:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_GreaterAtomicProposition; }
-    explicit impl_tAtomicProposition_GreaterAtomicProposition(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tAtomicProposition rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tAtomicProposition_NotEqualsAtomicProposition:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_NotEqualsAtomicProposition; }
-    explicit impl_tAtomicProposition_NotEqualsAtomicProposition(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tAtomicProposition rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tAtomicProposition_EqualsAtomicProposition:public impl_tAtomicProposition{
-public:
-    enum_operators prod_sel() const
-	{ return sel_EqualsAtomicProposition; }
-    explicit impl_tAtomicProposition_EqualsAtomicProposition(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tAtomicProposition rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
 private:
     void do_unparse(printer_functor, uview);
 };
@@ -1938,115 +1798,17 @@ class impl_tTerm: public impl_abstract_phylum{
 public:
     static const enum_phyla phylum_sel_;
     void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
+    TermP ttt;
     tTerm rewrite(rview) =0;
 };
-class impl_tTerm_ProductList:public impl_tTerm{
+class impl_tTerm_Complex:public impl_tTerm{
 public:
     enum_operators prod_sel() const
-	{ return sel_ProductList; }
-    explicit impl_tTerm_ProductList(tProduct_list);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
+	{ return sel_Complex; }
+    explicit impl_tTerm_Complex();
 
     tTerm rewrite( rview );
-    impl_tProduct_list* tProduct_list_1;
 private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tTerm_Product:public impl_tTerm{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Product; }
-    explicit impl_tTerm_Product(integer, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tTerm rewrite( rview );
-    impl_integer* integer_1;
-    impl_tTerm* tTerm_1;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tTerm_Difference:public impl_tTerm{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Difference; }
-    explicit impl_tTerm_Difference(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tTerm rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tTerm_Sum:public impl_tTerm{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Sum; }
-    explicit impl_tTerm_Sum(tTerm, tTerm);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tTerm rewrite( rview );
-    impl_tTerm* tTerm_1;
-    impl_tTerm* tTerm_2;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tTerm_Number:public impl_tTerm{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Number; }
-    explicit impl_tTerm_Number(integer);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tTerm rewrite( rview );
-    impl_integer* integer_1;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tTerm_Node:public impl_tTerm{
-public:
-    enum_operators prod_sel() const
-	{ return sel_Node; }
-    explicit impl_tTerm_Node(integer);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-
-    tTerm rewrite( rview );
-    impl_integer* integer_1;
-private:
-    void do_unparse(printer_functor, uview);
-};
-class impl_tProduct_list: public impl_abstract_list{
-public:
-    static const enum_phyla phylum_sel_;
-    void fprintdot( FILE*, const char*, const char*, const char*, bool, bool, bool ) const;
-    enum_operators prod_sel() const{
-	return is_nil() ? sel_NiltProduct_list: sel_ConstProduct_list;
-    }
-    explicit impl_tProduct_list(tTerm = 0, tProduct_list = 0);
-    abstract_phylum subphylum(int) const;
-    void set_subphylum(int, abstract_phylum);
-    friend tProduct_list concat(c_tProduct_list, c_tProduct_list);
-    tProduct_list reverse() const;
-    tProduct_list rewrite(rview);
-    tTerm last() const;
-    tProduct_list append(tTerm);
-    tProduct_list map(tTerm (*)(tTerm));
-    tProduct_list filter( bool (*)(tTerm));
-    tProduct_list merge( tProduct_list, tTerm (*)(tTerm, tTerm));
-    tTerm reduce( tTerm, tTerm (*)(tTerm, tTerm));
-    bool is_nil() const;
-    tTerm tTerm_1;
-    tProduct_list tProduct_list_1;
-private:
-    impl_tProduct_list* nil_rewrite(rview);
-    impl_tProduct_list* cons_rewrite(rview);
-    void nil_do_unparse(printer_functor, uview);
     void do_unparse(printer_functor, uview);
 };
 class impl_tBuechiAutomata: public impl_abstract_phylum{
