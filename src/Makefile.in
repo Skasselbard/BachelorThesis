@@ -334,7 +334,8 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(top_srcdir)/m4/Makefile.src Frontend/Parser/LexicBuechi.cc \
 	Frontend/Parser/LexicFormula.cc Frontend/Parser/LexicNet.cc \
 	Frontend/Parser/ParserBuechi.cc \
-	Frontend/Parser/ParserFormula.cc Frontend/Parser/ParserNet.cc
+	Frontend/Parser/ParserFormula.cc Frontend/Parser/ParserNet.cc \
+	ltmain.sh
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@

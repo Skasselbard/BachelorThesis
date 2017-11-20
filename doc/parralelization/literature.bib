@@ -19,6 +19,7 @@ semaphores
   organization={ACM}
 }
 
+disjoint graphs
 @article{rao1987parallel,
   title={Parallel depth first search. Part I. implementation},
   author={Rao, V Nageshwara and Kumar, Vipin},
@@ -29,3 +30,49 @@ semaphores
   year={1987},
   publisher={Springer}
 }
+
+planar graphs
+@Inbook{Kao1993,
+author="Kao, Ming-Yang
+and Teng, Shang-Hua
+and Toyama, Kentaro",
+editor="Dehne, Frank
+and Sack, J{\"o}rg-R{\"u}diger
+and Santoro, Nicola
+and Whitesides, Sue",
+title="Improved parallel depth-first search in undirected planar graphs",
+bookTitle="Algorithms and Data Structures: Third Workshop, WADS '93 Montr{\'e}al, Canada, August 11--13, 1993 Proceedings",
+year="1993",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="409--420",
+abstract="We present an improved parallel algorithm for constructing a depth-first search tree in a connected undirected planar graph. The algorithm runs in O(log2n) time with n/log n processors for an n-vertex graph. It hinges on the use of a new optimal algorithm for computing a cycle separator of an embedded planar graph in O(log n) time with n/log n processors. The best previous algorithms for computing depth-first search trees and cycle separators achieved the same time complexities, but with n processors. Our algorithms run on a parallel random access machine that permits concurrent reads and concurrent writes in its shared memory and allows an arbitrary processor to succeed in case of a write conflict.",
+isbn="978-3-540-47918-5",
+doi="10.1007/3-540-57155-8_266",
+url="https://doi.org/10.1007/3-540-57155-8_266"
+}
+
+with list of parallel dfs history (9f.)
+@article{freeman1991parallel,
+  title={Parallel algorithms for depth-first search},
+  author={Freeman, Jon},
+  year={1991}
+}
+
+parallel depth first search for directed graphs
+@inproceedings{Aggarwal:1989:PDS:73007.73035,
+ author = {Aggarwal, A. and Anderson, R. J. and Kao, M.-Y.},
+ title = {Parallel Depth-first Search in General Directed Graphs},
+ booktitle = {Proceedings of the Twenty-first Annual ACM Symposium on Theory of Computing},
+ series = {STOC '89},
+ year = {1989},
+ isbn = {0-89791-307-8},
+ location = {Seattle, Washington, USA},
+ pages = {297--308},
+ numpages = {12},
+ url = {http://doi.acm.org/10.1145/73007.73035},
+ doi = {10.1145/73007.73035},
+ acmid = {73035},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+} 

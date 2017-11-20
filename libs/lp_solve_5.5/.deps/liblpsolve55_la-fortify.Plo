@@ -1,1 +1,3 @@
-liblpsolve55_la-fortify.lo: fortify.c
+liblpsolve55_la-fortify.lo: fortify.c /usr/include/stdc-predef.h
+
+/usr/include/stdc-predef.h:

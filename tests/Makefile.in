@@ -542,8 +542,6 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
-.PRECIOUS: Makefile
-
 
 # run the test suite when calling "make check"
 check-local: atconfig $(TESTSUITE)

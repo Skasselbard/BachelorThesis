@@ -29,3 +29,4 @@ doc/lola.log
 *.old
 *.timestamp
 tests/package.m4
+*dfsTime.txt

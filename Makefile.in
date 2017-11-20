@@ -833,8 +833,6 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
-.PRECIOUS: Makefile
-
 
 svn-clean: maintainer-clean
 	rm -fr configure aclocal.m4 src/config.h.in doc/mdate-sh src/config-log.h build-aux

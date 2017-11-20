@@ -7,16 +7,16 @@
 \li \ref lic
 
 \section rm About LoLA
-\verbinclude /Users/karsten/Documents/tpp/tools/lola2/README
+\verbinclude /home/tom/Development/lola-2.0/README
 
 \section au Authors/Maintainers
-\verbinclude /Users/karsten/Documents/tpp/tools/lola2/AUTHORS
+\verbinclude /home/tom/Development/lola-2.0/AUTHORS
 
 \section ack Acknowledgements
-\verbinclude /Users/karsten/Documents/tpp/tools/lola2/THANKS
+\verbinclude /home/tom/Development/lola-2.0/THANKS
 
 \section lic License
-\verbinclude /Users/karsten/Documents/tpp/tools/lola2/COPYING
+\verbinclude /home/tom/Development/lola-2.0/COPYING
 \sa http://www.gnu.org/licenses/agpl-3.0.html
 */
 

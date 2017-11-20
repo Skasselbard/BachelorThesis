@@ -83,7 +83,7 @@ m4_define([LOLA_LOG],  [cover.sh /home/tom/Development/lola-2.0/src/lola])
 # Part 3: Optional and Mandatory Helper Tools #
 #---------------------------------------------#
 
-m4_define([VALGRIND],             [wrap.sh not found])
+m4_define([VALGRIND],             [wrap.sh /usr/bin/valgrind])
 
 #---------------------------------#
 # Part 4: Macros used by Autotest #

@@ -41,22 +41,28 @@ const char *gengetopt_args_info_detailed_help[] = {
   "  \n  The verification problem specifies the question that LoLA is supposed to\n  answer.\n",
   "  -c, --check=PROPERTY          Verify a property  (possible values=\"none\",\n                                  \"full\", \"modelchecking\"\n                                  default=`modelchecking')",
   "  \n  The type of property to be verified by LoLA is selected:\n\n  * modelchecking: A given temporal logic formula (specified using the\n    mandatory `--formula' or `--buechi' option) is evaluated while generating\n    the state space. Search terminates as soon as the value of the formula is\n    determined.\n  * full: All reachable states are computed without evaluating any property.\n    This is useful for determining the size of a (reduced) state space.\n  * none: No state space search is performed at all. This is useful for just\n    getting statistical data for the net and pre-processing information.\n\n",
+  "      --preference=FRAGMENT     Preferred logic fragment  (possible\n                                  values=\"none\", \"ltl\", \"ctl\"\n                                  default=`none')",
+  "  \n  When a formula can be classified as both CTL and LTL formula, the fragment\n  specified here is used for selecting the model checking procedure. Note that\n  LoLA will nevertheless classify a formula as deadlock, reachability, or\n  initial satisfaction if possible.  Values for this option are:\n  * ctl: ltl cap ctl formula is treated as CTL formula;\n  * ltl: ltl cap ctl formula is treated as LTL formula;\n  * none: no preference.\n\n",
   "  -f, --formula=FORMULA         Check a formula",
   "  \n  If the given string is a formula in one of the temporal logics CTL or LTL,\n  this formula is verified during state space exploration. Otherwise, if the\n  given string is a file name, such a formula is expected as content of that\n  file (requires `--check=modelchecking').\n\n",
   "      --buechi=AUTOMATON        Check a linear time property specified as a\n                                  Büchi automaton",
   "  \n  The given string is expected to be a file name that contains the description\n  of a Büchi automaton. During state space exploration, LoLA searches for a\n  path that is accepted by that automaton (requires `--check=modelchecking').\n",
+  "      --fair                    Take care of fairness constraints.\n                                  (default=off)",
+  "  \n  If set, LoLA searches for witness resp. counterexample paths that satisfy\n  all specified weak and strong fairness constraints. Otherwise, fairness\n  constraints are comletely ignored.\n",
   "\nReduction Techniques:",
   "  \n  LoLA offers several techniques for alleviating the state space explosion\n  problem. Many of them can be applied in combination.\n",
   "      --search=STRATEGY         Search the state space using a particular\n                                  strategy  (possible values=\"depth\",\n                                  \"sweepline\", \"covergraph\"\n                                  default=`depth')",
   "  \n  The search strategy determines (1) the order in which states are explored,\n  and (2) whether or not computed states are kept in memory.\n\n  * depth: States are explored using the depth-first strategy and kept in\n    memory forever.\n  * sweepline: States are explored in ascending progress value order determined\n    by a pre-processed progress measure. They are released from memory as soon\n    as their progress value is smaller those of than any unprocessed states,\n    unless the search algorithm has marked them as persistent (for assuring\n    termination). Search is exhaustive.\n  * covergraph: States are explored using the coverability graph constructions,\n   \n    i.e. sequences of states are abstracted to their limit. Evaluation of \n    properties may lead to inconclusive results.\n\n",
   "      --findpath=POSITION       Perform repeated runs without storing states\n                                  (possible values=\"seq\", \"par\", \"alone\",\n                                  \"off\" default=`off')",
   "  \n  This technique can be applied to simple properties such as reachability\n  of a state predicate or deadlock. It repeatedly generates firing sequences\n  and checks if the target property is satisfied. States are not stored, hence\n  sequence generation is very fast. On the other hand, this method is\n  inherently\n  incomplete. The value of the property determines, where the technique is\n  placed w.r.t. exhaustive search.\n\n  * seq: apply it before executing exhaustive search \n  * par: apply it in parallel to exhaustive search\n  * alone: apply it instead of exhaustive search\n  * off: do not apply it at all (default)\n",
-  "      --stubborn=STUBBORN       Apply a particular scheme for computing\n                                  stubborn sets.  (possible values=\"tarjan\",\n                                  \"deletion\", \"off\" default=`tarjan')",
-  "  \n  If LoLA searches for deadlocks or reduces a temporal logic property to a\n  simple reachability problem, it always uses the stubborn set method (a\n  partial order reduction technique). There are several ways to compute\n  stubborn sets which have different performance.\n\n  * tarjan: Stubborn sets are computed by an incremental method that\n    investigates strongly connected components in a dependency graph. It has\n    linear complexity (in the number of transitions) and leads to superior\n    performance if a target state (or deadlock) is actually reachable).\n  * deletion: Stubborn sets are computed by repeated deletion of transitions.\n    It has quadratic complexity (in the number of transitions) but produces\n    smaller stubborn sets. It has superior performance if no target state (or\n    deadlock) is actually reachable.\n\n",
+  "      --stubborn=STUBBORN       Apply a particular scheme for computing\n                                  stubborn sets.  (possible values=\"tarjan\",\n                                  \"deletion\", \"combined\", \"off\"\n                                  default=`tarjan')",
+  "  \n  If LoLA searches for deadlocks or reduces a temporal logic property to a\n  simple reachability problem, it always uses the stubborn set method (a\n  partial order reduction technique). There are several ways to compute\n  stubborn sets which have different performance.\n\n  * tarjan: Stubborn sets are computed by an incremental method that\n    investigates strongly connected components in a dependency graph. It has\n    linear complexity (in the number of transitions) and leads to superior\n    performance if a target state (or deadlock) is actually reachable).\n  * deletion: Stubborn sets are computed by repeated deletion of transitions.\n    It has quadratic complexity (in the number of transitions) but produces\n    smaller stubborn sets. It has superior performance if no target state (or\n    deadlock) is actually reachable.\n  * combined: Apply the deletion algorithm to the result of the insertion\n    algorithm\n  * off: do not apply stubborn sets at all\n\n",
   "      --cycle                   Apply transition invariant based reduction.\n                                  (default=off)",
   "  \n  States are computed but only some of them are stored. Stored states are\n  sufficient to cover at least one state for each cycle in the state space,\n  thus guaranteeing termination of the search. Information about cycles in the\n  state space is obtained from transition invariants of the Petri net that are\n  determined in preprocessing.\n\n",
   "      --symmetry                Apply symmetry reduction.  (default=off)",
   "  \n  A generating set for the symmetries of the given net (respecting the given\n  formula, if applicable) is computed during pre-processing. During state space\n  exploration, markings are transformed into (approximated) canonical\n  representatives of their respective equivalence classes before storing. This\n  way, only few members of an equivalence class are physically present in the\n  set of stored markings.\n",
+  "      --symmetrydepth=INT       Control the complexity of computing canonical\n                                  representatives  (default=`1073741824')",
+  "  \n  Computing a canonical representative means that symmetries are used\n  for shifting small marking values to places with small indices.\n  With a small value for symmetrydepth, this procedure is executed only\n  for few places. This is quicker but leads to larger a state space.\n",
   "      --ltlstubborn=ONorOFF     Apply computing stubborn sets for LTL.\n                                  (possible values=\"off\", \"on\"\n                                  default=`off')",
   "  ",
   "\nStructural Analysis:",
@@ -97,7 +103,7 @@ const char *gengetopt_args_info_detailed_help[] = {
   "  \n  LoLA has different ways to emit log messages.\n\n  * stream: Messages are sent to the standard error stream (stderr) of the\n    process that runs LoLA.\n  * socket: Messages are sent to a remote process (`listener') via socket\n    communication.\n  * silent: All messages are suppressed.\n\n",
   "  -j, --json[=FILE]             Output structured data in JSON format.\n                                  (default=`-')",
   "  \n  Creates structured output in JSON format (JavaScript Object Notation). This\n  format is designed to be easily consumable by other programs. The used keys\n  are described in LoLA's manual. The output is written into the specified\n  file, or by default to the standard output stream (-).\n\n",
-  "      --jsoninclude=DATA        Control which data should be included in the\n                                  JSON output.  (possible values=\"path\",\n                                  \"state\")",
+  "      --jsoninclude=DATA        Control which data should be included in the\n                                  JSON output.  (possible values=\"path\",\n                                  \"state\", \"log\", \"formula\",\n                                  \"formulastat\", \"siphon\", \"net\")",
   "  \n  This option controls whether additional aspects should be included in the\n  JSON output.\n\n",
   "      --nolog                   Do not send logging information  (default=off)",
   "  \n  LoLA sends statistical data to a logging server. This function switches off\n  logging.\n\n",
@@ -161,37 +167,37 @@ init_full_help_array(void)
   gengetopt_args_info_full_help[7] = gengetopt_args_info_detailed_help[8];
   gengetopt_args_info_full_help[8] = gengetopt_args_info_detailed_help[10];
   gengetopt_args_info_full_help[9] = gengetopt_args_info_detailed_help[12];
-  gengetopt_args_info_full_help[10] = gengetopt_args_info_detailed_help[13];
-  gengetopt_args_info_full_help[11] = gengetopt_args_info_detailed_help[14];
-  gengetopt_args_info_full_help[12] = gengetopt_args_info_detailed_help[16];
+  gengetopt_args_info_full_help[10] = gengetopt_args_info_detailed_help[14];
+  gengetopt_args_info_full_help[11] = gengetopt_args_info_detailed_help[16];
+  gengetopt_args_info_full_help[12] = gengetopt_args_info_detailed_help[17];
   gengetopt_args_info_full_help[13] = gengetopt_args_info_detailed_help[18];
   gengetopt_args_info_full_help[14] = gengetopt_args_info_detailed_help[20];
   gengetopt_args_info_full_help[15] = gengetopt_args_info_detailed_help[22];
   gengetopt_args_info_full_help[16] = gengetopt_args_info_detailed_help[24];
   gengetopt_args_info_full_help[17] = gengetopt_args_info_detailed_help[26];
-  gengetopt_args_info_full_help[18] = gengetopt_args_info_detailed_help[27];
-  gengetopt_args_info_full_help[19] = gengetopt_args_info_detailed_help[28];
-  gengetopt_args_info_full_help[20] = gengetopt_args_info_detailed_help[30];
-  gengetopt_args_info_full_help[21] = gengetopt_args_info_detailed_help[32];
+  gengetopt_args_info_full_help[18] = gengetopt_args_info_detailed_help[28];
+  gengetopt_args_info_full_help[19] = gengetopt_args_info_detailed_help[30];
+  gengetopt_args_info_full_help[20] = gengetopt_args_info_detailed_help[32];
+  gengetopt_args_info_full_help[21] = gengetopt_args_info_detailed_help[33];
   gengetopt_args_info_full_help[22] = gengetopt_args_info_detailed_help[34];
   gengetopt_args_info_full_help[23] = gengetopt_args_info_detailed_help[36];
-  gengetopt_args_info_full_help[24] = gengetopt_args_info_detailed_help[37];
-  gengetopt_args_info_full_help[25] = gengetopt_args_info_detailed_help[38];
-  gengetopt_args_info_full_help[26] = gengetopt_args_info_detailed_help[40];
-  gengetopt_args_info_full_help[27] = gengetopt_args_info_detailed_help[41];
-  gengetopt_args_info_full_help[28] = gengetopt_args_info_detailed_help[42];
-  gengetopt_args_info_full_help[29] = gengetopt_args_info_detailed_help[44];
-  gengetopt_args_info_full_help[30] = gengetopt_args_info_detailed_help[45];
-  gengetopt_args_info_full_help[31] = gengetopt_args_info_detailed_help[46];
-  gengetopt_args_info_full_help[32] = gengetopt_args_info_detailed_help[48];
-  gengetopt_args_info_full_help[33] = gengetopt_args_info_detailed_help[50];
+  gengetopt_args_info_full_help[24] = gengetopt_args_info_detailed_help[38];
+  gengetopt_args_info_full_help[25] = gengetopt_args_info_detailed_help[40];
+  gengetopt_args_info_full_help[26] = gengetopt_args_info_detailed_help[42];
+  gengetopt_args_info_full_help[27] = gengetopt_args_info_detailed_help[43];
+  gengetopt_args_info_full_help[28] = gengetopt_args_info_detailed_help[44];
+  gengetopt_args_info_full_help[29] = gengetopt_args_info_detailed_help[46];
+  gengetopt_args_info_full_help[30] = gengetopt_args_info_detailed_help[47];
+  gengetopt_args_info_full_help[31] = gengetopt_args_info_detailed_help[48];
+  gengetopt_args_info_full_help[32] = gengetopt_args_info_detailed_help[50];
+  gengetopt_args_info_full_help[33] = gengetopt_args_info_detailed_help[51];
   gengetopt_args_info_full_help[34] = gengetopt_args_info_detailed_help[52];
   gengetopt_args_info_full_help[35] = gengetopt_args_info_detailed_help[54];
   gengetopt_args_info_full_help[36] = gengetopt_args_info_detailed_help[56];
-  gengetopt_args_info_full_help[37] = gengetopt_args_info_detailed_help[57];
-  gengetopt_args_info_full_help[38] = gengetopt_args_info_detailed_help[58];
-  gengetopt_args_info_full_help[39] = gengetopt_args_info_detailed_help[60];
-  gengetopt_args_info_full_help[40] = gengetopt_args_info_detailed_help[62];
+  gengetopt_args_info_full_help[37] = gengetopt_args_info_detailed_help[58];
+  gengetopt_args_info_full_help[38] = gengetopt_args_info_detailed_help[60];
+  gengetopt_args_info_full_help[39] = gengetopt_args_info_detailed_help[62];
+  gengetopt_args_info_full_help[40] = gengetopt_args_info_detailed_help[63];
   gengetopt_args_info_full_help[41] = gengetopt_args_info_detailed_help[64];
   gengetopt_args_info_full_help[42] = gengetopt_args_info_detailed_help[66];
   gengetopt_args_info_full_help[43] = gengetopt_args_info_detailed_help[68];
@@ -199,34 +205,37 @@ init_full_help_array(void)
   gengetopt_args_info_full_help[45] = gengetopt_args_info_detailed_help[72];
   gengetopt_args_info_full_help[46] = gengetopt_args_info_detailed_help[74];
   gengetopt_args_info_full_help[47] = gengetopt_args_info_detailed_help[76];
-  gengetopt_args_info_full_help[48] = gengetopt_args_info_detailed_help[77];
-  gengetopt_args_info_full_help[49] = gengetopt_args_info_detailed_help[78];
-  gengetopt_args_info_full_help[50] = gengetopt_args_info_detailed_help[79];
-  gengetopt_args_info_full_help[51] = gengetopt_args_info_detailed_help[80];
-  gengetopt_args_info_full_help[52] = gengetopt_args_info_detailed_help[81];
-  gengetopt_args_info_full_help[53] = gengetopt_args_info_detailed_help[82];
-  gengetopt_args_info_full_help[54] = gengetopt_args_info_detailed_help[84];
-  gengetopt_args_info_full_help[55] = gengetopt_args_info_detailed_help[86];
+  gengetopt_args_info_full_help[48] = gengetopt_args_info_detailed_help[78];
+  gengetopt_args_info_full_help[49] = gengetopt_args_info_detailed_help[80];
+  gengetopt_args_info_full_help[50] = gengetopt_args_info_detailed_help[82];
+  gengetopt_args_info_full_help[51] = gengetopt_args_info_detailed_help[83];
+  gengetopt_args_info_full_help[52] = gengetopt_args_info_detailed_help[84];
+  gengetopt_args_info_full_help[53] = gengetopt_args_info_detailed_help[85];
+  gengetopt_args_info_full_help[54] = gengetopt_args_info_detailed_help[86];
+  gengetopt_args_info_full_help[55] = gengetopt_args_info_detailed_help[87];
   gengetopt_args_info_full_help[56] = gengetopt_args_info_detailed_help[88];
   gengetopt_args_info_full_help[57] = gengetopt_args_info_detailed_help[90];
-  gengetopt_args_info_full_help[58] = gengetopt_args_info_detailed_help[91];
-  gengetopt_args_info_full_help[59] = gengetopt_args_info_detailed_help[92];
-  gengetopt_args_info_full_help[60] = gengetopt_args_info_detailed_help[94];
-  gengetopt_args_info_full_help[61] = gengetopt_args_info_detailed_help[96];
+  gengetopt_args_info_full_help[58] = gengetopt_args_info_detailed_help[92];
+  gengetopt_args_info_full_help[59] = gengetopt_args_info_detailed_help[94];
+  gengetopt_args_info_full_help[60] = gengetopt_args_info_detailed_help[96];
+  gengetopt_args_info_full_help[61] = gengetopt_args_info_detailed_help[97];
   gengetopt_args_info_full_help[62] = gengetopt_args_info_detailed_help[98];
   gengetopt_args_info_full_help[63] = gengetopt_args_info_detailed_help[100];
-  gengetopt_args_info_full_help[64] = gengetopt_args_info_detailed_help[101];
-  gengetopt_args_info_full_help[65] = gengetopt_args_info_detailed_help[103];
-  gengetopt_args_info_full_help[66] = gengetopt_args_info_detailed_help[105];
-  gengetopt_args_info_full_help[67] = gengetopt_args_info_detailed_help[106];
-  gengetopt_args_info_full_help[68] = gengetopt_args_info_detailed_help[107];
-  gengetopt_args_info_full_help[69] = gengetopt_args_info_detailed_help[109];
-  gengetopt_args_info_full_help[70] = gengetopt_args_info_detailed_help[111];
-  gengetopt_args_info_full_help[71] = 0; 
+  gengetopt_args_info_full_help[64] = gengetopt_args_info_detailed_help[102];
+  gengetopt_args_info_full_help[65] = gengetopt_args_info_detailed_help[104];
+  gengetopt_args_info_full_help[66] = gengetopt_args_info_detailed_help[106];
+  gengetopt_args_info_full_help[67] = gengetopt_args_info_detailed_help[107];
+  gengetopt_args_info_full_help[68] = gengetopt_args_info_detailed_help[109];
+  gengetopt_args_info_full_help[69] = gengetopt_args_info_detailed_help[111];
+  gengetopt_args_info_full_help[70] = gengetopt_args_info_detailed_help[112];
+  gengetopt_args_info_full_help[71] = gengetopt_args_info_detailed_help[113];
+  gengetopt_args_info_full_help[72] = gengetopt_args_info_detailed_help[115];
+  gengetopt_args_info_full_help[73] = gengetopt_args_info_detailed_help[117];
+  gengetopt_args_info_full_help[74] = 0; 
   
 }
 
-const char *gengetopt_args_info_full_help[72];
+const char *gengetopt_args_info_full_help[75];
 
 static void
 init_help_array(void)
@@ -241,46 +250,49 @@ init_help_array(void)
   gengetopt_args_info_help[7] = gengetopt_args_info_detailed_help[8];
   gengetopt_args_info_help[8] = gengetopt_args_info_detailed_help[10];
   gengetopt_args_info_help[9] = gengetopt_args_info_detailed_help[12];
-  gengetopt_args_info_help[10] = gengetopt_args_info_detailed_help[13];
-  gengetopt_args_info_help[11] = gengetopt_args_info_detailed_help[14];
-  gengetopt_args_info_help[12] = gengetopt_args_info_detailed_help[16];
+  gengetopt_args_info_help[10] = gengetopt_args_info_detailed_help[14];
+  gengetopt_args_info_help[11] = gengetopt_args_info_detailed_help[16];
+  gengetopt_args_info_help[12] = gengetopt_args_info_detailed_help[17];
   gengetopt_args_info_help[13] = gengetopt_args_info_detailed_help[18];
   gengetopt_args_info_help[14] = gengetopt_args_info_detailed_help[20];
   gengetopt_args_info_help[15] = gengetopt_args_info_detailed_help[22];
   gengetopt_args_info_help[16] = gengetopt_args_info_detailed_help[24];
   gengetopt_args_info_help[17] = gengetopt_args_info_detailed_help[26];
-  gengetopt_args_info_help[18] = gengetopt_args_info_detailed_help[27];
-  gengetopt_args_info_help[19] = gengetopt_args_info_detailed_help[28];
-  gengetopt_args_info_help[20] = gengetopt_args_info_detailed_help[30];
-  gengetopt_args_info_help[21] = gengetopt_args_info_detailed_help[32];
+  gengetopt_args_info_help[18] = gengetopt_args_info_detailed_help[28];
+  gengetopt_args_info_help[19] = gengetopt_args_info_detailed_help[30];
+  gengetopt_args_info_help[20] = gengetopt_args_info_detailed_help[32];
+  gengetopt_args_info_help[21] = gengetopt_args_info_detailed_help[33];
   gengetopt_args_info_help[22] = gengetopt_args_info_detailed_help[34];
   gengetopt_args_info_help[23] = gengetopt_args_info_detailed_help[36];
-  gengetopt_args_info_help[24] = gengetopt_args_info_detailed_help[37];
-  gengetopt_args_info_help[25] = gengetopt_args_info_detailed_help[38];
-  gengetopt_args_info_help[26] = gengetopt_args_info_detailed_help[44];
-  gengetopt_args_info_help[27] = gengetopt_args_info_detailed_help[45];
-  gengetopt_args_info_help[28] = gengetopt_args_info_detailed_help[46];
-  gengetopt_args_info_help[29] = gengetopt_args_info_detailed_help[48];
-  gengetopt_args_info_help[30] = gengetopt_args_info_detailed_help[56];
-  gengetopt_args_info_help[31] = gengetopt_args_info_detailed_help[57];
-  gengetopt_args_info_help[32] = gengetopt_args_info_detailed_help[58];
-  gengetopt_args_info_help[33] = gengetopt_args_info_detailed_help[80];
-  gengetopt_args_info_help[34] = gengetopt_args_info_detailed_help[81];
-  gengetopt_args_info_help[35] = gengetopt_args_info_detailed_help[82];
-  gengetopt_args_info_help[36] = gengetopt_args_info_detailed_help[84];
-  gengetopt_args_info_help[37] = gengetopt_args_info_detailed_help[86];
+  gengetopt_args_info_help[24] = gengetopt_args_info_detailed_help[38];
+  gengetopt_args_info_help[25] = gengetopt_args_info_detailed_help[40];
+  gengetopt_args_info_help[26] = gengetopt_args_info_detailed_help[42];
+  gengetopt_args_info_help[27] = gengetopt_args_info_detailed_help[43];
+  gengetopt_args_info_help[28] = gengetopt_args_info_detailed_help[44];
+  gengetopt_args_info_help[29] = gengetopt_args_info_detailed_help[50];
+  gengetopt_args_info_help[30] = gengetopt_args_info_detailed_help[51];
+  gengetopt_args_info_help[31] = gengetopt_args_info_detailed_help[52];
+  gengetopt_args_info_help[32] = gengetopt_args_info_detailed_help[54];
+  gengetopt_args_info_help[33] = gengetopt_args_info_detailed_help[62];
+  gengetopt_args_info_help[34] = gengetopt_args_info_detailed_help[63];
+  gengetopt_args_info_help[35] = gengetopt_args_info_detailed_help[64];
+  gengetopt_args_info_help[36] = gengetopt_args_info_detailed_help[86];
+  gengetopt_args_info_help[37] = gengetopt_args_info_detailed_help[87];
   gengetopt_args_info_help[38] = gengetopt_args_info_detailed_help[88];
   gengetopt_args_info_help[39] = gengetopt_args_info_detailed_help[90];
-  gengetopt_args_info_help[40] = gengetopt_args_info_detailed_help[91];
-  gengetopt_args_info_help[41] = gengetopt_args_info_detailed_help[92];
-  gengetopt_args_info_help[42] = gengetopt_args_info_detailed_help[107];
-  gengetopt_args_info_help[43] = gengetopt_args_info_detailed_help[109];
-  gengetopt_args_info_help[44] = gengetopt_args_info_detailed_help[111];
-  gengetopt_args_info_help[45] = 0; 
+  gengetopt_args_info_help[40] = gengetopt_args_info_detailed_help[92];
+  gengetopt_args_info_help[41] = gengetopt_args_info_detailed_help[94];
+  gengetopt_args_info_help[42] = gengetopt_args_info_detailed_help[96];
+  gengetopt_args_info_help[43] = gengetopt_args_info_detailed_help[97];
+  gengetopt_args_info_help[44] = gengetopt_args_info_detailed_help[98];
+  gengetopt_args_info_help[45] = gengetopt_args_info_detailed_help[113];
+  gengetopt_args_info_help[46] = gengetopt_args_info_detailed_help[115];
+  gengetopt_args_info_help[47] = gengetopt_args_info_detailed_help[117];
+  gengetopt_args_info_help[48] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[46];
+const char *gengetopt_args_info_help[49];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -303,15 +315,16 @@ static int
 cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *prog_name, const char *additional_error);
 
 const char *cmdline_parser_check_values[] = {"none", "full", "modelchecking", 0}; /*< Possible values for check. */
+const char *cmdline_parser_preference_values[] = {"none", "ltl", "ctl", 0}; /*< Possible values for preference. */
 const char *cmdline_parser_search_values[] = {"depth", "sweepline", "covergraph", 0}; /*< Possible values for search. */
 const char *cmdline_parser_findpath_values[] = {"seq", "par", "alone", "off", 0}; /*< Possible values for findpath. */
-const char *cmdline_parser_stubborn_values[] = {"tarjan", "deletion", "off", 0}; /*< Possible values for stubborn. */
+const char *cmdline_parser_stubborn_values[] = {"tarjan", "deletion", "combined", "off", 0}; /*< Possible values for stubborn. */
 const char *cmdline_parser_ltlstubborn_values[] = {"off", "on", 0}; /*< Possible values for ltlstubborn. */
 const char *cmdline_parser_siphontrap_values[] = {"off", "seq", "par", "alone", 0}; /*< Possible values for siphontrap. */
 const char *cmdline_parser_stateequation_values[] = {"off", "seq", "par", "alone", 0}; /*< Possible values for stateequation. */
 const char *cmdline_parser_pathshape_values[] = {"linear", "run", "fullrun", "eventstructure", 0}; /*< Possible values for pathshape. */
 const char *cmdline_parser_reporter_values[] = {"stream", "socket", "silent", 0}; /*< Possible values for reporter. */
-const char *cmdline_parser_jsoninclude_values[] = {"path", "state", 0}; /*< Possible values for jsoninclude. */
+const char *cmdline_parser_jsoninclude_values[] = {"path", "state", "log", "formula", "formulastat", "siphon", "net", 0}; /*< Possible values for jsoninclude. */
 const char *cmdline_parser_store_values[] = {"comp", "prefix", "stl", "bloom", 0}; /*< Possible values for store. */
 const char *cmdline_parser_encoder_values[] = {"bit", "copy", "simplecompressed", "fullcopy", 0}; /*< Possible values for encoder. */
 const char *cmdline_parser_ltlmode_values[] = {"tree", "flat", 0}; /*< Possible values for ltlmode. */
@@ -327,13 +340,16 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->full_help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->check_given = 0 ;
+  args_info->preference_given = 0 ;
   args_info->formula_given = 0 ;
   args_info->buechi_given = 0 ;
+  args_info->fair_given = 0 ;
   args_info->search_given = 0 ;
   args_info->findpath_given = 0 ;
   args_info->stubborn_given = 0 ;
   args_info->cycle_given = 0 ;
   args_info->symmetry_given = 0 ;
+  args_info->symmetrydepth_given = 0 ;
   args_info->ltlstubborn_given = 0 ;
   args_info->siphontrap_given = 0 ;
   args_info->siphondepth_given = 0 ;
@@ -382,10 +398,13 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->check_arg = check_arg_modelchecking;
   args_info->check_orig = NULL;
+  args_info->preference_arg = preference_arg_none;
+  args_info->preference_orig = NULL;
   args_info->formula_arg = NULL;
   args_info->formula_orig = NULL;
   args_info->buechi_arg = NULL;
   args_info->buechi_orig = NULL;
+  args_info->fair_flag = 0;
   args_info->search_arg = search_arg_depth;
   args_info->search_orig = NULL;
   args_info->findpath_arg = findpath_arg_off;
@@ -394,6 +413,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->stubborn_orig = NULL;
   args_info->cycle_flag = 0;
   args_info->symmetry_flag = 0;
+  args_info->symmetrydepth_arg = 1073741824;
+  args_info->symmetrydepth_orig = NULL;
   args_info->ltlstubborn_arg = ltlstubborn_arg_off;
   args_info->ltlstubborn_orig = NULL;
   args_info->siphontrap_arg = siphontrap_arg_off;
@@ -477,55 +498,58 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->full_help_help = gengetopt_args_info_detailed_help[2] ;
   args_info->version_help = gengetopt_args_info_detailed_help[3] ;
   args_info->check_help = gengetopt_args_info_detailed_help[6] ;
-  args_info->formula_help = gengetopt_args_info_detailed_help[8] ;
-  args_info->buechi_help = gengetopt_args_info_detailed_help[10] ;
-  args_info->search_help = gengetopt_args_info_detailed_help[14] ;
-  args_info->findpath_help = gengetopt_args_info_detailed_help[16] ;
-  args_info->stubborn_help = gengetopt_args_info_detailed_help[18] ;
-  args_info->cycle_help = gengetopt_args_info_detailed_help[20] ;
-  args_info->symmetry_help = gengetopt_args_info_detailed_help[22] ;
-  args_info->ltlstubborn_help = gengetopt_args_info_detailed_help[24] ;
-  args_info->siphontrap_help = gengetopt_args_info_detailed_help[28] ;
-  args_info->siphondepth_help = gengetopt_args_info_detailed_help[30] ;
-  args_info->minisatargs_help = gengetopt_args_info_detailed_help[32] ;
-  args_info->siphonwitness_help = gengetopt_args_info_detailed_help[34] ;
-  args_info->stateequation_help = gengetopt_args_info_detailed_help[38] ;
-  args_info->compressed_help = gengetopt_args_info_detailed_help[42] ;
-  args_info->state_help = gengetopt_args_info_detailed_help[46] ;
-  args_info->path_help = gengetopt_args_info_detailed_help[48] ;
-  args_info->pathshape_help = gengetopt_args_info_detailed_help[50] ;
-  args_info->writeCompressed_help = gengetopt_args_info_detailed_help[52] ;
-  args_info->writeBuechi_help = gengetopt_args_info_detailed_help[54] ;
-  args_info->quiet_help = gengetopt_args_info_detailed_help[58] ;
-  args_info->reporter_help = gengetopt_args_info_detailed_help[60] ;
-  args_info->json_help = gengetopt_args_info_detailed_help[62] ;
-  args_info->jsoninclude_help = gengetopt_args_info_detailed_help[64] ;
+  args_info->preference_help = gengetopt_args_info_detailed_help[8] ;
+  args_info->formula_help = gengetopt_args_info_detailed_help[10] ;
+  args_info->buechi_help = gengetopt_args_info_detailed_help[12] ;
+  args_info->fair_help = gengetopt_args_info_detailed_help[14] ;
+  args_info->search_help = gengetopt_args_info_detailed_help[18] ;
+  args_info->findpath_help = gengetopt_args_info_detailed_help[20] ;
+  args_info->stubborn_help = gengetopt_args_info_detailed_help[22] ;
+  args_info->cycle_help = gengetopt_args_info_detailed_help[24] ;
+  args_info->symmetry_help = gengetopt_args_info_detailed_help[26] ;
+  args_info->symmetrydepth_help = gengetopt_args_info_detailed_help[28] ;
+  args_info->ltlstubborn_help = gengetopt_args_info_detailed_help[30] ;
+  args_info->siphontrap_help = gengetopt_args_info_detailed_help[34] ;
+  args_info->siphondepth_help = gengetopt_args_info_detailed_help[36] ;
+  args_info->minisatargs_help = gengetopt_args_info_detailed_help[38] ;
+  args_info->siphonwitness_help = gengetopt_args_info_detailed_help[40] ;
+  args_info->stateequation_help = gengetopt_args_info_detailed_help[44] ;
+  args_info->compressed_help = gengetopt_args_info_detailed_help[48] ;
+  args_info->state_help = gengetopt_args_info_detailed_help[52] ;
+  args_info->path_help = gengetopt_args_info_detailed_help[54] ;
+  args_info->pathshape_help = gengetopt_args_info_detailed_help[56] ;
+  args_info->writeCompressed_help = gengetopt_args_info_detailed_help[58] ;
+  args_info->writeBuechi_help = gengetopt_args_info_detailed_help[60] ;
+  args_info->quiet_help = gengetopt_args_info_detailed_help[64] ;
+  args_info->reporter_help = gengetopt_args_info_detailed_help[66] ;
+  args_info->json_help = gengetopt_args_info_detailed_help[68] ;
+  args_info->jsoninclude_help = gengetopt_args_info_detailed_help[70] ;
   args_info->jsoninclude_min = 0;
   args_info->jsoninclude_max = 0;
-  args_info->nolog_help = gengetopt_args_info_detailed_help[66] ;
-  args_info->outputport_help = gengetopt_args_info_detailed_help[68] ;
-  args_info->inputport_help = gengetopt_args_info_detailed_help[70] ;
-  args_info->address_help = gengetopt_args_info_detailed_help[72] ;
-  args_info->remoteTermination_help = gengetopt_args_info_detailed_help[74] ;
-  args_info->printNet_help = gengetopt_args_info_detailed_help[77] ;
-  args_info->stats_help = gengetopt_args_info_detailed_help[78] ;
-  args_info->tscc_help = gengetopt_args_info_detailed_help[79] ;
-  args_info->timelimit_help = gengetopt_args_info_detailed_help[82] ;
-  args_info->localtimelimit_help = gengetopt_args_info_detailed_help[84] ;
-  args_info->symmtimelimit_help = gengetopt_args_info_detailed_help[86] ;
-  args_info->markinglimit_help = gengetopt_args_info_detailed_help[88] ;
-  args_info->store_help = gengetopt_args_info_detailed_help[92] ;
-  args_info->encoder_help = gengetopt_args_info_detailed_help[94] ;
-  args_info->bucketing_help = gengetopt_args_info_detailed_help[96] ;
-  args_info->hashfunctions_help = gengetopt_args_info_detailed_help[98] ;
-  args_info->ltlmode_help = gengetopt_args_info_detailed_help[100] ;
-  args_info->sweepfronts_help = gengetopt_args_info_detailed_help[101] ;
-  args_info->sweeplinedelay_help = gengetopt_args_info_detailed_help[103] ;
-  args_info->sweeplinespread_help = gengetopt_args_info_detailed_help[105] ;
-  args_info->cycleheuristic_help = gengetopt_args_info_detailed_help[106] ;
-  args_info->retrylimit_help = gengetopt_args_info_detailed_help[107] ;
-  args_info->depthlimit_help = gengetopt_args_info_detailed_help[109] ;
-  args_info->threads_help = gengetopt_args_info_detailed_help[111] ;
+  args_info->nolog_help = gengetopt_args_info_detailed_help[72] ;
+  args_info->outputport_help = gengetopt_args_info_detailed_help[74] ;
+  args_info->inputport_help = gengetopt_args_info_detailed_help[76] ;
+  args_info->address_help = gengetopt_args_info_detailed_help[78] ;
+  args_info->remoteTermination_help = gengetopt_args_info_detailed_help[80] ;
+  args_info->printNet_help = gengetopt_args_info_detailed_help[83] ;
+  args_info->stats_help = gengetopt_args_info_detailed_help[84] ;
+  args_info->tscc_help = gengetopt_args_info_detailed_help[85] ;
+  args_info->timelimit_help = gengetopt_args_info_detailed_help[88] ;
+  args_info->localtimelimit_help = gengetopt_args_info_detailed_help[90] ;
+  args_info->symmtimelimit_help = gengetopt_args_info_detailed_help[92] ;
+  args_info->markinglimit_help = gengetopt_args_info_detailed_help[94] ;
+  args_info->store_help = gengetopt_args_info_detailed_help[98] ;
+  args_info->encoder_help = gengetopt_args_info_detailed_help[100] ;
+  args_info->bucketing_help = gengetopt_args_info_detailed_help[102] ;
+  args_info->hashfunctions_help = gengetopt_args_info_detailed_help[104] ;
+  args_info->ltlmode_help = gengetopt_args_info_detailed_help[106] ;
+  args_info->sweepfronts_help = gengetopt_args_info_detailed_help[107] ;
+  args_info->sweeplinedelay_help = gengetopt_args_info_detailed_help[109] ;
+  args_info->sweeplinespread_help = gengetopt_args_info_detailed_help[111] ;
+  args_info->cycleheuristic_help = gengetopt_args_info_detailed_help[112] ;
+  args_info->retrylimit_help = gengetopt_args_info_detailed_help[113] ;
+  args_info->depthlimit_help = gengetopt_args_info_detailed_help[115] ;
+  args_info->threads_help = gengetopt_args_info_detailed_help[117] ;
   
 }
 
@@ -677,6 +701,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 {
   unsigned int i;
   free_string_field (&(args_info->check_orig));
+  free_string_field (&(args_info->preference_orig));
   free_string_field (&(args_info->formula_arg));
   free_string_field (&(args_info->formula_orig));
   free_string_field (&(args_info->buechi_arg));
@@ -684,6 +709,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->search_orig));
   free_string_field (&(args_info->findpath_orig));
   free_string_field (&(args_info->stubborn_orig));
+  free_string_field (&(args_info->symmetrydepth_orig));
   free_string_field (&(args_info->ltlstubborn_orig));
   free_string_field (&(args_info->siphontrap_orig));
   free_string_field (&(args_info->siphondepth_orig));
@@ -822,10 +848,14 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->check_given)
     write_into_file(outfile, "check", args_info->check_orig, cmdline_parser_check_values);
+  if (args_info->preference_given)
+    write_into_file(outfile, "preference", args_info->preference_orig, cmdline_parser_preference_values);
   if (args_info->formula_given)
     write_into_file(outfile, "formula", args_info->formula_orig, 0);
   if (args_info->buechi_given)
     write_into_file(outfile, "buechi", args_info->buechi_orig, 0);
+  if (args_info->fair_given)
+    write_into_file(outfile, "fair", 0, 0 );
   if (args_info->search_given)
     write_into_file(outfile, "search", args_info->search_orig, cmdline_parser_search_values);
   if (args_info->findpath_given)
@@ -836,6 +866,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "cycle", 0, 0 );
   if (args_info->symmetry_given)
     write_into_file(outfile, "symmetry", 0, 0 );
+  if (args_info->symmetrydepth_given)
+    write_into_file(outfile, "symmetrydepth", args_info->symmetrydepth_orig, 0);
   if (args_info->ltlstubborn_given)
     write_into_file(outfile, "ltlstubborn", args_info->ltlstubborn_orig, cmdline_parser_ltlstubborn_values);
   if (args_info->siphontrap_given)
@@ -2087,13 +2119,16 @@ cmdline_parser_internal (
         { "full-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "check",	1, NULL, 'c' },
+        { "preference",	1, NULL, 0 },
         { "formula",	1, NULL, 'f' },
         { "buechi",	1, NULL, 0 },
+        { "fair",	0, NULL, 0 },
         { "search",	1, NULL, 0 },
         { "findpath",	1, NULL, 0 },
         { "stubborn",	1, NULL, 0 },
         { "cycle",	0, NULL, 0 },
         { "symmetry",	0, NULL, 0 },
+        { "symmetrydepth",	1, NULL, 0 },
         { "ltlstubborn",	1, NULL, 0 },
         { "siphontrap",	1, NULL, 0 },
         { "siphondepth",	1, NULL, 0 },
@@ -2259,8 +2294,22 @@ cmdline_parser_internal (
             exit (EXIT_SUCCESS);
           }
 
+          /* Preferred logic fragment.  */
+          if (strcmp (long_options[option_index].name, "preference") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->preference_arg), 
+                 &(args_info->preference_orig), &(args_info->preference_given),
+                &(local_args_info.preference_given), optarg, cmdline_parser_preference_values, "none", ARG_ENUM,
+                check_ambiguity, override, 0, 0,
+                "preference", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Check a linear time property specified as a Büchi automaton.  */
-          if (strcmp (long_options[option_index].name, "buechi") == 0)
+          else if (strcmp (long_options[option_index].name, "buechi") == 0)
           {
           
           
@@ -2269,6 +2318,18 @@ cmdline_parser_internal (
                 &(local_args_info.buechi_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "buechi", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Take care of fairness constraints..  */
+          else if (strcmp (long_options[option_index].name, "fair") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->fair_flag), 0, &(args_info->fair_given),
+                &(local_args_info.fair_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "fair", '-',
                 additional_error))
               goto failure;
           
@@ -2335,6 +2396,20 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->symmetry_flag), 0, &(args_info->symmetry_given),
                 &(local_args_info.symmetry_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "symmetry", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Control the complexity of computing canonical representatives.  */
+          else if (strcmp (long_options[option_index].name, "symmetrydepth") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->symmetrydepth_arg), 
+                 &(args_info->symmetrydepth_orig), &(args_info->symmetrydepth_given),
+                &(local_args_info.symmetrydepth_given), optarg, 0, "1073741824", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "symmetrydepth", '-',
                 additional_error))
               goto failure;
           

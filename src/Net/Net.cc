@@ -80,49 +80,49 @@ bool Net::DEBUG__checkConsistency()
     return true;
 }
 
-bool Net::DEBUG__checkArcOrdering()
-{
-    arrayindex_t curElem;
-    for (arrayindex_t t = 0; t < Net::Card[TR]; ++t)
-    {
-        if (Net::CardArcs[TR][PRE][t])
-        {
-            curElem = Net::Arc[TR][PRE][t][0];
-            for (arrayindex_t p = 1; p < Net::CardArcs[TR][PRE][t]; ++p)
-            {
-                assert(curElem < Net::Arc[TR][PRE][t][p]);
-            }
-        }
-        if (Net::CardArcs[TR][POST][t])
-        {
-            curElem = Net::Arc[TR][POST][t][0];
-            for (arrayindex_t p = 1; p < Net::CardArcs[TR][POST][t]; ++p)
-            {
-                assert(curElem < Net::Arc[TR][POST][t][p]);
-            }
-        }
-    }
-    for (arrayindex_t p = 0; p < Net::Card[PL]; ++p)
-    {
-        if (Net::CardArcs[PL][PRE][p])
-        {
-            curElem = Net::Arc[PL][PRE][p][0];
-            for (arrayindex_t t = 1; t < Net::CardArcs[PL][PRE][p]; ++t)
-            {
-                assert(curElem < Net::Arc[PL][PRE][p][t]);
-            }
-        }
-        if (Net::CardArcs[PL][POST][p])
-        {
-            curElem = Net::Arc[PL][POST][p][0];
-            for (arrayindex_t t = 1; t < Net::CardArcs[PL][POST][p]; ++t)
-            {
-                assert(curElem < Net::Arc[PL][POST][p][t]);
-            }
-        }
-    }
-    return true;
-}
+// bool Net::DEBUG__checkArcOrdering()
+// {
+//     arrayindex_t curElem;
+//     for (arrayindex_t t = 0; t < Net::Card[TR]; ++t)
+//     {
+//         if (Net::CardArcs[TR][PRE][t])
+//         {
+//             curElem = Net::Arc[TR][PRE][t][0];
+//             for (arrayindex_t p = 1; p < Net::CardArcs[TR][PRE][t]; ++p)
+//             {
+//                 assert(curElem < Net::Arc[TR][PRE][t][p]);
+//             }
+//         }
+//         if (Net::CardArcs[TR][POST][t])
+//         {
+//             curElem = Net::Arc[TR][POST][t][0];
+//             for (arrayindex_t p = 1; p < Net::CardArcs[TR][POST][t]; ++p)
+//             {
+//                 assert(curElem < Net::Arc[TR][POST][t][p]);
+//             }
+//         }
+//     }
+//     for (arrayindex_t p = 0; p < Net::Card[PL]; ++p)
+//     {
+//         if (Net::CardArcs[PL][PRE][p])
+//         {
+//             curElem = Net::Arc[PL][PRE][p][0];
+//             for (arrayindex_t t = 1; t < Net::CardArcs[PL][PRE][p]; ++t)
+//             {
+//                 assert(curElem < Net::Arc[PL][PRE][p][t]);
+//             }
+//         }
+//         if (Net::CardArcs[PL][POST][p])
+//         {
+//             curElem = Net::Arc[PL][POST][p][0];
+//             for (arrayindex_t t = 1; t < Net::CardArcs[PL][POST][p]; ++t)
+//             {
+//                 assert(curElem < Net::Arc[PL][POST][p][t]);
+//             }
+//         }
+//     }
+//     return true;
+// }
 // LCOV_EXCL_STOP
 
 
@@ -370,7 +370,7 @@ void Net::sortAllArcs()
             }
         }
     }
-    assert(DEBUG__checkArcOrdering());
+    //assert(DEBUG__checkArcOrdering());
 }
 
 void clusterSortAllArcs()
@@ -380,7 +380,7 @@ void clusterSortAllArcs()
 	clusterSortArcs(Net::Arc[TR][PRE][n], Net::Mult[TR][PRE][n], 0,
 		 Net::CardArcs[TR][PRE][n]);
     }
-    assert(DEBUG__checkArcOrdering());
+    //assert(Net::DEBUG__checkArcOrdering());
 }
 
 void backClusterSortAllArcs()
@@ -390,7 +390,7 @@ void backClusterSortAllArcs()
 	backClusterSortArcs(Net::Arc[TR][POST][n], Net::Mult[TR][POST][n], 0,
 		 Net::CardArcs[TR][POST][n]);
     }
-    assert(DEBUG__checkArcOrdering());
+    //assert(Net::DEBUG__checkArcOrdering());
 }
 
 /*!
@@ -775,7 +775,7 @@ Matrix Net::getIncidenceMatrix(node_t line_type)
     const arrayindex_t row_card = Net::Card[row_type];
 
     // arcs must be sorted
-    assert(Net::DEBUG__checkArcOrdering());
+    //assert(Net::DEBUG__checkArcOrdering());
 
     // request memory for one full row
     arrayindex_t *newVar = new arrayindex_t[line_card]();
@@ -816,7 +816,7 @@ void Net::setSignificantPlaces()
     RT::rep->status("finding significant places");
 
     // arcs must be sorted
-    assert(Net::DEBUG__checkArcOrdering());
+    //assert(Net::DEBUG__checkArcOrdering());
 
     // save number of places
     const arrayindex_t cardPL = Net::Card[PL];
@@ -870,7 +870,7 @@ Calculates the progress measure for all transitions
 void Net::setProgressMeasure()
 {
     // arcs must be sorted
-    assert(Net::DEBUG__checkArcOrdering());
+    //assert(Net::DEBUG__checkArcOrdering());
 
     // get incidence matrix (places are lines)
     Matrix m = getIncidenceMatrix(TR);
