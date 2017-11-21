@@ -292,6 +292,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     auto startOfDFS = high_resolution_clock::now();
     threadIdleTimes = new microseconds[_number_of_threads]();
     timeToHandOverWork = new microseconds[_number_of_threads]();
+    threadSyncTimes = new microseconds[_number_of_threads]();
     exploredStates = new uint[_number_of_threads]();
     backtracks = new uint[_number_of_threads]();
     for(int i = 0; i < _number_of_threads; i++){
