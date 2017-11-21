@@ -5,16 +5,13 @@ doc/parralelization/main.pdf
 doc/parralelization/*.log
 *.gz
 settings.json
-.vscode/c_cpp_properties.json
 *.o
 src/lola
 *.Po
 *.Tpo
-.vscode/tasks.json
 config.status
 config.log
 *Makefile
-.vscode/launch.json
 src/config.h
 autom4te.cache
 m4/l*.m4
@@ -30,3 +27,5 @@ doc/lola.log
 *.timestamp
 tests/package.m4
 *dfsTime.txt
+.vscode/*
+src/perf.data

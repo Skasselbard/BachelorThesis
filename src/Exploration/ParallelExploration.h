@@ -198,11 +198,10 @@ private:
         UNLOCKED
     };
 
-    typedef duration<int64_t, std::micro> workTime;
-
-    microseconds* threadIdleTimes;
-    microseconds* timeToHandOverWork;
-    microseconds* threadSyncTimes;
+    nanoseconds* threadIdleTimes;
+    nanoseconds* timeToHandOverWork;
+    nanoseconds* threadSyncTimes;
+    nanoseconds* storeSearchTimes;
     uint* exploredStates;
     uint* backtracks;
 
@@ -225,11 +224,13 @@ private:
         lock->store(UNLOCKED);
     }
 
-    inline microseconds calcCumulativeTime(microseconds* array, int size){
-        microseconds result = microseconds(0);
+    static inline nanoseconds calcCumulativeTime(nanoseconds* array, int size){
+        nanoseconds result = nanoseconds(0);
         for(int i=0; i < size; i++){
             result += array[i];
         }
         return result;
     }
+
+    inline void writeBenchmarkFile(int _number_of_threads, nanoseconds dfsTime);
 };
