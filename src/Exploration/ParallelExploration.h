@@ -203,6 +203,8 @@ private:
     microseconds* threadIdleTimes;
     microseconds* timeToHandOverWork;
     microseconds* threadSyncTimes;
+    uint* exploredStates;
+    uint* backtracks;
 
 
     static inline void waitAndLock(std::atomic<bool>* lock){
@@ -221,98 +223,6 @@ private:
     }
     static inline void unlock(std::atomic<bool>* lock){
         lock->store(UNLOCKED);
-    }
-
-    //////////////// DFS subfunctions /////////////////////////
-    inline void releaseRestartSemaphores(){
-        for (int i = 0; i < number_of_threads; i++){
-            unlock(restartSemaphore[i]);
-        }
-    }
-
-    inline void publishLocalState(
-        SearchStack<SimpleStackEntry> & local_stack, 
-        NetState &local_netstate,
-        threadid_t &threadNumber
-    ){
-        auto startSync = high_resolution_clock::now();
-        waitAndLock(&global_property_mutex);
-        threadSyncTimes[threadNumber] += duration_cast<microseconds>((high_resolution_clock::now())-startSync);
-        global_property->stack.swap(local_stack);
-        global_property->initProperty(local_netstate);
-        unlock(&global_property_mutex);
-    }
-
-    inline bool canHandOverWork(arrayindex_t &currentEntry){
-        return (currentEntry >= 2 && num_suspended > 0);
-    }
-
-    inline void HandOverWork(
-        SimpleProperty *&local_property,
-        SearchStack<SimpleStackEntry> &local_stack,
-        NetState &local_netstate
-    ){
-        // there is another thread waiting for my data, get its thread number
-        arrayindex_t reader_thread_number = suspended_threads[--num_suspended];
-        unlock(&num_suspend_mutex);
-
-        // the destination thread is blocked at this point, waiting our data
-        // copy the data for the other thread
-        thread_stack[reader_thread_number] = local_stack;
-        NetState tmp_netstate(local_netstate);
-        thread_netstate[reader_thread_number].swap(tmp_netstate);
-        delete thread_property[reader_thread_number];
-        thread_property[reader_thread_number] = local_property->copy();
-
-        // inform the other thread that the data is ready
-        unlock(restartSemaphore[reader_thread_number]);
-    }
-
-    inline void safeState(        
-        SearchStack<SimpleStackEntry> &local_stack,
-        arrayindex_t *&currentFirelist,
-        arrayindex_t &currentEntry
-    ){
-        // push the old firelist onto the stack (may be needed to hand over the current state correctly)
-        new(local_stack.push()) SimpleStackEntry(currentFirelist, currentEntry);
-    }
-
-    inline void restoreState(
-        SearchStack<SimpleStackEntry> &local_stack,
-        NetState &local_netstate,
-        arrayindex_t &currentEntry,
-        arrayindex_t *&currentFirelist
-    ){
-        // backfire the current transition to return to original state
-        local_stack.pop();
-        assert(currentEntry < Net::Card[TR]);
-        Transition::backfire(local_netstate, currentFirelist[currentEntry]);
-        Transition::revertEnabled(local_netstate, currentFirelist[currentEntry]);
-    }
-
-    inline void backtrack(
-        SearchStack<SimpleStackEntry> &local_stack,
-        NetState &local_netstate,
-        arrayindex_t &currentEntry,
-        arrayindex_t *&currentFirelist
-    ){
-        SimpleStackEntry &s = local_stack.top();
-        currentEntry = s.current;
-        currentFirelist = s.fl;
-        local_stack.pop();
-        assert(currentEntry < Net::Card[TR]);
-        Transition::backfire(local_netstate, currentFirelist[currentEntry]);
-        Transition::revertEnabled(local_netstate, currentFirelist[currentEntry]);
-    }
-
-    inline int declareJoblessness(threadid_t &threadNumber){
-        auto startSync = high_resolution_clock::now();
-        waitAndLock(&num_suspend_mutex);
-        threadSyncTimes[threadNumber] += duration_cast<microseconds>((high_resolution_clock::now())-startSync);
-        suspended_threads[num_suspended++] = threadNumber;
-        int local_num_suspended = num_suspended;
-        unlock(&num_suspend_mutex);
-        return local_num_suspended;
     }
 
     inline microseconds calcCumulativeTime(microseconds* array, int size){
