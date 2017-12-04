@@ -1,0 +1,55 @@
+\chapter{Approach}
+
+\section{Basic Plan}
+- Assumption: Lola is slow because of synchronization issues in the parallel dfs\\
+- parallelization is slowed down because of synchronization issues\\
+- synchronization is done with help of pthread library\\
+- replace pthread with faster, elemental synchronization method namely compare and swap\\
+- messure the performance difference
+
+\section{Implementation}
+\subsection{Extract Significant Code}
+- code analysis\\
+- differences between parallel and sequential implementation\\
+\subsection{Understanding The Semantics}
+- difference between mutex and semaphore\\
+- what mutexes are implemented\\
+- what semaphores are implemented\\
+- do they do what its type of synchronization is good for\\
+- what is pthread\\
+- what is the overhead inside the pthread library\\
+\subsection{Replace Code}
+- what would an equivalent compare and swap implementation look like\\
+- what is the overhead\\
+- where is synchronization necessary?\\
+- what is the exact code\\
+
+\section{Benchmark}
+\subsection{Benchmark Types}
+- microbenchmarks\\
+- macrobenchmarks\\
+- profiling\\
+\subsection{Profilers}
+- endless possibilities \\
+- testing all profilers is nearly impossible in the time frame\\
+- common tools identified through internet research\\
+\subsubsection{gprof}
+\subsubsection{valgrind}
+\subsubsection{perf}
+\subsubsection{operf}
+\subsection{Choice}
+- dfs is the main time consumption\\
+- therefore simple program runs are sufficient to messure differences between parallel and sequential implementations (macrobenchmark)\\
+- to find bottlenecks inside the implementation, a more precise approach is necessary\\
+- profilers have limitations\\
+- interpreting the results is not trivial and differ from profiler to profiler\\
+- code to benchmark is fairly compact\\
+- manual instrumentation is time efficient\\
+- manual instrumentation is precise\\
+- manual instrumentation can messure custom metadata like state expansions of each thread\\
+
+\section{Results}
+- philosopher net as example (warum?, repräsentativ?)\\
+- no significant speedup\\
+- threads distribute state expansions evenly\\
+- bottleneck is SearechAndInsert()\\

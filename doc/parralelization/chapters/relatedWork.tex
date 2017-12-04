@@ -1,60 +1,9 @@
 \chapter{Related Work}
 
-Compare and swap
-\begin{itemize}
-    \item atomic function
-    \item implemented as atomic hardware instruction
-\end{itemize}
-
-Semaphore\cite{mullender2008semaphores}
-\begin{itemize}
-    \item non negative integer
-    \item two operations
-    \begin{itemize}
-        \item V $\rightarrow$ increase (semaquire)
-        \item P $\rightarrow$ decrease (semrelease)
-    \end{itemize}
-\end{itemize}
-
-Copy-on-write-like techniques (including read-copy-update)
-provide impressively high performance for read-only workloads
-but very low performance for update workloads. \cite{gramoli2015more}
-
-
-NC steht in der Informatik als Abkürzung für Nick's Class (nach Nick Pippenger), die Komplexitätsklasse der parallel effizient lösbaren Entscheidungsprobleme. https://de.wikipedia.org/wiki/NC_(Komplexit%C3%A4tsklasse)
-
-
-Randomized NC
-https://books.google.de/books?id=ThBR22HOjMcC&pg=PA41&lpg=PA41&dq=randomized+NC&source=bl&ots=jFwyJt80ub&sig=zb4TpnAULxKmN8t3SRl-CLDLWn4&hl=de&sa=X&ved=0ahUKEwil-6Wn2KnXAhURFuwKHXxlC1sQ6AEIPzAD#v=onepage&q&f=false
-
-NC stands for \"Nick's Class\", after Nicholas Pippenger, who first identified it and suggested
-that it contains precisely the problems we think of as having \"good\" parallel algorithms [45]. NC
-remains the same across a wide variety of machine models, although the subclasses NCI" may vary
-[14]. It is easy to see that NC P, but whether NC = Pis a famous open problem (see Section 6
-below). \cite{freeman1991parallel}
-
-The intuition is also similar: RNCis the set of
-all problems that have fast parallel randomized algorithms. \cite{freeman1991parallel}
-
-Profiling:
-\begin{itemize}
-    \item gprof braucht exit() statt _exit und liefert keine ergebnisse
-    \item valgrind sequenziert die einzelnen threads
-    \item operf (oprofile) funktioniert nicht out of the box -> permission errors unter root, kann nicht ohne weiteres auf ebro gebaut oder installiert werden
-    \item perf scheint zu funktionieren
-    \item profiling ist teilweise hardwareabhängig und benötigt möglicherweise debug kernel
-\end{itemize}
-
-perf install and sources
-https://askubuntu.com/questions/50145/how-to-install-perf-monitoring-tool#50148
-
-Erkenntnisse:
-\begin{itemize}
-    \item dfs ist schwer zu parallelisieren
-    \item bis in 80er eher als unparallelisierbar gehalten
-    \item für lexikalische graphen nicht parallelisierbar
-    \item parallele Algorithmen für bestimmte graphklassen gefunden (planare, disjoint)
-    \item in Nicks Class (NC)
-    \item auch algorithmus für allgemeine gerichtete graphen
-    \item menge der knoten muss dabei allerdings for suche bekannt sein und kann nicht während der suche aufgedeckt werden
-\end{itemize}
+\section{Parallelization History}
+\section{Synchronization Methods}
+- mutexe\\
+- semaphores\\
+- compare and swap\\
+- locks\\
+\section{Depth First Search Parallelization}

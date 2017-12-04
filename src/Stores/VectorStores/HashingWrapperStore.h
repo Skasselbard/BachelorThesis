@@ -29,6 +29,7 @@ length) are not prefix of another.
 
 #include <Core/Dimensions.h>
 #include <Stores/VectorStores/VectorStore.h>
+#include "Core/LolaMutex.h"
 
 /// A VectorStoreCreator encapsulates a method that, when invoked, creates a new VectorStore.
 /// It is used by the HashingWrapperStore to create VectorStores for new hash buckets on demand.
@@ -99,7 +100,7 @@ public:
     virtual ~HashingWrapperStore();
 
     /// searches for a vector and inserts if not found
-    /// @param in vector to be seached for or inserted
+    /// @param in vector to be searched for or inserted
     /// @param bitlen length of vector
     /// @param hash of current NetState
     /// @param payload pointer to be set to the place where the payload of this state will be held
@@ -125,6 +126,7 @@ public:
 
 private:
     VectorStore<T> **buckets;
+    LolaMutex* bucketMutexes;
 
     arrayindex_t *currentPopBucket;
     arrayindex_t number_of_buckets;

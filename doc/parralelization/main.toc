@@ -1,0 +1,24 @@
+\contentsline {chapter}{\numberline {1}Title}{1}
+\contentsline {chapter}{\numberline {2}Abstract}{2}
+\contentsline {chapter}{\numberline {3}Introduction}{4}
+\contentsline {chapter}{\numberline {4}Related Work}{5}
+\contentsline {section}{\numberline {4.1}Parallelization History}{5}
+\contentsline {section}{\numberline {4.2}Synchronization Methods}{5}
+\contentsline {section}{\numberline {4.3}Depth First Search Parallelization}{5}
+\contentsline {chapter}{\numberline {5}Approach}{6}
+\contentsline {section}{\numberline {5.1}Basic Plan}{6}
+\contentsline {section}{\numberline {5.2}Implementation}{6}
+\contentsline {subsection}{\numberline {5.2.1}Extract Significant Code}{6}
+\contentsline {subsection}{\numberline {5.2.2}Understanding The Semantics}{6}
+\contentsline {subsection}{\numberline {5.2.3}Replace Code}{6}
+\contentsline {section}{\numberline {5.3}Benchmark}{7}
+\contentsline {subsection}{\numberline {5.3.1}Benchmark Types}{7}
+\contentsline {subsection}{\numberline {5.3.2}Profilers}{7}
+\contentsline {subsubsection}{\nonumberline gprof}{7}
+\contentsline {subsubsection}{\nonumberline valgrind}{7}
+\contentsline {subsubsection}{\nonumberline perf}{7}
+\contentsline {subsubsection}{\nonumberline operf}{7}
+\contentsline {subsection}{\numberline {5.3.3}Choice}{7}
+\contentsline {section}{\numberline {5.4}Results}{7}
+\contentsline {chapter}{\numberline {6}Conclusion}{9}
+\contentsline {chapter}{\numberline {7}Future Work}{10}

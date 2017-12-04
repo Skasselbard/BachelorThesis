@@ -31,35 +31,23 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
 {
     //storeCreator = _storeCreator;
     number_of_buckets = _number_of_buckets;
-
     buckets = new VectorStore<T> *[number_of_buckets]();
-    //rwlocks =(pthread_rwlock_t*) calloc(sizeof(pthread_rwlock_t), number_of_buckets);
-
-    for (hash_t i = 0; i < number_of_buckets; i++)
-    {
+    bucketMutexes = new LolaMutex[number_of_buckets]();
+    for (hash_t i = 0; i < number_of_buckets; i++){
         buckets[i] = (*storeCreator)();
-        //pthread_rwlock_init(rwlocks+i, NULL);
     }
-
     currentPopBucket = new arrayindex_t[_number_of_threads]();
-
     // all initialization done, delete the given creator (for comfortable one-line creation)
     delete storeCreator;
 }
 
 template <typename T>
-HashingWrapperStore<T>::~HashingWrapperStore()
-{
-    for (hash_t i = 0; i < number_of_buckets; i++)
-    {
+HashingWrapperStore<T>::~HashingWrapperStore(){
+    for (hash_t i = 0; i < number_of_buckets; i++){
         delete buckets[i];
     }
     delete[] buckets;
-
-    //for (hash_t i = 0; i < number_of_buckets; i++)
-    //    pthread_rwlock_destroy(rwlocks+i);
-    //free(rwlocks);
-
+    delete[] bucketMutexes;
     delete[] currentPopBucket;
 }
 
@@ -69,17 +57,19 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
         hash_t hash,
         T **payload, threadid_t threadIndex, bool noinsert)
 {
-    /*if (!buckets[hash]) {
-        // lock the current bucket to ensure thread safety
-        pthread_rwlock_wrlock(rwlocks + hash);
+    int bucket = hash%number_of_buckets;
+    // std::ofstream logFile;
+    // logFile.open ("debugLog.txt");
+    // if (logFile){
+    //     logFile << "Bucket: " << bucket << "\t thread: " << threadIndex << "\n";
+    // }
+    // logFile.close();
+    bucketMutexes[bucket].waitForLock();
+    bool ret = buckets[bucket]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);
+    bucketMutexes[bucket].unlock();
+    return ret;
+        // return buckets[hash]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);
 
-        if(!buckets[hash])
-        	buckets[hash] = (*storeCreator)();
-
-        pthread_rwlock_unlock(rwlocks + hash);
-    }*/
-
-    return buckets[hash]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);
 }
 
 /*!
@@ -89,10 +79,8 @@ template <typename T>
 bool HashingWrapperStore<T>::popVector(vectordata_t *&out, threadid_t threadIndex)
 {
     hash_t startingPopBucket = currentPopBucket[threadIndex];
-    do
-    {
-        if (buckets[currentPopBucket[threadIndex]]->popVector(out, threadIndex))
-        {
+    do    {
+        if (buckets[currentPopBucket[threadIndex]]->popVector(out, threadIndex))        {
             return true;
         }
         currentPopBucket[threadIndex] = (currentPopBucket[threadIndex] + 1) % number_of_buckets;

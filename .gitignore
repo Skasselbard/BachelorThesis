@@ -8,6 +8,7 @@ settings.json
 *.o
 src/lola
 *.Po
+*.Plo
 *.Tpo
 config.status
 config.log
