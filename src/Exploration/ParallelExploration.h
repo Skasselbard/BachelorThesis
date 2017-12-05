@@ -202,6 +202,7 @@ private:
     nanoseconds* timeToHandOverWork;
     nanoseconds* threadSyncTimes;
     nanoseconds* storeSearchTimes;
+    nanoseconds* firelistFetchTime;
     uint* exploredStates;
     uint* backtracks;
 

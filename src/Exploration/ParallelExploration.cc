@@ -102,7 +102,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
 
     // get first firelist
     arrayindex_t *currentFirelist;
+    auto startFirelistSearch = high_resolution_clock::now();
     arrayindex_t currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
+    firelistFetchTime[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startFirelistSearch);
 
     while (true) // exit when trying to pop from empty stack
     {
@@ -218,7 +220,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             timeToHandOverWork[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startOfHandoverCheck);
             // current marking does not satisfy property --> continue search
             // grab a new firelist (old one is already on stack)
+            auto startFirelistSearch = high_resolution_clock::now();
             currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
+            firelistFetchTime[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startFirelistSearch);
         }
         else
         {
@@ -284,7 +288,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             local_firelist = global_baseFireList->createNewFireList(local_property);
 
             // re-initialize the current search state
+            auto startFirelistSearch = high_resolution_clock::now();
             currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
+            firelistFetchTime[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startFirelistSearch);
         }
     }
 }
@@ -299,6 +305,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     timeToHandOverWork = new nanoseconds[_number_of_threads]();
     threadSyncTimes = new nanoseconds[_number_of_threads]();
     storeSearchTimes = new nanoseconds[_number_of_threads]();
+    firelistFetchTime = new nanoseconds[_number_of_threads]();
     exploredStates = new uint[_number_of_threads]();
     backtracks = new uint[_number_of_threads]();
     for(int i = 0; i < _number_of_threads; i++){
@@ -306,6 +313,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
         timeToHandOverWork[i] = nanoseconds(0);
         threadSyncTimes[i] = nanoseconds(0);
         storeSearchTimes[i] = nanoseconds(0);
+        firelistFetchTime[i] = nanoseconds(0);
         exploredStates[i] = 0;
         backtracks[i] = 0;
     }
@@ -407,6 +415,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     delete[] timeToHandOverWork;
     delete[] threadSyncTimes;
     delete[] storeSearchTimes;
+    delete[] firelistFetchTime;
     delete[] exploredStates;
     delete[] backtracks;
     return property.value;
@@ -444,6 +453,9 @@ std::ofstream dfsFile;
         dfsFile << "Cumulative idle time: ";
         dfsFile << calcCumulativeTime(threadIdleTimes, _number_of_threads).count();
         dfsFile << "ns\n";
+        dfsFile << "Cumulative firelist fetching time: ";
+        dfsFile << calcCumulativeTime(firelistFetchTime, _number_of_threads).count();
+        dfsFile << "ns\n";
         dfsFile << "Cumulative synchronization time: ";
         dfsFile << calcCumulativeTime(threadSyncTimes, _number_of_threads).count();
         dfsFile << "ns\n\n";
@@ -458,8 +470,11 @@ std::ofstream dfsFile;
             dfsFile << "Synchronization time: ";
             dfsFile << threadSyncTimes[i].count();
             dfsFile << "ns\n";
-            dfsFile << "store search time: ";
+            dfsFile << "Store search time: ";
             dfsFile << storeSearchTimes[i].count();
+            dfsFile << "ns\n";
+            dfsFile << "Firelist fetching time: ";
+            dfsFile << firelistFetchTime[i].count();
             dfsFile << "ns\n";
             dfsFile << "Explored states: ";
             dfsFile << exploredStates[i];
