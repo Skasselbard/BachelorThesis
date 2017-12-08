@@ -30,11 +30,7 @@ length) are not prefix of another.
 #include <Core/Dimensions.h>
 #include <Stores/VectorStores/VectorStore.h>
 #include "Core/LolaMutex.h"
-
-#include <chrono>
-#include <ratio>
-
-using namespace std::chrono;
+#include "Core/Benchmark.h"
 
 /// A VectorStoreCreator encapsulates a method that, when invoked, creates a new VectorStore.
 /// It is used by the HashingWrapperStore to create VectorStores for new hash buckets on demand.
@@ -137,8 +133,8 @@ private:
     arrayindex_t number_of_buckets;
 
     threadid_t number_of_threads;
-    nanoseconds* threadIdleTimes;
-    nanoseconds* threadSearchTimes;
+    Benchmark* threadIdleTimes;
+    Benchmark* threadSearchTimes;
 };
 
 #include <Stores/VectorStores/HashingWrapperStore.inc>

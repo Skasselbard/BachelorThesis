@@ -1,0 +1,16 @@
+[Thread 0]
+Idle time: 36321ns
+Store search time: 92942
+
+[Thread 1]
+Idle time: 996ns
+Store search time: 3026
+
+[Thread 2]
+Idle time: 1159ns
+Store search time: 3235
+
+[Thread 3]
+Idle time: 967ns
+Store search time: 3194
+

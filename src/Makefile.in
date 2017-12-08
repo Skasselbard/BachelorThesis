@@ -121,8 +121,8 @@ am__objects_3 = Frontend/Parser/ast-system-k.$(OBJEXT) \
 	$(am__objects_2)
 am_lola_OBJECTS = $(am__objects_3) cmdline.$(OBJEXT) \
 	Core/Handlers.$(OBJEXT) Core/Runtime.$(OBJEXT) \
-	Core/LolaMutex.$(OBJEXT) Core/main.$(OBJEXT) \
-	CoverGraph/CoverGraph.$(OBJEXT) \
+	Core/LolaMutex.$(OBJEXT) Core/Benchmark.$(OBJEXT) \
+	Core/main.$(OBJEXT) CoverGraph/CoverGraph.$(OBJEXT) \
 	EstimateMaxMarking/CreateLP.$(OBJEXT) \
 	Exploration/AutomataTree.$(OBJEXT) \
 	Exploration/CTLExploration.$(OBJEXT) \
@@ -489,6 +489,8 @@ lola_SOURCES = $(KCSOURCES)                                           \
                Core/Runtime.h                                         \
                Core/LolaMutex.h                                       \
                Core/LolaMutex.cc                                      \
+               Core/Benchmark.h                                       \
+               Core/Benchmark.cc                                      \
                Core/main.cc                                           \
                CoverGraph/CoverGraph.cc                               \
                CoverGraph/CoverGraph.h                                \
@@ -978,6 +980,8 @@ Core/Runtime.$(OBJEXT): Core/$(am__dirstamp) \
 	Core/$(DEPDIR)/$(am__dirstamp)
 Core/LolaMutex.$(OBJEXT): Core/$(am__dirstamp) \
 	Core/$(DEPDIR)/$(am__dirstamp)
+Core/Benchmark.$(OBJEXT): Core/$(am__dirstamp) \
+	Core/$(DEPDIR)/$(am__dirstamp)
 Core/main.$(OBJEXT): Core/$(am__dirstamp) \
 	Core/$(DEPDIR)/$(am__dirstamp)
 CoverGraph/$(am__dirstamp):
@@ -1437,6 +1441,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmdline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@Core/$(DEPDIR)/Benchmark.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@Core/$(DEPDIR)/Handlers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@Core/$(DEPDIR)/LolaMutex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@Core/$(DEPDIR)/Runtime.Po@am__quote@

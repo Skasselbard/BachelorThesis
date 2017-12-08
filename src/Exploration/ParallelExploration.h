@@ -25,12 +25,13 @@
 
 #pragma once
 
-#include <Core/Dimensions.h>
-#include <Exploration/SearchStack.h>
-#include <Stores/Store.h>
 #include <atomic>
 #include <chrono>
 #include <ratio>
+#include <Core/Dimensions.h>
+#include <Exploration/SearchStack.h>
+#include <Stores/Store.h>
+#include "Core/Benchmark.h"
 
 using namespace std::chrono;
 
@@ -198,11 +199,13 @@ private:
         UNLOCKED
     };
 
-    nanoseconds* threadIdleTimes;
-    nanoseconds* timeToHandOverWork;
-    nanoseconds* threadSyncTimes;
-    nanoseconds* storeSearchTimes;
-    nanoseconds* firelistFetchTime;
+    Benchmark* totalDFS;
+
+    Benchmark* threadIdleTimes;
+    Benchmark* timeToHandOverWork;
+    Benchmark* threadSyncTimes;
+    Benchmark* storeSearchTimes;
+    Benchmark* firelistFetchTime;
     uint* exploredStates;
     uint* backtracks;
 

@@ -31,8 +31,6 @@ parallel.
 #include <Exploration/ParallelExploration.h>
 #include <Net/Net.h>
 #include <SweepLine/Sweep.h>
-#include <iostream>
-#include <fstream>
 
 /// transfer struct for the start of a parallel search thread
 struct tpDFSArguments
@@ -47,11 +45,15 @@ struct tpDFSArguments
 ParallelExploration::ParallelExploration():    
 // initialize mutexes
 global_property_mutex((bool)UNLOCKED),
-num_suspend_mutex((bool)UNLOCKED),
-threadIdleTimes(nullptr),
-timeToHandOverWork(nullptr),
-threadSyncTimes(nullptr)
-{}
+num_suspend_mutex((bool)UNLOCKED)
+{
+    totalDFS = Benchmark::newBenchmark("DFS total", 1);
+    threadIdleTimes = Benchmark::newBenchmark("Idle time", RT::args.threads_arg);
+    timeToHandOverWork = Benchmark::newBenchmark("Hand over time", RT::args.threads_arg);
+    threadSyncTimes = Benchmark::newBenchmark("Synchronization time", RT::args.threads_arg);
+    storeSearchTimes = Benchmark::newBenchmark("Store search time", RT::args.threads_arg);
+    firelistFetchTime = Benchmark::newBenchmark("Firelist fetch time", RT::args.threads_arg);
+}
 
 void *ParallelExploration::threadPrivateDFS(void *container)
 {
@@ -81,9 +83,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
         }
 
         // return success and the current stack and property
-        auto startSync = high_resolution_clock::now();
+        threadSyncTimes->startCycle(threadNumber);
         waitAndLock(&global_property_mutex);
-        threadSyncTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSync);
+        threadSyncTimes->endCycle(threadNumber);
         global_property->stack.swap(local_stack);
         global_property->initProperty(local_netstate);
         unlock(&global_property_mutex);
@@ -95,16 +97,17 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
 
     // add initial marking to store
     // we do not care about return value since we know that store is empty
-    auto startSearch = high_resolution_clock::now();
+    storeSearchTimes->startCycle(threadNumber);
     global_store->searchAndInsert(local_netstate, 0, threadNumber);
-    storeSearchTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSearch);
+    storeSearchTimes->endCycle(threadNumber);
+
 
 
     // get first firelist
     arrayindex_t *currentFirelist;
-    auto startFirelistSearch = high_resolution_clock::now();
+    firelistFetchTime->startCycle(threadNumber);
     arrayindex_t currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
-    firelistFetchTime[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startFirelistSearch);
+    firelistFetchTime->endCycle(threadNumber);
 
     while (true) // exit when trying to pop from empty stack
     {
@@ -122,9 +125,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             // there is a next transition that needs to be explored in current marking
             // fire this transition to produce new marking in ns
             Transition::fire(local_netstate, currentFirelist[currentEntry]);
-            auto startSearch = high_resolution_clock::now();
+            storeSearchTimes->startCycle(threadNumber);
             bool stateExists = global_store->searchAndInsert(local_netstate, 0, threadNumber);
-            storeSearchTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSearch);
+            storeSearchTimes->endCycle(threadNumber);
             if (stateExists)
             {
                 // State exists! --> backtrack to previous state and try again
@@ -150,9 +153,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 }
 
                 // return success and the current stack and property
-                auto startSync = high_resolution_clock::now();
+                threadSyncTimes->startCycle(threadNumber);
                 waitAndLock(&global_property_mutex);
-                threadSyncTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSync);
+                threadSyncTimes->endCycle(threadNumber);
                 global_property->stack.swap(local_stack);
                 global_property->initProperty(local_netstate);
                 unlock(&global_property_mutex);
@@ -171,13 +174,13 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             // try the dirty read to make the program more efficient
             // most of the time this will already fail and we have saved the time needed to lock the mutex
             // ... do it only if there are at least two transitions in the firelist left (one for us, and one for the other thread)
-            auto startOfHandoverCheck = high_resolution_clock::now();
+            timeToHandOverWork->startCycle(threadNumber);
             if (currentEntry >= 2 && num_suspended > 0)
             {
                 // try to lock
-                auto startSync = high_resolution_clock::now();
+                threadSyncTimes->startCycle(threadNumber);
                 waitAndLock(&num_suspend_mutex);
-                threadSyncTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSync);
+                threadSyncTimes->endCycle(threadNumber);
                 if (num_suspended > 0)
                 {
                     // there is another thread waiting for my data, get its thread number
@@ -217,12 +220,12 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 }
                 unlock(&num_suspend_mutex);
             }
-            timeToHandOverWork[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startOfHandoverCheck);
+            timeToHandOverWork->endCycle(threadNumber);
             // current marking does not satisfy property --> continue search
             // grab a new firelist (old one is already on stack)
-            auto startFirelistSearch = high_resolution_clock::now();
+            firelistFetchTime->startCycle(threadNumber);
             currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
-            firelistFetchTime[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startFirelistSearch);
+            firelistFetchTime->endCycle(threadNumber);
         }
         else
         {
@@ -251,9 +254,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
 
             // maybe we have to go into an other sub-tree of the state-space
             // first get the counter mutex to be able to count the number of threads currently suspended
-            auto startSync = high_resolution_clock::now();
+            threadSyncTimes->startCycle(threadNumber);
             waitAndLock(&num_suspend_mutex);
-            threadSyncTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSync);
+            threadSyncTimes->endCycle(threadNumber);
             suspended_threads[num_suspended++] = threadNumber;
             int local_num_suspended = num_suspended;
             unlock(&num_suspend_mutex);
@@ -271,10 +274,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 return NULL;
             }
             lock(restartSemaphore[threadNumber]);
-            auto startOfIdle = high_resolution_clock::now();
+            threadIdleTimes->startCycle(threadNumber);
             waitForUnlock(restartSemaphore[threadNumber]);
-            threadIdleTimes[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startOfIdle);
-
+            threadIdleTimes->endCycle(threadNumber);
             // test if result is already known now
             // LCOV_EXCL_START
             if (finished)
@@ -288,9 +290,9 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             local_firelist = global_baseFireList->createNewFireList(local_property);
 
             // re-initialize the current search state
-            auto startFirelistSearch = high_resolution_clock::now();
+            firelistFetchTime->startCycle(threadNumber);
             currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
-            firelistFetchTime[threadNumber] += duration_cast<nanoseconds>((high_resolution_clock::now())-startFirelistSearch);
+            firelistFetchTime->endCycle(threadNumber);
         }
     }
 }
@@ -300,23 +302,10 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
                                       int _number_of_threads)
 {
     // initialize benchmark arrays
-    auto startOfDFS = high_resolution_clock::now();
-    threadIdleTimes = new nanoseconds[_number_of_threads]();
-    timeToHandOverWork = new nanoseconds[_number_of_threads]();
-    threadSyncTimes = new nanoseconds[_number_of_threads]();
-    storeSearchTimes = new nanoseconds[_number_of_threads]();
-    firelistFetchTime = new nanoseconds[_number_of_threads]();
+    totalDFS->startCycle(0);
     exploredStates = new uint[_number_of_threads]();
     backtracks = new uint[_number_of_threads]();
-    for(int i = 0; i < _number_of_threads; i++){
-        threadIdleTimes[i] = nanoseconds(0);
-        timeToHandOverWork[i] = nanoseconds(0);
-        threadSyncTimes[i] = nanoseconds(0);
-        storeSearchTimes[i] = nanoseconds(0);
-        firelistFetchTime[i] = nanoseconds(0);
-        exploredStates[i] = 0;
-        backtracks[i] = 0;
-    }
+
     // allocate space for threads
     threads = new pthread_t[_number_of_threads]();
 
@@ -409,13 +398,9 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     delete[] threads;
 
     // write benchmark
-    writeBenchmarkFile( _number_of_threads, duration_cast<nanoseconds>(high_resolution_clock::now() - startOfDFS));
+    totalDFS->endCycle(0);
+    Benchmark::writeToFile("dfsTimes.txt");
     //delete benchmark arrays
-    delete[] threadIdleTimes;
-    delete[] timeToHandOverWork;
-    delete[] threadSyncTimes;
-    delete[] storeSearchTimes;
-    delete[] firelistFetchTime;
     delete[] exploredStates;
     delete[] backtracks;
     return property.value;
@@ -439,51 +424,3 @@ ternary_t ParallelExploration::cover_breadth_first(SimpleProperty &property, Net
     }
     return c.runThreads();
 }
-
- void ParallelExploration::writeBenchmarkFile(int _number_of_threads, nanoseconds dfsTime){
-std::ofstream dfsFile;
-    dfsFile.open ("dfsTime.txt");
-    if (dfsFile){
-        dfsFile << "Cumulative DFS time: ";
-        dfsFile << dfsTime.count();
-        dfsFile << "ns\n";
-        dfsFile << "Cumulative hand over time: ";
-        dfsFile << calcCumulativeTime(timeToHandOverWork, _number_of_threads).count();
-        dfsFile << "ns\n";
-        dfsFile << "Cumulative idle time: ";
-        dfsFile << calcCumulativeTime(threadIdleTimes, _number_of_threads).count();
-        dfsFile << "ns\n";
-        dfsFile << "Cumulative firelist fetching time: ";
-        dfsFile << calcCumulativeTime(firelistFetchTime, _number_of_threads).count();
-        dfsFile << "ns\n";
-        dfsFile << "Cumulative synchronization time: ";
-        dfsFile << calcCumulativeTime(threadSyncTimes, _number_of_threads).count();
-        dfsFile << "ns\n\n";
-        for(int i = 0; i < _number_of_threads; i++){
-            dfsFile << "[Thread " << i << "]\n";
-            dfsFile << "Time for hand over checks: ";
-            dfsFile << timeToHandOverWork[i].count();
-            dfsFile << "ns\n";
-            dfsFile << "Idle time: ";
-            dfsFile << threadIdleTimes[i].count();
-            dfsFile << "ns\n";
-            dfsFile << "Synchronization time: ";
-            dfsFile << threadSyncTimes[i].count();
-            dfsFile << "ns\n";
-            dfsFile << "Store search time: ";
-            dfsFile << storeSearchTimes[i].count();
-            dfsFile << "ns\n";
-            dfsFile << "Firelist fetching time: ";
-            dfsFile << firelistFetchTime[i].count();
-            dfsFile << "ns\n";
-            dfsFile << "Explored states: ";
-            dfsFile << exploredStates[i];
-            dfsFile << "\n";
-            dfsFile << "Backtracks: ";
-            dfsFile << backtracks[i];
-            dfsFile << "\n";
-            dfsFile << "\n";
-        }
-        dfsFile.close();
-    }
- }

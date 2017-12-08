@@ -32,6 +32,8 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
     //storeCreator = _storeCreator;
     number_of_threads = _number_of_threads;
     number_of_buckets = _number_of_buckets;
+    threadIdleTimes = Benchmark::newBenchmark("Hash Idle", number_of_threads);
+    threadSearchTimes = Benchmark::newBenchmark("Hash search", number_of_threads);
     buckets = new VectorStore<T> *[number_of_buckets]();
     bucketMutexes = new LolaMutex[number_of_buckets]();
     for (hash_t i = 0; i < number_of_buckets; i++){
@@ -40,12 +42,6 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
     currentPopBucket = new arrayindex_t[_number_of_threads]();
     // all initialization done, delete the given creator (for comfortable one-line creation)
     delete storeCreator;
-    threadIdleTimes = new nanoseconds[_number_of_threads]();
-    threadSearchTimes = new nanoseconds[_number_of_threads]();
-    for(int i = 0; i < _number_of_threads; i++){
-        threadIdleTimes[i] = nanoseconds(0);
-        threadSearchTimes[i] = nanoseconds(0);
-    }
 }
 
 template <typename T>
@@ -56,25 +52,6 @@ HashingWrapperStore<T>::~HashingWrapperStore(){
     delete[] buckets;
     delete[] bucketMutexes;
     delete[] currentPopBucket;
-
-    std::ofstream dfsFile;
-    dfsFile.open ("hashingStoreTime.txt");
-    if (dfsFile){
-        for(int i = 0; i < number_of_threads; i++){
-            dfsFile << "[Thread " << i << "]\n";
-            dfsFile << "Idle time: ";
-            dfsFile << threadIdleTimes[i].count();
-            dfsFile << "ns\n";;
-            dfsFile << "Store search time: ";
-            dfsFile << threadSearchTimes[i].count();
-            dfsFile << "\n";
-            dfsFile << "\n";
-        }
-        dfsFile.close();
-    }
-
-    delete[] threadIdleTimes;
-    delete[] threadSearchTimes;
 }
 
 /// search for an input vector in the suffix tree and insert it, if it is not present
@@ -85,11 +62,11 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
 {
     int bucket = hash%number_of_buckets;
     
-    auto startIdleTime = high_resolution_clock::now();
+    threadIdleTimes->startCycle(threadIndex);
     bucketMutexes[bucket].waitForLock();
-    threadIdleTimes[threadIndex] += duration_cast<nanoseconds>((high_resolution_clock::now())-startIdleTime);
+    threadIdleTimes->endCycle(threadIndex);
 
-    auto startSearchTime = high_resolution_clock::now();
+    threadSearchTimes->startCycle(threadIndex);
     bool ret = buckets[bucket]->searchAndInsert(
         in, 
         bitlen, 
@@ -98,7 +75,7 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
         threadIndex, 
         noinsert
         );
-    threadSearchTimes[threadIndex] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSearchTime);
+    threadSearchTimes->endCycle(threadIndex);
     bucketMutexes[bucket].unlock();
     return ret;
         // return buckets[hash]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);

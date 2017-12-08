@@ -11,6 +11,8 @@ lola_SOURCES = $(KCSOURCES)                                           \
                Core/Runtime.h                                         \
                Core/LolaMutex.h                                       \
                Core/LolaMutex.cc                                      \
+               Core/Benchmark.h                                       \
+               Core/Benchmark.cc                                      \
                Core/main.cc                                           \
                CoverGraph/CoverGraph.cc                               \
                CoverGraph/CoverGraph.h                                \
