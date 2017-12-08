@@ -30,3 +30,5 @@ tests/package.m4
 *dfsTime.txt
 .vscode/*
 src/perf.data
+src/HashingStoreTime.txt
+src/hashingStoreTime.txt
