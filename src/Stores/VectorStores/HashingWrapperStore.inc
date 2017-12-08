@@ -40,12 +40,6 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
     currentPopBucket = new arrayindex_t[_number_of_threads]();
     // all initialization done, delete the given creator (for comfortable one-line creation)
     delete storeCreator;
-    threadIdleTimes = new nanoseconds[_number_of_threads]();
-    threadSearchTimes = new nanoseconds[_number_of_threads]();
-    for(int i = 0; i < _number_of_threads; i++){
-        threadIdleTimes[i] = nanoseconds(0);
-        threadSearchTimes[i] = nanoseconds(0);
-    }
 }
 
 template <typename T>
@@ -56,25 +50,6 @@ HashingWrapperStore<T>::~HashingWrapperStore(){
     delete[] buckets;
     delete[] bucketMutexes;
     delete[] currentPopBucket;
-
-    std::ofstream dfsFile;
-    dfsFile.open ("hashingStoreTime.txt");
-    if (dfsFile){
-        for(int i = 0; i < number_of_threads; i++){
-            dfsFile << "[Thread " << i << "]\n";
-            dfsFile << "Idle time: ";
-            dfsFile << threadIdleTimes[i].count();
-            dfsFile << "ns\n";;
-            dfsFile << "Store search time: ";
-            dfsFile << threadSearchTimes[i].count();
-            dfsFile << "\n";
-            dfsFile << "\n";
-        }
-        dfsFile.close();
-    }
-
-    delete[] threadIdleTimes;
-    delete[] threadSearchTimes;
 }
 
 /// search for an input vector in the suffix tree and insert it, if it is not present
@@ -84,12 +59,7 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
         T **payload, threadid_t threadIndex, bool noinsert)
 {
     int bucket = hash%number_of_buckets;
-    
-    auto startIdleTime = high_resolution_clock::now();
     bucketMutexes[bucket].waitForLock();
-    threadIdleTimes[threadIndex] += duration_cast<nanoseconds>((high_resolution_clock::now())-startIdleTime);
-
-    auto startSearchTime = high_resolution_clock::now();
     bool ret = buckets[bucket]->searchAndInsert(
         in, 
         bitlen, 
@@ -98,7 +68,6 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
         threadIndex, 
         noinsert
         );
-    threadSearchTimes[threadIndex] += duration_cast<nanoseconds>((high_resolution_clock::now())-startSearchTime);
     bucketMutexes[bucket].unlock();
     return ret;
         // return buckets[hash]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);

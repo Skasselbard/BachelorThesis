@@ -32,8 +32,6 @@
 #include <chrono>
 #include <ratio>
 
-using namespace std::chrono;
-
 class DFSExploration;
 struct CoverPayload;
 class SimpleStackEntry;
@@ -198,15 +196,6 @@ private:
         UNLOCKED
     };
 
-    nanoseconds* threadIdleTimes;
-    nanoseconds* timeToHandOverWork;
-    nanoseconds* threadSyncTimes;
-    nanoseconds* storeSearchTimes;
-    nanoseconds* firelistFetchTime;
-    uint* exploredStates;
-    uint* backtracks;
-
-
     static inline void waitAndLock(std::atomic<bool>* lock){
         bool expected = UNLOCKED;
         while (!lock->compare_exchange_strong(expected,LOCKED)){
@@ -224,14 +213,4 @@ private:
     static inline void unlock(std::atomic<bool>* lock){
         lock->store(UNLOCKED);
     }
-
-    static inline nanoseconds calcCumulativeTime(nanoseconds* array, int size){
-        nanoseconds result = nanoseconds(0);
-        for(int i=0; i < size; i++){
-            result += array[i];
-        }
-        return result;
-    }
-
-    inline void writeBenchmarkFile(int _number_of_threads, nanoseconds dfsTime);
 };
