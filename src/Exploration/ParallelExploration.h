@@ -206,6 +206,8 @@ private:
     Benchmark* threadSyncTimes;
     Benchmark* storeSearchTimes;
     Benchmark* firelistFetchTime;
+    Benchmark* loadTime;    //time spent knowing there are untracked states
+    Benchmark* recoverTime; //time to wait for and get new work
     uint* exploredStates;
     uint* backtracks;
 

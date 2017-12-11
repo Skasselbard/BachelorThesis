@@ -53,6 +53,9 @@ num_suspend_mutex((bool)UNLOCKED)
     threadSyncTimes = Benchmark::newBenchmark("Synchronization time", RT::args.threads_arg);
     storeSearchTimes = Benchmark::newBenchmark("Store search time", RT::args.threads_arg);
     firelistFetchTime = Benchmark::newBenchmark("Firelist fetch time", RT::args.threads_arg);
+    loadTime = Benchmark::newBenchmark("Time with work", RT::args.threads_arg);
+    recoverTime = Benchmark::newBenchmark("Time without work", RT::args.threads_arg);
+
 }
 
 void *ParallelExploration::threadPrivateDFS(void *container)
@@ -122,6 +125,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
         }
         if (currentEntry-- > 0)
         {
+            loadTime->startCycle(threadNumber);
             // there is a next transition that needs to be explored in current marking
             // fire this transition to produce new marking in ns
             Transition::fire(local_netstate, currentFirelist[currentEntry]);
@@ -226,9 +230,11 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             firelistFetchTime->startCycle(threadNumber);
             currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
             firelistFetchTime->endCycle(threadNumber);
+            loadTime->endCycle(threadNumber);
         }
         else
         {
+            recoverTime->startCycle(threadNumber);
             // firing list completed -->close state and return to previous state
             delete[] currentFirelist;
 
@@ -293,6 +299,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             firelistFetchTime->startCycle(threadNumber);
             currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
             firelistFetchTime->endCycle(threadNumber);
+            recoverTime->endCycle(threadNumber);
         }
     }
 }

@@ -32,3 +32,4 @@ tests/package.m4
 src/perf.data
 src/HashingStoreTime.txt
 src/hashingStoreTime.txt
+hashingStoreTime.txt
