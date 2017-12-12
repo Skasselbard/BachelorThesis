@@ -143,6 +143,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 // State exists! --> backtrack to previous state and try again
                 Transition::backfire(local_netstate, currentFirelist[currentEntry]);
                 backtracks[threadNumber]++;
+                loadTime->endCycle(threadNumber);
                 continue;
             }
             // State does not exist!
@@ -174,6 +175,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 delete[] currentFirelist;
                 delete local_firelist;
                 
+                loadTime->endCycle(threadNumber);
                 totalThreadTime->endCycle(threadNumber);
                 return &local_netstate;
             }
@@ -214,6 +216,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                     {
                         // clean up and return
                         delete local_firelist;
+                        loadTime->endCycle(threadNumber);
                         totalThreadTime->endCycle(threadNumber);
                         return NULL;
                     }
@@ -227,6 +230,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                     local_property->updateProperty(local_netstate, currentFirelist[currentEntry]);
                     backtracks[threadNumber]++;
                     // go on as nothing happened (i.e. pretend the new marking has already been in the store)
+                    loadTime->endCycle(threadNumber);
                     continue;
                 }
                 unlock(&num_suspend_mutex);
@@ -257,6 +261,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 Transition::revertEnabled(local_netstate, currentFirelist[currentEntry]);
                 propertyResult = local_property->updateProperty(local_netstate, currentFirelist[currentEntry]);
                 backtracks[threadNumber]++;
+                recoverTime->endCycle(threadNumber);
                 continue;
             }
 
@@ -283,6 +288,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 {
                     unlock(restartSemaphore[i]);
                 }
+                recoverTime->endCycle(threadNumber);
                 totalThreadTime->endCycle(threadNumber);
                 // there is no such state
                 return NULL;
@@ -295,6 +301,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             // LCOV_EXCL_START
             if (finished)
             {
+                recoverTime->endCycle(threadNumber);
                 totalThreadTime->endCycle(threadNumber);
                 return NULL;
             }
