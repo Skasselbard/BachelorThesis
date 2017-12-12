@@ -52,13 +52,13 @@ Benchmark::~Benchmark(){
 
 void Benchmark::startCycle(threadid_t threadID){
     if (benchmarkArray){
-        lastStart= high_resolution_clock::now();
+        lastStart= steady_clock::now();
     }
 }
 void Benchmark::endCycle(threadid_t threadID){
     if (benchmarkArray){
         benchmarkArray[threadID] += 
-            duration_cast<nanoseconds>((high_resolution_clock::now())-lastStart);
+            duration_cast<nanoseconds>((steady_clock::now())-lastStart);
     }
 }
 
