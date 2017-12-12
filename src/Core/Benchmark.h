@@ -39,8 +39,8 @@ public:
     void startCycle(threadid_t threadID);
     void endCycle(threadid_t threadID);
 
-    /// Writes the meassurements to a fie
-    /// DELETES ALL MESSURED DATA
+    /// Writes the measurement to a fie
+    /// DELETES ALL MEASURED DATA
     static void writeToFile(std::string fileName);
 
 private:
@@ -53,7 +53,7 @@ private:
     int benchmarkInt;
     std::string benchmarkName;
 
-    high_resolution_clock::time_point lastStart;
+    steady_clock::time_point lastStart;
 
 };
 
