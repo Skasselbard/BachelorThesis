@@ -85,7 +85,7 @@ void Benchmark::writeToFile(std::string fileName){
             // dfsFile << "ns\n\n";
             for(int i = 0; i < currentBenchmark->arraySize; i++){
                 //dfsFile << "Thread " << i << "\n";
-                dfsFile << std::defaultfloat << currentBenchmark->benchmarkArray[i].count()/1000000000;
+                dfsFile << currentBenchmark->benchmarkArray[i].count()/1000000000;
                 dfsFile << "s\t";
                 dfsFile << currentBenchmark->benchmarkName;
                 dfsFile << "\n";
