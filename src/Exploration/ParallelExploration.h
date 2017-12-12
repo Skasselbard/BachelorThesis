@@ -211,6 +211,7 @@ private:
     Benchmark* recoverTime; //time to wait for and get new work
     Benchmark* threadBuildUpTime;
     Benchmark* threadTearDownTime;
+    Benchmark* preloop;
     uint* exploredStates;
     uint* backtracks;
 

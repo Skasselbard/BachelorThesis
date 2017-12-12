@@ -55,6 +55,7 @@ num_suspend_mutex((bool)UNLOCKED)
     firelistFetchTime = Benchmark::newBenchmark("Firelist fetch time", RT::args.threads_arg);
     loadTime = Benchmark::newBenchmark("Time with work", RT::args.threads_arg);
     recoverTime = Benchmark::newBenchmark("Time without work", RT::args.threads_arg);
+    preloop = Benchmark::newBenchmark("Pre loop time", RT::args.threads_arg);
     
     threadBuildUpTime = Benchmark::newBenchmark("Thread build up", 1);
     threadTearDownTime = Benchmark::newBenchmark("Thread tear down", 1);
@@ -70,6 +71,7 @@ void *ParallelExploration::threadPrivateDFS(void *container)
 
 NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
     totalThreadTime->startCycle(threadNumber);
+    preloop->startCycle(threadNumber);
     SimpleProperty *&local_property = thread_property[threadNumber];
     Firelist *local_firelist = global_baseFireList->createNewFireList(local_property);
     SearchStack<SimpleStackEntry> &local_stack = thread_stack[threadNumber];
@@ -99,6 +101,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
 
         delete local_firelist;
 
+        preloop->endCycle(threadNumber);
         totalThreadTime->endCycle(threadNumber);
         return &local_netstate;
     }
@@ -116,9 +119,11 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
     firelistFetchTime->startCycle(threadNumber);
     arrayindex_t currentEntry = local_firelist->getFirelist(local_netstate, &currentFirelist);
     firelistFetchTime->endCycle(threadNumber);
+    preloop->endCycle(threadNumber);
 
     while (true) // exit when trying to pop from empty stack
     {
+        loadTime->startCycle(threadNumber);
         // if one of the threads sets the finished signal this thread is useless and has to abort
         if (finished)
         {
@@ -127,8 +132,10 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             delete local_firelist;
 
             totalThreadTime->endCycle(threadNumber);
+            loadTime->endCycle(threadNumber);
             return NULL;
         }
+        loadTime->endCycle(threadNumber);
         if (currentEntry-- > 0)
         {
             loadTime->startCycle(threadNumber);
