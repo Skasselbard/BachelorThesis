@@ -47,7 +47,6 @@ ParallelExploration::ParallelExploration():
 global_property_mutex((bool)UNLOCKED),
 num_suspend_mutex((bool)UNLOCKED)
 {
-    totalDFS = Benchmark::newBenchmark("DFS total", 1);
     threadIdleTimes = Benchmark::newBenchmark("Idle time", RT::args.threads_arg);
     timeToHandOverWork = Benchmark::newBenchmark("Hand over time", RT::args.threads_arg);
     threadSyncTimes = Benchmark::newBenchmark("Synchronization time", RT::args.threads_arg);
@@ -55,7 +54,10 @@ num_suspend_mutex((bool)UNLOCKED)
     firelistFetchTime = Benchmark::newBenchmark("Firelist fetch time", RT::args.threads_arg);
     loadTime = Benchmark::newBenchmark("Time with work", RT::args.threads_arg);
     recoverTime = Benchmark::newBenchmark("Time without work", RT::args.threads_arg);
-
+    
+    threadBuildUpTime = Benchmark::newBenchmark("Thread build up", 1);
+    threadTearDownTime = Benchmark::newBenchmark("Thread tear down", 1);
+    totalDFS = Benchmark::newBenchmark("DFS total", 1);
 }
 
 void *ParallelExploration::threadPrivateDFS(void *container)
@@ -310,6 +312,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
 {
     // initialize benchmark arrays
     totalDFS->startCycle(0);
+    threadBuildUpTime->startCycle(0);
     exploredStates = new uint[_number_of_threads]();
     backtracks = new uint[_number_of_threads]();
 
@@ -350,7 +353,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     num_suspended = 0;
     suspended_threads = new arrayindex_t[number_of_threads];
     finished = false;
-
+    threadBuildUpTime->endCycle(0);
     // start the threads
     for (int i = 0; i < number_of_threads; i++)
         if (UNLIKELY(pthread_create(threads + i, NULL, threadPrivateDFS, args + i)))
@@ -381,7 +384,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
             ns = *reinterpret_cast<NetState *>(return_value);
         }
     }
-
+    threadTearDownTime->startCycle(0);
     // clean up semaphores
     for (int i = 0; i < number_of_threads; i++){
         delete restartSemaphore[i];
@@ -405,6 +408,7 @@ bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
     delete[] threads;
 
     // write benchmark
+    threadTearDownTime->endCycle(0);//TODO: Messen!
     totalDFS->endCycle(0);
     Benchmark::writeToFile("dfsTimes.txt");
     //delete benchmark arrays
