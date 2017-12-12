@@ -201,6 +201,7 @@ private:
 
     Benchmark* totalDFS;
 
+    Benchmark* totalThreadTime;
     Benchmark* threadIdleTimes;
     Benchmark* timeToHandOverWork;
     Benchmark* threadSyncTimes;

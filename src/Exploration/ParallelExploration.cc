@@ -47,6 +47,7 @@ ParallelExploration::ParallelExploration():
 global_property_mutex((bool)UNLOCKED),
 num_suspend_mutex((bool)UNLOCKED)
 {
+    totalThreadTime = Benchmark::newBenchmark("Total thread time", RT::args.threads_arg);
     threadIdleTimes = Benchmark::newBenchmark("Idle time", RT::args.threads_arg);
     timeToHandOverWork = Benchmark::newBenchmark("Hand over time", RT::args.threads_arg);
     threadSyncTimes = Benchmark::newBenchmark("Synchronization time", RT::args.threads_arg);
@@ -68,6 +69,7 @@ void *ParallelExploration::threadPrivateDFS(void *container)
 }
 
 NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
+    totalThreadTime->startCycle(threadNumber);
     SimpleProperty *&local_property = thread_property[threadNumber];
     Firelist *local_firelist = global_baseFireList->createNewFireList(local_property);
     SearchStack<SimpleStackEntry> &local_stack = thread_stack[threadNumber];
@@ -97,6 +99,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
 
         delete local_firelist;
 
+        totalThreadTime->endCycle(threadNumber);
         return &local_netstate;
     }
 
@@ -123,6 +126,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             delete[] currentFirelist;
             delete local_firelist;
 
+            totalThreadTime->endCycle(threadNumber);
             return NULL;
         }
         if (currentEntry-- > 0)
@@ -169,7 +173,8 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 // clean up and return
                 delete[] currentFirelist;
                 delete local_firelist;
-
+                
+                totalThreadTime->endCycle(threadNumber);
                 return &local_netstate;
             }
 
@@ -209,7 +214,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                     {
                         // clean up and return
                         delete local_firelist;
-
+                        totalThreadTime->endCycle(threadNumber);
                         return NULL;
                     }
                     // LCOV_EXCL_STOP
@@ -278,6 +283,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
                 {
                     unlock(restartSemaphore[i]);
                 }
+                totalThreadTime->endCycle(threadNumber);
                 // there is no such state
                 return NULL;
             }
@@ -289,6 +295,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber){
             // LCOV_EXCL_START
             if (finished)
             {
+                totalThreadTime->endCycle(threadNumber);
                 return NULL;
             }
             // LCOV_EXCL_STOP
