@@ -1,0 +1,3 @@
+[submodule "libs/mara"]
+	path = libs/mara
+	url = https://github.com/Skasselbard/mara.git
