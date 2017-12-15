@@ -227,7 +227,9 @@ am_lola_OBJECTS = $(am__objects_3) cmdline.$(OBJEXT) \
 	ThirdParty/minisat/simp/Main.$(OBJEXT) \
 	ThirdParty/minisat/simp/SimpSolver.$(OBJEXT) \
 	ThirdParty/minisat/utils/Options.$(OBJEXT) \
-	ThirdParty/minisat/utils/System.$(OBJEXT)
+	ThirdParty/minisat/utils/System.$(OBJEXT) \
+	../libs/mara/src/Statistic.$(OBJEXT) \
+	../libs/mara/src/Mara.$(OBJEXT)
 lola_OBJECTS = $(am_lola_OBJECTS)
 lola_DEPENDENCIES = $(top_builddir)/libs/lp_solve_5.5/liblpsolve55.la
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -776,7 +778,11 @@ lola_SOURCES = $(KCSOURCES)                                           \
 	ThirdParty/minisat/utils/System.h \
 	ThirdParty/minisat/utils/System.cc \
 	ThirdParty/minisat/ThirdParty/zlib/zconf.h \
-	ThirdParty/minisat/ThirdParty/zlib/zlib.h
+	ThirdParty/minisat/ThirdParty/zlib/zlib.h \
+    ../libs/mara/src/Statistic.cpp \
+    ../libs/mara/src/Mara.cpp \
+    ../libs/mara/include/Statistic.h \
+    ../libs/mara/include/Mara.h
 
 lola_LDADD = $(top_builddir)/libs/lp_solve_5.5/liblpsolve55.la
 BUILT_SOURCES = $(BISON_FILES:.yy=.cc) $(BISON_FILES:.yy=.hh) \
@@ -831,7 +837,7 @@ all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .ggo .ll .lo .o .obj .yy
+.SUFFIXES: .c .cc .cpp .ggo .ll .lo .o .obj .yy
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/m4/Makefile.src $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1403,6 +1409,17 @@ ThirdParty/minisat/utils/Options.$(OBJEXT):  \
 ThirdParty/minisat/utils/System.$(OBJEXT):  \
 	ThirdParty/minisat/utils/$(am__dirstamp) \
 	ThirdParty/minisat/utils/$(DEPDIR)/$(am__dirstamp)
+../libs/mara/src/$(am__dirstamp):
+	@$(MKDIR_P) ../libs/mara/src
+	@: > ../libs/mara/src/$(am__dirstamp)
+../libs/mara/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ../libs/mara/src/$(DEPDIR)
+	@: > ../libs/mara/src/$(DEPDIR)/$(am__dirstamp)
+../libs/mara/src/Statistic.$(OBJEXT):  \
+	../libs/mara/src/$(am__dirstamp) \
+	../libs/mara/src/$(DEPDIR)/$(am__dirstamp)
+../libs/mara/src/Mara.$(OBJEXT): ../libs/mara/src/$(am__dirstamp) \
+	../libs/mara/src/$(DEPDIR)/$(am__dirstamp)
 
 lola$(EXEEXT): $(lola_OBJECTS) $(lola_DEPENDENCIES) $(EXTRA_lola_DEPENDENCIES) 
 	@rm -f lola$(EXEEXT)
@@ -1410,6 +1427,7 @@ lola$(EXEEXT): $(lola_OBJECTS) $(lola_DEPENDENCIES) $(EXTRA_lola_DEPENDENCIES)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f ../libs/mara/src/*.$(OBJEXT)
 	-rm -f Core/*.$(OBJEXT)
 	-rm -f CoverGraph/*.$(OBJEXT)
 	-rm -f EstimateMaxMarking/*.$(OBJEXT)
@@ -1436,6 +1454,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@../libs/mara/src/$(DEPDIR)/Mara.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../libs/mara/src/$(DEPDIR)/Statistic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmdline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@Core/$(DEPDIR)/Handlers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@Core/$(DEPDIR)/LolaMutex.Po@am__quote@
@@ -1622,6 +1642,30 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
 .ll.cc:
 	$(AM_V_LEX)$(am__skiplex) $(SHELL) $(YLWRAP) $< $(LEX_OUTPUT_ROOT).c $@ -- $(LEXCOMPILE)
 
@@ -1751,6 +1795,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f ../libs/mara/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f ../libs/mara/src/$(am__dirstamp)
 	-rm -f Core/$(DEPDIR)/$(am__dirstamp)
 	-rm -f Core/$(am__dirstamp)
 	-rm -f CoverGraph/$(DEPDIR)/$(am__dirstamp)
@@ -1814,7 +1860,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool clean-local \
 	mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR) Core/$(DEPDIR) CoverGraph/$(DEPDIR) EstimateMaxMarking/$(DEPDIR) Exploration/$(DEPDIR) Formula/$(DEPDIR) Formula/CTL/$(DEPDIR) Formula/LTL/$(DEPDIR) Formula/StatePredicate/$(DEPDIR) Frontend/Parser/$(DEPDIR) Frontend/SymbolTable/$(DEPDIR) InputOutput/$(DEPDIR) Net/$(DEPDIR) Planning/$(DEPDIR) Siphon/$(DEPDIR) Stores/NetStateEncoder/$(DEPDIR) Stores/VectorStores/$(DEPDIR) SweepLine/$(DEPDIR) Symmetry/$(DEPDIR) ThirdParty/minisat/core/$(DEPDIR) ThirdParty/minisat/simp/$(DEPDIR) ThirdParty/minisat/utils/$(DEPDIR) Witness/$(DEPDIR)
+	-rm -rf ../libs/mara/src/$(DEPDIR) ./$(DEPDIR) Core/$(DEPDIR) CoverGraph/$(DEPDIR) EstimateMaxMarking/$(DEPDIR) Exploration/$(DEPDIR) Formula/$(DEPDIR) Formula/CTL/$(DEPDIR) Formula/LTL/$(DEPDIR) Formula/StatePredicate/$(DEPDIR) Frontend/Parser/$(DEPDIR) Frontend/SymbolTable/$(DEPDIR) InputOutput/$(DEPDIR) Net/$(DEPDIR) Planning/$(DEPDIR) Siphon/$(DEPDIR) Stores/NetStateEncoder/$(DEPDIR) Stores/VectorStores/$(DEPDIR) SweepLine/$(DEPDIR) Symmetry/$(DEPDIR) ThirdParty/minisat/core/$(DEPDIR) ThirdParty/minisat/simp/$(DEPDIR) ThirdParty/minisat/utils/$(DEPDIR) Witness/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -1860,7 +1906,7 @@ install-ps-am:
 installcheck-am: installcheck-binPROGRAMS
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR) Core/$(DEPDIR) CoverGraph/$(DEPDIR) EstimateMaxMarking/$(DEPDIR) Exploration/$(DEPDIR) Formula/$(DEPDIR) Formula/CTL/$(DEPDIR) Formula/LTL/$(DEPDIR) Formula/StatePredicate/$(DEPDIR) Frontend/Parser/$(DEPDIR) Frontend/SymbolTable/$(DEPDIR) InputOutput/$(DEPDIR) Net/$(DEPDIR) Planning/$(DEPDIR) Siphon/$(DEPDIR) Stores/NetStateEncoder/$(DEPDIR) Stores/VectorStores/$(DEPDIR) SweepLine/$(DEPDIR) Symmetry/$(DEPDIR) ThirdParty/minisat/core/$(DEPDIR) ThirdParty/minisat/simp/$(DEPDIR) ThirdParty/minisat/utils/$(DEPDIR) Witness/$(DEPDIR)
+	-rm -rf ../libs/mara/src/$(DEPDIR) ./$(DEPDIR) Core/$(DEPDIR) CoverGraph/$(DEPDIR) EstimateMaxMarking/$(DEPDIR) Exploration/$(DEPDIR) Formula/$(DEPDIR) Formula/CTL/$(DEPDIR) Formula/LTL/$(DEPDIR) Formula/StatePredicate/$(DEPDIR) Frontend/Parser/$(DEPDIR) Frontend/SymbolTable/$(DEPDIR) InputOutput/$(DEPDIR) Net/$(DEPDIR) Planning/$(DEPDIR) Siphon/$(DEPDIR) Stores/NetStateEncoder/$(DEPDIR) Stores/VectorStores/$(DEPDIR) SweepLine/$(DEPDIR) Symmetry/$(DEPDIR) ThirdParty/minisat/core/$(DEPDIR) ThirdParty/minisat/simp/$(DEPDIR) ThirdParty/minisat/utils/$(DEPDIR) Witness/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

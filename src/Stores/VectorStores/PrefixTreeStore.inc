@@ -30,12 +30,14 @@ length) are not prefix of another.
 #include <Stores/VectorStores/PrefixTreeStore.h>
 
 template <typename T>
-PrefixTreeStore<T>::PrefixTreeStore(threadid_t _number_of_threads)
+PrefixTreeStore<T>::PrefixTreeStore(threadid_t _number_of_threads):
+allocator()
 {
+    //allocator.setPageSize((size_t)(1024*1024));//1MB
     number_of_threads = _number_of_threads;
     branch = NULL;
     firstvector = NULL;
-    popVectorCache = (vectordata_t **) calloc(SIZEOF_VOIDP, number_of_threads);
+    popVectorCache = (vectordata_t **) allocator.staticNew(SIZEOF_VOIDP*number_of_threads);
 
     pthread_rwlock_init(&rwlock, NULL);
 }
@@ -349,7 +351,7 @@ bool PrefixTreeStore<T>::searchAndInsert(const vectordata_t *in, bitarrayindex_t
             // allocate space for payload if necessary
             if (payloadSize)
             {
-                *newvector = (vectordata_t *) calloc(payloadSize, 1);
+                *newvector = (vectordata_t *) allocator.staticNew(payloadSize);
                 pPayload = *newvector;
             }
 
@@ -370,7 +372,7 @@ bool PrefixTreeStore<T>::searchAndInsert(const vectordata_t *in, bitarrayindex_t
     // vector_bitstogo is always VECTOR_WIDTH here
     int newvectorlen = ((bitlen - position) + (VECTOR_WIDTH - 1)) / VECTOR_WIDTH;
     // \TODO: Understand this construct and how it can be translated to a new
-    *newvector = (vectordata_t *) calloc(payloadSize + newvectorlen * SIZEOF_VECTORDATA_T, 1);
+    *newvector = (vectordata_t *) allocator.staticNew(payloadSize + newvectorlen * SIZEOF_VECTORDATA_T);
     pPayload = *newvector;
     pVector = (vectordata_t *)(((char *)pPayload) + payloadSize);
 
@@ -421,7 +423,7 @@ bool PrefixTreeStore<T>::popVector(vectordata_t *&out, threadid_t threadIndex)
     // create intermediate vector
     if (!(popVectorCache[threadIndex]))
     {
-        popVectorCache[threadIndex] = (vectordata_t *) malloc(vectorlen);
+        popVectorCache[threadIndex] = (vectordata_t *) allocator.staticNew(vectorlen);
     }
 
     // vector currently viewed
