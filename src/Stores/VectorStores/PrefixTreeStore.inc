@@ -33,7 +33,7 @@ template <typename T>
 PrefixTreeStore<T>::PrefixTreeStore(threadid_t _number_of_threads):
 allocator()
 {
-    //allocator.setPageSize((size_t)(1024*1024));//1MB
+    allocator.setPageSize((size_t)(1024*1024*500));//500MB
     number_of_threads = _number_of_threads;
     branch = NULL;
     firstvector = NULL;
