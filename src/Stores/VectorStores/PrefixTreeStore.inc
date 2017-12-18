@@ -32,6 +32,7 @@ length) are not prefix of another.
 template <typename T>
 PrefixTreeStore<T>::PrefixTreeStore(threadid_t _number_of_threads)
 {
+    allocator.setPageSize((size_t)(1024*1024*300));//200MB
     number_of_threads = _number_of_threads;
     branch = NULL;
     firstvector = NULL;
@@ -49,21 +50,21 @@ inline size_t PrefixTreeStore<T>::getPayloadSize()
 template <typename T>
 PrefixTreeStore<T>::~PrefixTreeStore()
 {
-    if (branch)
-    {
-        delete branch;
-    }
-    if (firstvector)
-    {
-        free(firstvector);
-    }
+    // if (branch)
+    // {
+    //     delete branch;
+    // }
+    // if (firstvector)
+    // {
+    //     free(firstvector);
+    // }
 
-    for (threadid_t i = 0; i < number_of_threads; ++i)
-        if (popVectorCache[i])
-        {
-            free(popVectorCache[i]);
-        }
-    free(popVectorCache);
+    // for (threadid_t i = 0; i < number_of_threads; ++i)
+    //     if (popVectorCache[i])
+    //     {
+    //         free(popVectorCache[i]);
+    //     }
+    // free(popVectorCache);
 
     pthread_rwlock_destroy(&rwlock);
 }
@@ -78,18 +79,18 @@ PrefixTreeStore<T>::Decision::Decision(bitarrayindex_t b) : bit(b) , vector(NULL
 template <typename T>
 PrefixTreeStore<T>::Decision::~Decision()
 {
-    if (vector)
-    {
-        free(vector);
-    }
-    if (nextnew)
-    {
-        delete nextnew;
-    }
-    if (nextold)
-    {
-        delete nextold;
-    }
+    // if (vector)
+    // {
+    //     free(vector);
+    // }
+    // if (nextnew)
+    // {
+    //     delete nextnew;
+    // }
+    // if (nextold)
+    // {
+    //     delete nextold;
+    // }
 }
 
 /// search for an input vector in the suffix tree and insert it, if it is not present
@@ -506,7 +507,7 @@ bool PrefixTreeStore<T>::popVector(vectordata_t *&out, threadid_t threadIndex)
     // remove node
     *pAnchor = anchor->nextnew;
     anchor->nextnew = NULL; // prevent it from being deleted when calling the destructor
-    delete anchor;
+    //delete anchor;
 
     // return result
     pthread_rwlock_unlock(&rwlock);
