@@ -14,7 +14,7 @@ src/lola
 config.status
 config.log
 *Makefile
-.vscode/launch.json
+.vscode/*
 src/config.h
 autom4te.cache
 m4/l*.m4
@@ -29,3 +29,15 @@ doc/lola.log
 *.old
 *.timestamp
 
+*/Makefile.in
+tests/package.m4
+src/perf.out
+src/perf.data
+src/Makefile.in
+src/hashingStoreTime.txt
+src/dfsTime.txt
+src/config.h.in
+*.Plo
+*.lo
+doc/Doxydetails
+libs/lp_solve_5.5/liblpsolve55.la
