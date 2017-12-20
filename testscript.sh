@@ -1,7 +1,7 @@
 #!/bin/bash
 
 git stash
-git checkout master
+git checkout -f master
 git pull
 
 libtoolize
@@ -16,7 +16,7 @@ make -j4
 ./src/lola --json="test-master-t60-b100.json" --check=full --threads=60 --bucketing=100 ./tests/testfiles/phils1000.lola
 
 git stash
-git checkout atomics
+git checkout -f atomics
 git pull
 
 libtoolize
@@ -31,7 +31,7 @@ make -j4
 ./src/lola --json="test-atomics-t60-b100.json" --check=full --threads=60 --bucketing=100 ./tests/testfiles/phils1000.lola
 
 git stash
-git checkout maraIntegration
+git checkout -f maraIntegration
 git pull
 
 libtoolize
