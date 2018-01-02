@@ -31,7 +31,7 @@ make -j4
 ./src/lola --json="test-atomics-t60-b100.json" --check=full --threads=60 --bucketing=100 ./tests/testfiles/phils1000.lola
 
 git stash
-git checkout -f maraIntegration
+git checkout -f maraPThread
 git pull
 
 libtoolize
