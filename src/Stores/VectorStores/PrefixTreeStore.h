@@ -27,6 +27,18 @@ length) are not prefix of another.
 
 #pragma once
 
+//Defines for mara
+#ifndef DEFAULT_PAGE_SIZE
+#define DEFAULT_PAGE_SIZE 104857600 //100MB
+#endif
+#ifndef USE_REALLOC
+#define USE_REALLOC
+#endif
+#ifndef STATISTIC
+#define STATISTIC
+#endif
+
+#include <../libs/mara/include/Mara.h>
 #include <Core/Dimensions.h>
 #include <Stores/VectorStores/VectorStore.h>
 
@@ -93,6 +105,8 @@ private:
     vectordata_t **popVectorCache;
 
     threadid_t number_of_threads;
+
+    Mara allocator;
 };
 
 // forward declaration to register function specialization

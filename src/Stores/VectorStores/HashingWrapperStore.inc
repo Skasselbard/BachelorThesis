@@ -30,14 +30,14 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
         arrayindex_t _number_of_buckets, threadid_t _number_of_threads)
 {
     //storeCreator = _storeCreator;
+    number_of_threads = _number_of_threads;
     number_of_buckets = _number_of_buckets;
 
     buckets = new VectorStore<T> *[number_of_buckets]();
-    //rwlocks =(pthread_rwlock_t*) calloc(sizeof(pthread_rwlock_t), number_of_buckets);
-
-    for (hash_t i = 0; i < number_of_buckets; i++)
-    {
+    bucketMutexes = new pthread_mutex_t[number_of_buckets]();
+    for (int i = 0; i < number_of_buckets; i++){
         buckets[i] = (*storeCreator)();
+        pthread_mutex_init(&bucketMutexes[i], NULL);
         //pthread_rwlock_init(rwlocks+i, NULL);
     }
 
@@ -55,7 +55,7 @@ HashingWrapperStore<T>::~HashingWrapperStore()
         delete buckets[i];
     }
     delete[] buckets;
-
+    delete[] bucketMutexes;
     //for (hash_t i = 0; i < number_of_buckets; i++)
     //    pthread_rwlock_destroy(rwlocks+i);
     //free(rwlocks);
@@ -79,7 +79,19 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
         pthread_rwlock_unlock(rwlocks + hash);
     }*/
 
-    return buckets[hash]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);
+    int bucket = hash%number_of_buckets;
+    pthread_mutex_lock(&bucketMutexes[bucket]);
+    bool ret = buckets[bucket]->searchAndInsert(
+        in, 
+        bitlen, 
+        hash, 
+        payload, 
+        threadIndex, 
+        noinsert
+        );
+    pthread_mutex_unlock(&bucketMutexes[bucket]);
+    return ret;
+
 }
 
 /*!
@@ -89,10 +101,8 @@ template <typename T>
 bool HashingWrapperStore<T>::popVector(vectordata_t *&out, threadid_t threadIndex)
 {
     hash_t startingPopBucket = currentPopBucket[threadIndex];
-    do
-    {
-        if (buckets[currentPopBucket[threadIndex]]->popVector(out, threadIndex))
-        {
+    do{
+        if (buckets[currentPopBucket[threadIndex]]->popVector(out, threadIndex)){
             return true;
         }
         currentPopBucket[threadIndex] = (currentPopBucket[threadIndex] + 1) % number_of_buckets;

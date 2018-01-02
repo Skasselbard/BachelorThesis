@@ -263,7 +263,7 @@ NetState *ParallelExploration::threadedExploration(threadid_t threadNumber)
 
 bool ParallelExploration::depth_first(SimpleProperty &property, NetState &ns,
                                       Store<void> &myStore, Firelist &firelist,
-                                      threadid_t _number_of_threads)
+                                      int _number_of_threads)
 {
     // allocate space for threads
     threads = new pthread_t[_number_of_threads]();

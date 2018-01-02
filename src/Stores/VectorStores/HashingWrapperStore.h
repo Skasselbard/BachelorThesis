@@ -125,9 +125,11 @@ public:
 
 private:
     VectorStore<T> **buckets;
+    pthread_mutex_t* bucketMutexes;
 
     arrayindex_t *currentPopBucket;
     arrayindex_t number_of_buckets;
+    threadid_t number_of_threads;
 };
 
 #include <Stores/VectorStores/HashingWrapperStore.inc>

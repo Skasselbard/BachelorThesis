@@ -296,7 +296,11 @@ lola_SOURCES = $(KCSOURCES)                                           \
 	ThirdParty/minisat/utils/System.h \
 	ThirdParty/minisat/utils/System.cc \
 	ThirdParty/minisat/ThirdParty/zlib/zconf.h \
-	ThirdParty/minisat/ThirdParty/zlib/zlib.h
+	ThirdParty/minisat/ThirdParty/zlib/zlib.h \
+    ../libs/mara/src/Statistic.cpp \
+    ../libs/mara/src/Mara.cpp \
+    ../libs/mara/include/Statistic.h \
+    ../libs/mara/include/Mara.h
 
 lola_LDADD = $(top_builddir)/libs/lp_solve_5.5/liblpsolve55.la
 
