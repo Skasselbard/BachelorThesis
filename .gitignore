@@ -1,4 +1,3 @@
-doc/parralelization/main.pdf
 *.aux
 *.bbl
 *.blg
@@ -32,3 +31,4 @@ tests/package.m4
 src/perf.data
 src/HashingStoreTime.txt
 src/hashingStoreTime.txt
+src/perf.out
