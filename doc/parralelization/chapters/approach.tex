@@ -1,28 +1,43 @@
 \chapter{Approach}
 
-\section{Basic Plan}
-- Assumption: Lola is slow because of synchronization issues in the parallel dfs\\
-- parallelization is slowed down because of synchronization issues\\
-- synchronization is done with help of pthread library\\
-- replace pthread with faster, elemental synchronization method namely compare and swap\\
-- messure the performance difference
+The purpose of this work is to efficiently make use of multiple threads with the LowLevelAnalyzer (lola).\\
+Lolas development startet in 1998. It was aimed to be used by third party tools to check properties of petri nets \cite{schmidt2000lola}. Since then it was steadily updated to compete with other state of the art tools. Recurring prizes in a model checking contest with focus on petri nets suggest a success in this attempt \cite{MCC2017}.\\
+The internal property evaluation however, is still most performant single threaded. To evaluate a property of a petri net, lola searches all necessary net states that can be reached from the initial one. The search is a depth first search on an undirected graph. The graph is discovered during the search itself.\\
+Parallelization of depth first search is a difficult matter. Although rather general algorithms exist (some of them mentioned in the previous chapter), they usually make use of an assumption which cannot be made with lola.\\
+For the quite specialized search in lola, a previous attempt of parallelization exists. Unfortunately the performance is usually worse then the single threaded approach. It even gets worse the more threads are used.\\
+This is the staring point of this work. There is an algorithm which is not performing as expected. The most important task, is to find the bottle neck of this algorithm. After that it is desired to remove that bottleneck. The improved version should hopefully outperform the single threaded algorithm with use of a reasonable amount of threads. Additionally a desirable result would show a linear (or better) scaling of the performance with the amount of threads.
 
-\section{Implementation}
-\subsection{Extract Significant Code}
-- code analysis\\
-- differences between parallel and sequential implementation\\
-\subsection{Understanding The Semantics}
-- difference between mutex and semaphore\\
-- what mutexes are implemented\\
-- what semaphores are implemented\\
-- do they do what its type of synchronization is good for\\
-- what is pthread\\
-- what is the overhead inside the pthread library\\
-\subsection{Replace Code}
-- what would an equivalent compare and swap implementation look like\\
-- what is the overhead\\
-- where is synchronization necessary?\\
-- what is the exact code\\
+\section{Implementation Details}
+\subsection{Relevant Code}
+This work is based on a previous attempt by Gregor Behnke to use multiple threads for lola. For this reason, his code will be taken as base implementation for the parallel search. In the lola project structure, this would correspond to the \texttt{ParallelExploration} class in src/Exploration.\\
+This class itself seems to be based on the single threaded algorithm in the \texttt{DFSExploration} class, since the basic structure is is similar and several lines of code and comments are ...Deckungsgleich?...
+
+- code was handed over from previous developers\\
+- was Based on the existing single threaded exploration\\
+- subclass of a general exploration class\\
+- search class is determent by the call switches of lola\\
+
+- perpose: get performance boost with multiple threads\\
+- challenge: sync overhead and load distribution\\
+
+- threads get local and shared data\\
+- shared data has to be thread safe\\
+- ?which data?\\
+- parallel exploration is mainly sync\\
+- actual work is done in a thread local single threaded search\\
+
+- another challenge: searchandinsert inside global data\\
+- threadsadety accomplished with netstate has and threadsafe buckets\\
+
+\subsection{Swapping the Synchronization}
+- swap pthread with compare and swap\\
+- get a fitting CAS implementation\\
+- find all mutexes and semaphores\\
+- replace all pthread calls with CAS calls\\
+
+\section{Environment}
+- ebro\\
+- vm\\
 
 \section{Benchmark}
 \subsection{Benchmark Types}
@@ -48,8 +63,93 @@
 - manual instrumentation is precise\\
 - manual instrumentation can messure custom metadata like state expansions of each thread\\
 
-\section{Results}
-- philosopher net as example (warum?, repräsentativ?)\\
+\section{Manual Instrumentation}
+%was        philosopher check full, searchandinsert von parallel exploration, später von unterklasse der einzelnen threads
+%warum      ausreichend komplex, vergleichsweise allgemeines netz, start der suche
+%ergebnis   nicht eindeutig
+\subsection{First Iteration}
+- benchmark on own vm and ebro
+- PIC: vm stats
+- PIC: ebro stats
+- benchmarking inside search and insert of parallel exploration\\
+- search loop begins there - majority of the time spent there\\
+- 1000 philosopher net as example with a full check\\ %TODO: meaning of full check
+- net is reasonable complex to keep machine busy for a reasonable amount of time\\
+- net is not a to specialized case\\
+- net is a commonly used example and therefore known to a decent part of the community\\
+- PIC: measurements
 - no significant speedup\\
 - threads distribute state expansions evenly\\
-- bottleneck is SearechAndInsert()\\
+- idle thread times are not significant\\
+- bottleneck is SearechAndInsert() (the store of the individual thread)\\
+
+\subsection{Second Iteration}
+- therefore new benchmark inside the thread local search and insert\\
+- PIC: measurements\\
+- PIC: CodeSnippet\\
+- times seem inkonsistent\\
+- time spent in thread local space is ?longer? then the bracket around the function call\\
+- time inside the own functioncalls is marginal\\
+- additional unnamed measurements did not improve the reliability of the measured values\\
+
+\subsection{Result and Conclusion}
+- time measurements inside threads can be tricky\\
+- measurements of wall clock time vs ?process? time ?CITATION?\\
+- measurement method might not be appropriate \\
+- moving on to another method\\
+
+\section{Profiling}
+\subsection{Approach}
+- use of perf ?tools?\\%was 
+- works out of the box\\%warum
+- no significant slowdown\\
+- readable data\\
+- other tested profilers did not work as well or not at all\\
+- kernel feature from linux\\
+- impossible to test every profiler in the time constraints\\
+- profiling on vm as start\\%was
+- dropping profiling on ebro since no rights and strong hint on bottleneck found like stated below\\%warum
+- measurement of the whole lola execution or a sample inside the search phase\\%was
+- PIC: CodeSnippet\\
+- snippet explanation\\
+- sample measurements is sufficient data\\ %warum
+- measurements create large amount of data (GBs)\\
+
+%ergebnis
+\subsection{Result and Conclusion}
+- most of the time spent in libcalloc\\
+- PIC: TestData\\
+- memory allocation in OS scope\\
+- function names point to os mutex lock and wait\\
+- to many allocation calls which blocks each other\\
+- custom allocator is needed\\
+
+\section{Memory Allocator}
+- luckily there is a project where author was involved\\
+- mara allocates stack and gives no interface to free allocated memory\\
+- gets chunks of memory from malloc\\
+- simple and fast pointer arithmetic is used to manage the memory stack\\
+- each bucket can have own instance of mara so that it becomes thread safe (since the buckets are already thread safe)\\
+- freeing memory on program termination\\
+- the only data created is needed for the search\\
+- terminating the search is the begin of terminating lola\\
+- thus this method is sufficient for this perpose\\ 
+
+\section{Results}
+\subsection{Profiling}
+- same environment like the previous prof env\\
+- PIC: data\\
+- libcalloc calls are gone -> under significance threshold\\
+- mem... calls and firelist calls are now the most segnificant values\\
+- meaning the greatest bottleneck seems to be gone\\
+
+\subsection{Macrobenchmark}
+- knowing a major bottleneck is gone, execution and scaling of the whole program is of interest\\
+- simple measuremnt of execution time is sufficiant\\
+- since multiple threads will influence time consumption directly\\
+- lola can log that itself\\
+- all implementations are benchmarked (master, CAS, MaraCas, MaraPthread)\\
+- significant values are: single thread performance, scaling with threads, scaling with bucket count\\
+- PIC: measurements\\
+
+\section{Evaluation}

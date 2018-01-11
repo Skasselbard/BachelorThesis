@@ -32,3 +32,6 @@ src/perf.data
 src/HashingStoreTime.txt
 src/hashingStoreTime.txt
 src/perf.out
+*.nlo
+*.out
+*.toc
