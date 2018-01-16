@@ -1,24 +1,37 @@
-\contentsline {chapter}{\numberline {1}Title}{1}
-\contentsline {chapter}{\numberline {2}Abstract}{2}
-\contentsline {chapter}{\numberline {3}Introduction}{4}
-\contentsline {chapter}{\numberline {4}Related Work}{5}
-\contentsline {section}{\numberline {4.1}Parallelization History}{5}
-\contentsline {section}{\numberline {4.2}Synchronization Methods}{5}
-\contentsline {section}{\numberline {4.3}Depth First Search Parallelization}{5}
-\contentsline {chapter}{\numberline {5}Approach}{6}
-\contentsline {section}{\numberline {5.1}Basic Plan}{6}
-\contentsline {section}{\numberline {5.2}Implementation}{6}
-\contentsline {subsection}{\numberline {5.2.1}Extract Significant Code}{6}
-\contentsline {subsection}{\numberline {5.2.2}Understanding The Semantics}{6}
-\contentsline {subsection}{\numberline {5.2.3}Replace Code}{6}
-\contentsline {section}{\numberline {5.3}Benchmark}{7}
-\contentsline {subsection}{\numberline {5.3.1}Benchmark Types}{7}
-\contentsline {subsection}{\numberline {5.3.2}Profilers}{7}
-\contentsline {subsubsection}{\nonumberline gprof}{7}
-\contentsline {subsubsection}{\nonumberline valgrind}{7}
-\contentsline {subsubsection}{\nonumberline perf}{7}
-\contentsline {subsubsection}{\nonumberline operf}{7}
-\contentsline {subsection}{\numberline {5.3.3}Choice}{7}
-\contentsline {section}{\numberline {5.4}Results}{7}
-\contentsline {chapter}{\numberline {6}Conclusion}{9}
-\contentsline {chapter}{\numberline {7}Future Work}{10}
+\select@language {english}
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}
+\contentsline {chapter}{List of Abbreviations}{1}{Doc-Start}
+\contentsline {chapter}{\numberline {2}Related Work}{2}{chapter.2}
+\contentsline {section}{\numberline {2.1}Parallelization History}{2}{section.3}
+\contentsline {section}{\numberline {2.2}Synchronization Methods}{2}{section.4}
+\contentsline {section}{\numberline {2.3}Depth First Search Parallelization}{2}{section.5}
+\contentsline {chapter}{\numberline {3}Background}{3}{chapter.6}
+\contentsline {section}{\numberline {3.1}Implementation Details}{3}{section.7}
+\contentsline {subsection}{\numberline {3.1.1}Code Base}{3}{subsection.8}
+\contentsline {subsection}{\numberline {3.1.2}Data Synchronization}{4}{subsection.9}
+\contentsline {section}{\numberline {3.2}Environment}{5}{section.10}
+\contentsline {section}{\numberline {3.3}Performance Measurement}{6}{section.12}
+\contentsline {subsection}{\numberline {3.3.1}Benchmarking Scopes And Methods}{6}{subsection.13}
+\contentsline {subsection}{\numberline {3.3.2}Profilers}{7}{subsection.14}
+\contentsline {subsubsection}{\numberline {3.3.2.1}gprof}{7}{subsubsection.15}
+\contentsline {subsubsection}{\numberline {3.3.2.2}valgrind}{7}{subsubsection.16}
+\contentsline {subsubsection}{\numberline {3.3.2.3}perf}{7}{subsubsection.17}
+\contentsline {subsubsection}{\numberline {3.3.2.4}operf}{7}{subsubsection.18}
+\contentsline {subsection}{\numberline {3.3.3}Choice}{7}{subsection.19}
+\contentsline {chapter}{\numberline {4}Approach}{8}{chapter.20}
+\contentsline {section}{\numberline {4.1}Switching The Synchronization}{8}{section.21}
+\contentsline {section}{\numberline {4.2}Manual Instrumentation}{8}{section.22}
+\contentsline {subsection}{\numberline {4.2.1}First Iteration}{8}{subsection.23}
+\contentsline {subsection}{\numberline {4.2.2}Second Iteration}{8}{subsection.24}
+\contentsline {subsection}{\numberline {4.2.3}Result and Conclusion}{9}{subsection.25}
+\contentsline {section}{\numberline {4.3}Profiling}{9}{section.26}
+\contentsline {subsection}{\numberline {4.3.1}Approach}{9}{subsection.27}
+\contentsline {subsection}{\numberline {4.3.2}Result and Conclusion}{9}{subsection.28}
+\contentsline {section}{\numberline {4.4}Memory Allocator}{10}{section.29}
+\contentsline {section}{\numberline {4.5}Results}{10}{section.30}
+\contentsline {subsection}{\numberline {4.5.1}Profiling}{10}{subsection.31}
+\contentsline {subsection}{\numberline {4.5.2}Macrobenchmark}{10}{subsection.32}
+\contentsline {section}{\numberline {4.6}Evaluation}{10}{section.33}
+\contentsline {chapter}{\numberline {5}Conclusion}{11}{chapter.34}
+\contentsline {chapter}{\numberline {6}Future Work}{12}{chapter.35}
+\contentsline {chapter}{\nonumberline Bibliography}{13}{chapter*.36}
