@@ -2,11 +2,28 @@
 \chapter{Background}
 
 The purpose of this work is to efficiently make use of multiple threads with the LowLevelAnalyzer (lola).\\
+%TODO: separate chapter?
 Lolas development startet in 1998. It was aimed to be used by third party tools to check properties of petri nets \cite{schmidt2000lola}. Since then it was steadily updated to compete with other state of the art tools. Recurring prizes in a model checking contest with focus on petri nets suggest a success in this attempt \cite{MCC2017}.\\
 The internal property evaluation however, is still most performant single threaded. To evaluate a property of a petri net, lola searches all necessary net states that can be reached from the initial one. The search is a depth first search on an undirected graph. The graph is discovered during the search itself.\\
-Parallelization of depth first search is a difficult matter. Although rather general algorithms exist (some of them mentioned in the previous chapter), they usually make use of an assumption which cannot be made with lola.\\
+Parallelization of depth first search is a difficult matter. Although rather general algorithms exist (some of them mentioned in the previous chapter), they usually make use of an assumption which cannot be made with lola.\\ %TODO: reference dfs correctly
 For the quite specialized search in lola, a previous attempt of parallelization exists. Unfortunately the performance is usually worse then the single threaded approach. It even gets worse the more threads are used.\\
 This is the staring point of this work. There is an algorithm which is not performing as expected. The most important task, is to find the bottle neck of this algorithm. After that it is desired to remove that bottleneck. The improved version should hopefully outperform the single threaded algorithm with use of a reasonable amount of threads. Additionally a desirable result would show a linear (or better) scaling of the performance with the amount of threads.
+
+\section{Performance Measurement}
+\subsection{A distinction between different views on software}
+The performance of a program is a property which is always of interest somehow. Even if it is not a critical aspect in the working environment. But as reachable the concept of performance might look at first, the complicated it can get.\\
+Just like that, what is called a performant application is highly dependent on its environment. The possibly most obvious metric would be the time it takes to execute a program or a subroutine. But in a lot of szenarios, the time consumption actually does not matter that much. A user might not even notice a factor of 1000 between routines that operate in an order of micro seconds. At the same time he might worry that the program can access enough memory to finish its task. That means before measuring the performance of a program or subroutine, one must define the metrics that define the performance of exactly that given program or subroutine. Other metrics beside execution time and memory consumption can be network latency, energy consumption or responsibility. Ultimately it is everything that increases the useability of a program.\\
+After knowing what will be measured the reasonable next concern is how it will be measured. The act of measuring is typically called benchmark and the approach here is influenced by the scope of the measurement. Oaks describes a general distinction between macro, meso and micro benchmarks \cite{oaks2014java}. Each type addresses a different scope of a programm.\\ %TODO: don't address oaks directly
+Macro benchmarks give an overview over the entire execution. The data collection is often less complicated since it is done over the whole application runtime and hardly requires any modifications to it. Measuring the runtime of a program is as simple as it gets: the difference between the end and the start of the program. The memory allocation can often also be measured with simple tools that the operating system or other third party software provide. The downside is that a lot of software cannot be measured at all in this scope. So it is a property of event driven programs that they do not terminate at a known point in time and therefore the execution time is of limited use.\\
+Micro benchmarks consider the most narrow aspects of an application. They messure the execution of single instructions or atomic routines. Results of micro benchmarks have to be taken with a grain of salt because compile and hardware optimization strongly influences the results. Assumptions that work for the single code snippet might become false after the compiler integrates that part into the complete program or vise versa. It is a good advise to use a benchmarking tool which is built for this task. Overwise there is a risk to be trapped in false results. Like compilers that are optimizing away whole loops (which in turn often be the benchmark itself), because the result can be evaluated at compile time. The advantages of micro benchmarks however, is that different implementations of basic algorithms can be compared directly. Provided they are performing equivalent in the macro scope of the program.\\
+After the previous scopes described a detailed view and an overview, the last scope has to be something in between. And this holds true for the so called meso benchmark. Perhaps the best explanation for this kind is, that a meso benchmark is what is not macro nor micro benchmark. Meso benchmarks deal with parts of a program that get more complex. Like Modules or further reaching subroutines. These can be the most interesting benchmarks since they can narrow down bottle necks to specific parts of the software. Unfortunately they often require to manipulate the program in some way. Which again means that the measured performance differs from the actual performance.\\
+
+\subsection{Methods of measurement}
+For the actual measurements, two basic approaches can be distinguished: manual implementation or usage of a tool.\\
+The quickest and most precise approach is to make own measurements. Self written, and therefore known software can be easily extended e.g. by counters for variables or measurements of time periods. All measurements can be tailored to the individual use case and results can be exported in the most convenient format. On the over hand this approach can come with several downsides. Some of them might be that the maintenance of the measurements can get increasingly complex the more numerous they get, added code will influence the performance of the software itself, and own mistakes might hide behind satisfying results. And there are probably other reasons that can be thought of, but short, temporary measurements of this kind might give o quick overview the own software.\\
+Probably the safer approach is the usage of a tool. There exist a variety of tools which are build for the inherent purpose to measure application performance with common metrics and use cases. Since the metrics reflect some characteristics of an application - a profile - these tools are typically called profilers. Using established profilers for performance measurement can help avoiding common traps and mistakes especially when they were designed by experienced developers who are skilled in this area. But it also means to invest time and effort to learn how to use it and how to interpret its results.\\
+Profilers aid to do the things automatically that otherwise would have to be implemented manually. An often used method to figure out bottle necks is to take samples of the call stack during program execution. The calls that are most frequently sampled will correlate with the program parts where the most time was spent in. Another method is to use code injections. Here, code is inserted automatically into the source or binary code at relevant spots. The injections are then used to count events or measure time intervals.\\
+With the general techniques in mind we can proceed to the actual software and its characteristics that will be examined in this work.
 
 \section{Implementation Details}
 \subsection{Code Base}
@@ -54,38 +71,6 @@ If no other source is provided the data was collected with the proc filesystem p
 % MemTotal:       18281952 kB
 % SwapTotal:       2097148 kB
 
-\section{Performance Measurement}
-\subsection{Benchmarking Scopes And Methods}
-The performance of a program is a property which is always of interest somehow. Even if it is not a critical aspect in the working environment. But as reachable the concept of performance might look at first, the complicated it can get.\\
-Just like that, what is called a performant application is highly dependent on its environment. The possibly most obvious metric would be the time it takes to execute a program or a subroutine. But in a lot of szenarios, the time consumption actually does not matter that much. A user might not even notice a factor of 1000 between routines that operate in an order of micro seconds. At the same time he might worry that the program can access enough memory to finish its task. That means before measuring the performance of a program or subroutine, one must define the metrics that define the performance of exactly that given program or subroutine. Other metrics beside execution time and memory consumption can be network latency, energy consumption or responsibility. Ultimately it is everything that increases the useability of a program.\\
-After knowing what will be measured the reasonable next concern is how it will be measured. The act of measuring is typically called benchmark and the approach here is influenced by the scope of the measurement. Oaks describes a general distinction between macro, meso and micro benchmarks \cite{oaks2014java}. Each type addresses a different scope of a programm.\\
-Macro benchmarks give an overview over the entire execution. The data collection is often less complicated since it is done over the whole application runtime and hardly requires any modifications to it. Measuring the runtime of a program is as simple as it gets: the difference between the end and the start of the program. The memory allocation can often also be measured with simple tools that the operating system or other third party software provide. The downside is that a lot of software cannot be measured at all in this scope. So it is a property of event driven programs that they do not terminate at a known point in time and therefore the execution time is of limited use.\\
-Micro benchmarks consider the most narrow aspects of an application. They messure the execution of single instructions or atomic routines. Results of micro benchmarks have to be taken with a grain of salt because compile and hardware optimization strongly influences the results. Assumptions that work for the single code snippet might become false after the compiler integrates that part into the complete program or vise versa. It is a good advise to use a benchmarking tool which is built for this task. Overwise there is a risk to be trapped in false results. Like compilers that are optimizing away whole loops (which in turn often be the benchmark itself), because the result can be evaluated at compile time. The advantages of micro benchmarks however, is that different implementations of basic algorithms can be compared directly. Provided they are performing equivalent in the macro scope of the program.\\
-After the previous scopes described a detailed and an overview, the last scope has to be something in between. And this holds tre for the so called meso benchmark. Perhaps the best explanation for this kind is, that it is what is not macro nor micro benchmark. Meso benchmarks deal with parts of a program that get more complex. Like Modules or further reaching subroutines. These can be the most interesting benchmarks since they can narrow down bottle necks to specific parts of the software. Unfortunately they almost always require to manipulate the program in some way. Which again means that the measured performance differs from the actual performance.
-
-- microbenchmarks\\
-- macrobenchmarks\\
-- profiling\\
-- "das ganze kann noch ausgedehnt werden, reicht aber erstmal"\\
-\subsection{Profilers}
-- endless possibilities \\
-- testing all profilers is nearly impossible in the time frame\\
-- common tools identified through internet research\\
-\subsubsection{gprof}
-\subsubsection{valgrind}
-\subsubsection{perf}
-\subsubsection{operf}
-\subsection{Choice}
-- dfs is the main time consumption\\
-- therefore simple program runs are sufficient to messure differences between parallel and sequential implementations (macrobenchmark)\\
-- to find bottlenecks inside the implementation, a more precise approach is necessary\\
-- profilers have limitations\\
-- interpreting the results is not trivial and differ from profiler to profiler\\
-- code to benchmark is fairly compact\\
-- manual instrumentation is time efficient\\
-- manual instrumentation is precise\\
-- manual instrumentation can messure custom metadata like state expansions of each thread\\
-
 \chapter{Approach}
 \section{Switching The Synchronization}
 - pthread to mutex
@@ -128,7 +113,22 @@ After the previous scopes described a detailed and an overview, the last scope h
 - moving on to another method\\
 
 \section{Profiling}
-\subsection{Approach}
+\subsubsection{gprof}
+\subsubsection{valgrind}
+\subsubsection{perf}
+\subsubsection{operf}
+\subsection{Choice}
+- dfs is the main time consumption\\
+- therefore simple program runs are sufficient to messure differences between parallel and sequential implementations (macrobenchmark)\\
+- to find bottlenecks inside the implementation, a more precise approach is necessary\\
+- profilers have limitations\\
+- interpreting the results is not trivial and differ from profiler to profiler\\
+- code to benchmark is fairly compact\\
+- manual instrumentation is time efficient\\
+- manual instrumentation is precise\\
+- manual instrumentation can messure custom metadata like state expansions of each thread\\
+
+
 - use of perf ?tools?\\%was 
 - works out of the box\\%warum
 - no significant slowdown\\
