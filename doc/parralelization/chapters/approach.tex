@@ -72,8 +72,48 @@ If no other source is provided the data was collected with the proc filesystem p
 % SwapTotal:       2097148 kB
 
 \chapter{Approach}
+%TODO:
+% was erwartet mich in diesem kaitel
+% warum bin ich so vorgegangen
+% was wird am ende stehen (ohne genaue werte)
+% wo können referenzen gefunden werden? http://www.cplusplus.com
+
 \section{Switching The Synchronization}
-- pthread to mutex
+The first step taken was switching from the pthread library to a compare and swap (CAS) algorithm. Since C++ 11 there is an equivalent implementation in the standard library called \texttt{bool std::atomic::compare\_exchange\_weak(T\& expected, T val)} (or \texttt{bool std::atomic::compare\_exchange\_strong(T\& expected, T val)}) that was used for this task. This function compares the current value of an \texttt{std::atomic} with \texttt{expected} and replace it with \texttt{val} if the comparison returns true. If it returns false it replaces \texttt{expected} with the actual value of the atomic. The weak version is allowed to return false in favor for a general performance gain, even if the compared values are actually equal.\\
+To represent a lock that can either be locked or unlocked, a boolean as value is sufficient. To shape a spin lock like mutexes and semaphores with a CAS function, they have to loop until the expected value compares equal. There are two reasonable modes to lock: the first is to just wait until an observed lock is unlocked and the second is to wait for an unlock with an immediate locking. The first approach can be helpful to suspend the execution of the current thread until an external thread is signalling a continuation. The second approach can be used to block access to a resource until all preceeding manipulations are completed. At last there are functions necessary that can block or release the resource in a privileged manner. The resulting implementation is shown in listing \ref{CASIMPL}.\\
+Swapping the old pthread implementation with the new CAS implementation now remains a matter of search and replace. The equivalent of the mutexes \texttt{pthread\_mutex\_lock()} is \texttt{waitAndLock()}. \texttt{Pthread\_mutex\_unlock()} corresponds to \texttt{unlock()}. The previous \texttt{sem\_wait()} correspond to a \texttt{waitForUnlock()} call after a \texttt{lock()}. And \texttt{sem\_post()} corresponds to \texttt{unlock()}.\\
+However, this is a very specialized replacement which acts as a proof of concept. Other parts of the code might have to be replaced in another way, depending on the semantics of the part. Additionally the CAS implementation is as short as possible. The pthread library comes with some importend features like a mechanism to reduces the risk of dead locks and different modes for the semaphores.
+
+\lstset{language=C++,caption={Basic implementation of a spin lock with compare and swap},label=CASIMPL, frame=none, stepnumber=5, backgroundcolor=\color{verylightgray}}
+\begin{lstlisting}
+#include <atomic>
+
+enum LOCK{
+    LOCKED,
+    UNLOCKED
+};
+
+static inline void waitAndLock(std::atomic<bool>* lock){
+    bool expected = UNLOCKED;
+    while (!lock->compare_exchange_strong(expected,LOCKED)){
+        expected = UNLOCKED;
+    }
+}
+
+static inline void waitForUnlock(std::atomic<bool>* lock){
+    while (lock->load() != UNLOCKED){
+        continue;
+    }
+}
+
+static inline void lock(std::atomic<bool>* lock){
+    lock->store(LOCKED);
+}
+
+static inline void unlock(std::atomic<bool>* lock){
+    lock->store(UNLOCKED);
+}
+\end{lstlisting}
 
 \section{Manual Instrumentation}
 %was        philosopher check full, searchandinsert von parallel exploration, später von unterklasse der einzelnen threads

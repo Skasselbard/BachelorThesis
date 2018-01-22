@@ -6,3 +6,5 @@
 - if the bottleneck returns to the exploration after optimizing:\\
 - find a reasonable heuristic to share work between threads\\
 - maybe don't let every single thread look for other idle ones, instead consider implementing a scheduler thread, or a data structure with possible tasks\\
+
+- the synchronization method should be considered in the parallel design of the algorithm (dont emulate mutexe if using compare and swap)
