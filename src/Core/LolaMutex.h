@@ -47,7 +47,7 @@ public:
     /// Will wait for eternity if the state won't be unlocked by another thread
     void waitForLock(){
         bool expected = UNLOCKED;
-        while (!locked.compare_exchange_strong(expected,LOCKED)){
+        while (!locked.compare_exchange_weak(expected,LOCKED)){
             expected = UNLOCKED;
         }
     }
