@@ -97,7 +97,7 @@ enum LOCK{
 
 static inline void waitAndLock(std::atomic<bool>* lock){
     bool expected = UNLOCKED;
-    while (!lock->compare_exchange_strong(expected,LOCKED)){
+    while (!lock->compare_exchange_weak(expected,LOCKED)){
         expected = UNLOCKED;
     }
 }
@@ -117,8 +117,8 @@ static inline void unlock(std::atomic<bool>* lock){
 }
 \end{lstlisting}
 
-\section{Finding the Bottleneck}
-\subsection{Benchmark Characteristics}
+\section{Finding the bottleneck}
+\subsection{Benchmark characteristics}
 We have now an application with a bottleneck and a possible solution to fix that bottleneck. Next we will compare the performances.
 
 In this case, performance means execution time. The expectation is that the execution time decreases with an increased amount of threads (computing power). The time is therefore the characteristic of interest.
@@ -130,7 +130,31 @@ As test data a predefined petrinet of the dining philosophers was used. It is a 
 
 LoLA is executed with the \texttt{--threads=[threadCount]} and \texttt{--check=full} switches. The first switch simply sets the amount of threads that should be used for the state exploration. The second switch cause LoLA to explore the whole state space without exploring a property. This ensures that the application will terminate after all states have been discovered and no varying discovery paths can influence the execution time.
 
+\subsection{A general performance survey}
 LoLA will spend most of the time inside the depth first search of the state exploration. For this reason a simple execution with the given parameters will uncover if the different synchronization implementations have an impact on the performance. This would correspond to the macro benchmark scope and can be achieved without any additional modification or tools because LoLA already measures its own execution time.
+
+Unfortunately a simple testrun on the VM reveals that there is no performance gain. Figure TODO:ref shows that the new implementation is actually slower than the previous. But as stated in TODO:ref, the performance of the original implementation always stayed behind the sequential algorithm. This means that a relevant speedup would divide the execution time by an order of the used threads. Taking this expectation as base, both implementations still can be considered in the same order of performance. Thus, we can conclude that we either missed the cause of the bottleneck, or the new implementation faces similar challenges.
+
+%TODO: fix diagram, add label
+\input{pictures/performanceComparisonMacroNOBuckets}
+
+\begin{center}
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{| c | c |}
+            \hline
+            \textbf{PThread} & \textbf{Compare And Swap} \\ \hline
+            262s & 274s \\ \hline
+        \end{tabular}
+        \caption{Macro benchmark comparison between the original (PThread) implementation and the substitute (Compare and swap)\\ LoLA call: "lola --check=full --threads=4 ../tests/testfiles/phils1000.lola" }
+    \end{table}
+\end{center}
+
+The benchmark result shows no significant change in performance. Therefore an exhaustive evaluation with multiple testruns is dropped in favor of a detailed bottle neck analysis. In the next section we will use a more precise benchmark method to inspect the search characteristics.
+
+\subsection{Searching for inefficient application components}
+To develop a deeper understanding of the internal processes, we have to examine the individual program parts. The most important one remains the search for net states which is done in the \texttt{ParallelExploration} class.
+
 %was        philosopher check full, searchandinsert von parallel exploration, später von unterklasse der einzelnen threads
 %warum      ausreichend komplex, vergleichsweise allgemeines netz, start der suche
 %ergebnis   nicht eindeutig
