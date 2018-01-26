@@ -128,6 +128,9 @@ private:
 
     arrayindex_t *currentPopBucket;
     arrayindex_t number_of_buckets;
+
+    pthread_mutex_t* bucket_mutexes;
+
 };
 
 #include <Stores/VectorStores/HashingWrapperStore.inc>

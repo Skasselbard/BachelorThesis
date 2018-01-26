@@ -33,12 +33,14 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
     number_of_buckets = _number_of_buckets;
 
     buckets = new VectorStore<T> *[number_of_buckets]();
-    //rwlocks =(pthread_rwlock_t*) calloc(sizeof(pthread_rwlock_t), number_of_buckets);
+    bucket_mutexes = new pthread_mutex_t[number_of_buckets]();
 
-    for (hash_t i = 0; i < number_of_buckets; i++)
-    {
+    for (hash_t i = 0; i < number_of_buckets; i++){
         buckets[i] = (*storeCreator)();
-        //pthread_rwlock_init(rwlocks+i, NULL);
+        if (UNLIKELY(pthread_mutex_init(&bucket_mutexes[i], NULL))){
+            RT::rep->status("mutexes could not be created");
+            RT::rep->abort(ERROR_THREADING);
+        }
     }
 
     currentPopBucket = new arrayindex_t[_number_of_threads]();
@@ -50,16 +52,14 @@ HashingWrapperStore<T>::HashingWrapperStore(VectorStoreCreator<T> *storeCreator,
 template <typename T>
 HashingWrapperStore<T>::~HashingWrapperStore()
 {
-    for (hash_t i = 0; i < number_of_buckets; i++)
-    {
+    for (hash_t i = 0; i < number_of_buckets; i++){
+        if (UNLIKELY( pthread_mutex_destroy(&bucket_mutexes[i]))){
+            RT::rep->status("mutexes could not be destroyed");
+            RT::rep->abort(ERROR_THREADING);
+        }
         delete buckets[i];
     }
     delete[] buckets;
-
-    //for (hash_t i = 0; i < number_of_buckets; i++)
-    //    pthread_rwlock_destroy(rwlocks+i);
-    //free(rwlocks);
-
     delete[] currentPopBucket;
 }
 
@@ -69,17 +69,11 @@ bool HashingWrapperStore<T>::searchAndInsert(const vectordata_t *in, bitarrayind
         hash_t hash,
         T **payload, threadid_t threadIndex, bool noinsert)
 {
-    /*if (!buckets[hash]) {
-        // lock the current bucket to ensure thread safety
-        pthread_rwlock_wrlock(rwlocks + hash);
-
-        if(!buckets[hash])
-        	buckets[hash] = (*storeCreator)();
-
-        pthread_rwlock_unlock(rwlocks + hash);
-    }*/
-
-    return buckets[hash]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);
+    int bucket = hash%number_of_buckets;
+    pthread_mutex_lock(&bucket_mutexes[bucket]);
+    bool ret = buckets[bucket]->searchAndInsert(in, bitlen, hash, payload, threadIndex, noinsert);
+    pthread_mutex_unlock(&bucket_mutexes[bucket]);
+    return ret;
 }
 
 /*!

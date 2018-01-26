@@ -84,7 +84,7 @@ arrayindex_t FirelistStubbornDeadlock::getFirelist(NetState &ns, arrayindex_t **
     // LCOV_EXCL_START
     if (UNLIKELY(ns.CardEnabled == 0))
     {
-        assert(false);
+//        assert(false);
         * result = new arrayindex_t[1];
         return 0;
     }

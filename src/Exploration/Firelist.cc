@@ -91,7 +91,7 @@ arrayindex_t Firelist::selectScapegoat(NetState & ns, arrayindex_t currenttransi
 			}
                 }
         }
-        assert(scapegoat < Net::CardArcs[TR][PRE][currenttransition]);
+//        assert(scapegoat < Net::CardArcs[TR][PRE][currenttransition]);
 	// have a scapegoat that has not yet been used by another transition
 	Firelist::usedAsScapegoat[scapegoat] = Firelist::timestampScapegoat;
 	return scapegoat;

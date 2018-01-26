@@ -133,8 +133,14 @@ public:
             RT::data["task"]["search"]["store"]["type"] = "prefix";
             if (RT::args.bucketing_given)
             {
-                st = new PluginStore<T>(enc, new HashingWrapperStore<T>(new
-                                        NullaryVectorStoreCreator<T, PrefixTreeStore<T> >()), number_of_threads);
+                st = new PluginStore<T>(
+                    enc,
+                    new HashingWrapperStore<T>(
+                        new NullaryVectorStoreCreator<T, PrefixTreeStore<T> >(),
+                        RT::args.bucketing_arg,
+                        number_of_threads
+                        ), 
+                        number_of_threads);
             }
             else
             {
@@ -149,8 +155,14 @@ public:
             RT::data["task"]["search"]["store"]["type"] = "stl";
             if (RT::args.bucketing_given)
             {
-                st = new PluginStore<T>(enc, new HashingWrapperStore<T>(new
-                                        UnaryVectorStoreCreator<T, VSTLStore<T>, arrayindex_t>(number_of_threads)), number_of_threads);
+               st = new PluginStore<T>(
+                   enc, 
+                   new HashingWrapperStore<T>(
+                        new UnaryVectorStoreCreator<T, VSTLStore<T>, arrayindex_t>(number_of_threads),
+                        RT::args.bucketing_arg,
+                        number_of_threads
+                        ), 
+                   number_of_threads);
             }
             else
             {
