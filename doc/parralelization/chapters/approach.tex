@@ -193,21 +193,26 @@ Table TODO:ref is listing the performance of the code pieces that are considered
 \begin{itemize}
     \item Total Thread Time - The cumulative time spend in each thread is called total thread time.
     \item Synchronization Time - Time spend to synchronize the threads with mutexes.
-    \item Store Search Time - Time spend inside the \textt{searchAndInsert} call. A method to safe the discovered states.
+    \item Store Search Time - Time spend inside the \texttt{searchAndInsert} call. A method to safe the discovered states.
     \item Idle Time - The Time each thread spent for the \texttt{restartSemaphore} to be unlocked
 \end{itemize}
 
-%was        philosopher check full, searchandinsert von parallel exploration, später von unterklasse der einzelnen threads
-%warum      ausreichend komplex, vergleichsweise allgemeines netz, start der suche
-%ergebnis   nicht eindeutig
-First Iteration\\
-- mesobenchmark
-- benchmarking inside search and insert of parallel exploration\\
-- search loop begins there - majority of the time spent there\\
-- PIC: measurements
-- no significant speedup\\
-- threads distribute state expansions evenly\\
-- idle thread times are not significant\\
+\begin{center}
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{ | l | c | c | c | c |}
+            \hline
+            \textbf{} & \textbf{Trhead 0} & \textbf{Trhead 1} & \textbf{Trhead 2} & \textbf{Trhead 3}\\ \hline
+            Total Thread Time & 256s & 256s & 256s & 256s \\ 
+            Synchronization Time & 0.00000004s & 0.00000004s & 0,00000005s & 0.00000005s \\
+            Store Search Time & 58s & 58s & 56s & 58s \\ 
+            Idle Time & 0.22s & 0.22s & 0.22s & 0.22s \\ \hline
+        \end{tabular}
+        \caption{Manual meso Benchmark of the \texttt{ParallelExploration}}
+    \end{table}
+\end{center}
+
+
 - bottleneck is SearchAndInsert() (the store of the individual thread)\\
 
 Second Iteration
