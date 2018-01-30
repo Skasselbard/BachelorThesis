@@ -227,14 +227,19 @@ The store that is used is decided at runtime. A trivial debug session can uncove
 
 Fortunately there is a way to use an appropriate store implementation. If LoLA is called with the additional parameter \texttt{--bucketing=[numberOfBuckets]} the \texttt{HashingWrapperStore} store is used instead of the \texttt{PrefixTreeStore}. The \texttt{HashingWrapperStore} divides the memory into different buckets and uses hashes of the discovered states to store them. Each bucket is used for a range of hashes and the access to a bucket is only granted to at most one thread at a time. With this implementation multiple threads can store their discovered states at the same time, as long as the states hashes differ. Because of this insight all future calls of LoLA will be done with the \texttt{--bucketing=[numberOfBuckets]} parameter.
 
-Unfortunately the new parameter has no relevant impact on the performance of LoLA. Additionally measuring additional timings inside the \texttt{HashingWrapperStore} lead to even more inconsistencies. TODO: something with overthinking the approach
+Unfortunately the new parameter has no relevant impact on the performance of LoLA. Additionally measuring further timings inside the \texttt{HashingWrapperStore} lead to even more inconsistencies. This caused a greater lack of trust and an overthinking of the benchmark method seems inevitable.
 
 \subsection{Reconsidering the approach}
+Our previous results point to a bottleneck inside the \texttt{searchAndInsert} method of the store. But due to inconsistencies between them they seem unreliable.
 
-- time measurements inside threads can be tricky\\
-- measurements of wall clock time vs ?process? time ?CITATION?\\
-- measurement method might not be appropriate \\
-- moving on to another method\\
+The exact reason is unknown and to find the cause might be as difficult as the search for the bottleneck itself. But during the implementation of the benchmarks two problems arose that could be related
+
+First it proved difficult in practice to measure exactly those periods of interest. Especially covering the whole implementation is quite error prone because the implementation is not linear. There are several branches, loops and early returns that have to be considered. As a result, one might start a time period more often than to stop it or vise versa. This quickly leads to wrong times without noticing it.
+
+The second problem refers to the kind of time that is measured. Especially in a multi threaded environments a distinction between real time (or wall-clock time) and cpu time. The real time of a program is the time that passes for an observer during its execution while the cpu time is the time the cpu was active. This means that the cpu time can be actually lesser or greater than the real time. For example a program that is temporarily suspended for a nother process can have a shorter cpu time than real time. Whereas a program that is executed on multiple cpus will have its cpu time also multiplied by the amount of cores (or threads), resulting in a greater cpu time than real time. In our scenario, blocking a thread with a mutex might influence the time periods that are taken. To measure correct values, a deep understanding of the matter is necessary and the approach should be well-thought-out.
+%TODO:ref real time vs cpu time
+
+Since the time for this work is limited and the author is a novice in the field of benchmarking, the manual approach is put aside for a more refined third party solution.
 
 \section{Profiling}
 \subsubsection{gprof}
