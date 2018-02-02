@@ -57,26 +57,6 @@ Erkenntnisse:
     \item menge der knoten muss dabei allerdings for suche bekannt sein und kann nicht während der suche aufgedeckt werden
 \end{itemize}
 
-Eckpfeiler in der Implementierung
-\begin{itemize}
-    \item mutexe und Semaphore ersetzen -> keine signifikanten auswirkungen
-    \item Überladungs fix in der parallelExploration -> pexplore wird benutzt
-    \item benchmarking
-    \begin{itemize}
-        \item keine wesentlichen synchronizations bottlenecks im eigenen code
-        \item keine wesentlichen idle threads
-        \item threads entdecken ca gleich viele markierungen
-        \item die meiste zeit wird im search and insert der threads verbracht
-        \item benchmark in der unterklasse (hashingWrapperStore) sind inkonsistent
-        \item möglicherweise arbeitet die Zeitmessung durch threading nicht so wie erwartet
-        \item rückkehr zu profiling
-    \end{itemize}
-    \item profiling ergibt viel zeitverlust in libcalloc
-    \item integration von mara
-    \item macrobenchmark (zeitmessung für beispielnetz)
-    \item singlethreadperformance von mara (compare and swap) ist sehr niedrig
-    \item singlethreadperformance von mara (pthread) ist ähnlichähnlich niedrig
-\end{itemize}
 
 https://tex.stackexchange.com/questions/6834/change-paper-size-in-mid-document#6838
 
