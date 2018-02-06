@@ -284,7 +284,7 @@ It is also possible to limit the perf call to a time interval with the \texttt{s
 The final bash call that was used looks like this:
 \lstset{language=bash,caption={Profiling lola with perf},label=CASIMPL, frame=none, stepnumber=5, backgroundcolor=\color{verylightgray}}
 \begin{lstlisting}
-    lola --check=full --threads=4 --bucketing=100 phils1000.lola&;
+    lola --check=full --threads=4 --bucketing=10000 phils1000.lola&;
     PID=$!;
     sudo perf record -p $PID --call-graph dwarf sleep 30;
     kill $PID
@@ -293,23 +293,30 @@ With \texttt{lola --check=full --threads=4 --bucketing=100 phils1000.lola\&;} Lo
 
 To analyze the data perf provide the perf report command. It will process the gathered data and output an interactive data structure like in figure \ref{perf_record_sample}. In the output we can see what functions are sampled most of the time ('Self' column), in which functions children where taken the most samples ('Children column), the command name that was executed, library in which the function resides and the name of the function. A more detailed explanation of the different columns and additional features of the perf report command can be found in the man page.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{pictures/perfReportSample.png}
-    \caption{perf report sample output}
-    \label{perf_record_sample}
-\end{figure}
-
 Knowing the basics for the perf usage, we can now look closer into the generated data and make more reliable assumptions about the possible location of the bottleneck.
 
 %ergebnis
 \subsection{Result and Conclusion}
-- most of the time spent in libcalloc\\
-- PIC: TestData\\
-- memory allocation in OS scope\\
-- function names point to os mutex lock and wait\\
-- to many allocation calls which blocks each other\\
-- custom allocator is needed\\
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{pictures/perfReportSample.png}
+    \caption{perf report output}
+    \label{perf_record_sample}
+\end{figure}
+Figure \ref{perf_record_sample} shows that over 95\% of the samples where taken somewhere in the \texttt{threadedExploration}. This is expected because it is where the search of LoLA is implemented and almost all what LoLA does is searching. We can also see that nearly half of the samples where taken inside the \texttt{searchAndInsert} method of the global store. This observation corresponds to the hint we took from the manual benchmark approach. The two different \texttt{searchAndInsert} methods are caused by the implementation of the \texttt{HashingWrapperStore} which associate each bucket with a \texttt{PrefixTreeStore} and forwards each \texttt{searchAndInsert} to the corresponding \texttt{PrefixTreeStore}.
+The new information that we get from the data is that the most samples inside the \texttt{searchAndInsert} methods are taken in a \texttt{\_\_lib\_calloc} call. Almost the half the samples of all taken originate here. They are almost certainly caused by allocating memory on the heap with \texttt{malloc}, \texttt{calloc}, or \texttt{new}. This makes perfect sense, since the perpose of the \texttt{searchAndInsert} method is to store newly discovered net states, which has to be done on the heap. In fact an overly simplified search could be described as:
+\begin{enumerate}
+    \item Discover a net state
+    \item Store the net state
+    \item Repeat until all states are discovered
+\end{enumerate}
+Discovering net states is done by firing a transition from the fire list (a list of al transitions that can be fired from the current net state). Beside the \texttt{searchAndInsert} method we can see this behavior in the profiling data too. Getting the fire list is the second most sampled method inside the \texttt{threadedExploration} and firing the transition was also sampled often enough to account for almost 1\% of all samples.
+
+The calls inside lib calloc are a variety of system calls. Understanding what they really do is outside of the scope of this work. But the last sampled functions containing words like 'lock' or 'wake'. These are probably used to synchronize threads and lock memory regions. Ultimately the allocator has to be thread safe too. Allocating heap space in high frequencies is no common use case, thus the assumption that the allocator just blocks until a request was fully processed seems to be reasonable. Additionally there is only one system allocator for multiple threads. If they all call the same allocator it is likely that they get in each others ways with higher frequent calls and with an increasing amount of used threads.
+
+With perfs data and the previous assumptions we can be quite confident that changing the way we allocate heap space can have an impact on LoLA performance. For example we can reduce the frequent and complex calls to the allocator, by using bigger preallocated chunks of memory (from the system allocator) and manage them by our selfs. This would not only reduce the calls to lib calloc needed, it also has the potential of reducing the overall consumed memory, since we already store pointers to each net state inside the global store. The fact that we store them permanently until LoLA is terminated makes it unnecessary to manage additional data for defragmentation handling. This information can get quite big in the system allocator, especially when allocating a lot of small data like LoLA does. The chunks can also be associated with each thread or each bucket of the \texttt{HashingWrapperStore} to make their access thread safe. This way we can access multiple memory locations by multiple threads. If thread synchronization is really a problem by the system allocator like previously assumed, this potentially resolves the issue of the general sequential performance of LoLA with the parallel implementation.
+
+An implementation for this approach requires a custom allocator that wraps the system calls. Fortunately we have access to exactly such an allocator from a previous project at our chair called 'mara'. The participation of the author of this work at the development of mara is another advantage. The results of this circumstances lead to an integration of mara into LoLA for the net state search.
 
 \section{Memory Allocator}
 - luckily there is a project where author was involved\\
