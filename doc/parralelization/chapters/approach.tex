@@ -304,7 +304,7 @@ Knowing the basics for the perf usage, we can now look closer into the generated
     \label{perf_record_sample}
 \end{figure}
 Figure \ref{perf_record_sample} shows that over 95\% of the samples where taken somewhere in the \texttt{threadedExploration}. This is expected because it is where the search of LoLA is implemented and almost all what LoLA does is searching. We can also see that nearly half of the samples where taken inside the \texttt{searchAndInsert} method of the global store. This observation corresponds to the hint we took from the manual benchmark approach. The two different \texttt{searchAndInsert} methods are caused by the implementation of the \texttt{HashingWrapperStore} which associate each bucket with a \texttt{PrefixTreeStore} and forwards each \texttt{searchAndInsert} to the corresponding \texttt{PrefixTreeStore}.
-The new information that we get from the data is that the most samples inside the \texttt{searchAndInsert} methods are taken in a \texttt{\_\_lib\_calloc} call. Almost the half the samples of all taken originate here. They are almost certainly caused by allocating memory on the heap with \texttt{malloc}, \texttt{calloc}, or \texttt{new}. This makes perfect sense, since the perpose of the \texttt{searchAndInsert} method is to store newly discovered net states, which has to be done on the heap. In fact an overly simplified search could be described as:
+The new information that we get from the data is that the most samples inside the \texttt{searchAndInsert} methods are taken in a \texttt{\_\_lib\_calloc} call. Almost the half the samples of all taken originate here. They are almost certainly caused by allocating memory on the heap with \texttt{malloc}, \texttt{calloc}, or \texttt{new}. This makes perfect sense, since the perpose of the \texttt{searchAndInsert} method is to store newly discovered net states, which has to be done on the heap. In fact a simplified high level view on the search could be described as:
 \begin{enumerate}
     \item Discover a net state
     \item Store the net state
@@ -318,16 +318,18 @@ With perfs data and the previous assumptions we can be quite confident that chan
 
 An implementation for this approach requires a custom allocator that wraps the system calls. Fortunately we have access to exactly such an allocator from a previous project at our chair called 'mara'. The participation of the author of this work at the development of mara is another advantage. The results of this circumstances lead to an integration of mara into LoLA for the net state search.
 
-\section{Memory Allocator}
-- luckily there is a project where author was involved\\
-- mara allocates stack and gives no interface to free allocated memory\\
-- gets chunks of memory from malloc\\
-- simple and fast pointer arithmetic is used to manage the memory stack\\
-- each bucket can have own instance of mara so that it becomes thread safe (since the buckets are already thread safe)\\
-- freeing memory on program termination\\
-- the only data created is needed for the search\\
-- terminating the search is the begin of terminating lola\\
-- thus this method is sufficient for this perpose\\ 
+\section{Allocation strategie change}
+In the last chapter we saw that the profiling results lead deeper into the \texttt{searchAndInsert} method. The data suggest that high frequent calls to the system allocator might be the cause of the bottleneck. To see if this assumption is true, we have to change the way LoLA uses the heap und measure the performance again.
+
+We will use the Memory and Resource Allocator (mara) to wrap calls to the system allocator. Mara was previously developed at the chair of theoretical computer science as a student project by Julian Gaede, Marian Stein and Tom Meyer. The later use in LoLA was a part of the project aims.
+
+A major part of maras constraints was that once allocated memory will never be rearranged and never be freed until program termination. Thus it can be freed by the operating system and mara is allowed to drop references that where previously shared. This allows mara to reduce the overhead for heap allocation in space and time.
+
+Mara publishes a class that can be used as a custom allocator. A call to its \texttt{staticNew} method will return a pointer into a previously allocated chunk of memory. The next call to \texttt{staticNew} will return another pointer inside the same chunk that is adjacent to the previously returned memory segment. This memory management is equivalent to a stack. Once the chunk is filled, a new one is allocated with a call to the system allocator. The old chunk is not stored and there is now possibility to access it again with mara (but the previously shared pointers remain valid). Each object of the mara class manages disjoint parts of the heap.
+
+With memory allocated by mara we can very easily distribute LoLAs net state memory to make it thread safe. With the \texttt{HashingWrapperStore} we already have a method to store net states in independent \texttt{PrefixTreeStore}s (inside the buckets). The access to them is already restricted to one thread at a time, while other buckets still can be accessed by other threads. This means that we don not need to consider parallelization issues inside the buckets \texttt{PrefixTreeStore}. All memory access inside can only be done by a single thread. To use mara as allocator, we just have to create one instance of the mara class and substitute all calls to \texttt{malloc}, \texttt{calloc} and \texttt{new} inside the \texttt{PrefixTreeStore} with a call to maras \texttt{staticNew} method. Because calls to delete and free will now produce undefined behavior, these calls have to be removed. The operating system will free the memory on program termination. After that, all heap allocation for the net states is wrapped by mara. 
+
+Altering LoLA in that way we now can start another benchmark to see if the changes impact LoLAs performance.
 
 \section{Results}
 \subsection{Profiling}
