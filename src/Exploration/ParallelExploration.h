@@ -198,7 +198,7 @@ private:
 
     static inline void waitAndLock(std::atomic<bool>* lock){
         bool expected = UNLOCKED;
-        while (!lock->compare_exchange_strong(expected,LOCKED)){
+        while (!lock->compare_exchange_weak(expected,LOCKED)){
             expected = UNLOCKED;
         }
     }
