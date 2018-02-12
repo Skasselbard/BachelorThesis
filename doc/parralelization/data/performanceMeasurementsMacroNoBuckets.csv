@@ -1,2 +1,2 @@
-PThread,    CompareAndSwap
-262,        274
+PThread,    CompareAndSwap, mara-CAS,   mara-pthread
+236,        284,            179,        183

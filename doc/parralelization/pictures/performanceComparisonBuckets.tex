@@ -3,8 +3,8 @@
         ybar, axis on top,
         bar width=16,
         title={1000 philosophers with 100 buckets},
-        xtick={1,5,20,60},
-        symbolic x coords={1,5,20,60},
+        xtick={1,2,3,4,20,60},
+        symbolic x coords={1,2,3,4,20,60},
         x tick label style={/pgf/number format/1000 sep=},
         xlabel={threads},
         %y tick label style={/pgf/number format/1000 sep=},
@@ -25,10 +25,10 @@
         }
         ]
 
-        \addplot table [y=mara-atomics100, col sep=comma,trim cells=true] {data/performanceMeasurements1000buckets.csv};
-        \addplot table [y=mara-pthread100, col sep=comma,trim cells=true] {data/performanceMeasurements1000buckets.csv};
-        \addplot table [ y=mara-atomics1000, col sep=comma,trim cells=true] {data/performanceMeasurements1000buckets.csv};
-        \addplot table [y=mara-pthread1000, col sep=comma,trim cells=true] {data/performanceMeasurements1000buckets.csv};
+        \addplot table [y=mara-atomics, col sep=comma,trim cells=true] {data/performanceMeasurements100buckets.csv};
+        \addplot table [y=mara-pthread, col sep=comma,trim cells=true] {data/performanceMeasurements100buckets.csv};
+        \addplot table [ y=mara-atomics, col sep=comma,trim cells=true] {data/performanceMeasurements1000buckets.csv};
+        \addplot table [y=mara-pthread, col sep=comma,trim cells=true] {data/performanceMeasurements1000buckets.csv};
         \legend{CAS 100 buckets, PThread 100 buckets, CAS 1000 buckets, PThread 1000 buckets}
     \end{axis}
 \end{tikzpicture}

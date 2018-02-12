@@ -162,20 +162,7 @@ LoLA will spend most of the time inside the depth first search of the state expl
 
 Unfortunately a simple testrun on the VM reveals that there is no performance gain. Figure TODO:ref shows that the new implementation is actually slower than the previous. But as stated in TODO:ref, the performance of the original implementation always stayed behind the sequential algorithm. This means that a relevant speedup would divide the execution time by an order of the used threads. Taking this expectation as base, both implementations still can be considered in the same order of performance. Thus, we can conclude that we either missed the cause of the bottleneck, or the new implementation faces similar challenges.
 
-%TODO: fix diagram, add label
 \input{pictures/performanceComparisonMacroNOBuckets}
-
-\begin{center}
-    \begin{table}[H]
-        \centering
-        \begin{tabular}{| c | c |}
-            \hline
-            \textbf{PThread} & \textbf{Compare And Swap} \\ \hline
-            262s & 274s \\ \hline
-        \end{tabular}
-        \caption{Macro benchmark comparison between the original (PThread) implementation and the substitute (Compare and swap)\\ LoLA call: "lola --check=full --threads=4 ../tests/testfiles/phils1000.lola" }
-    \end{table}
-\end{center}
 
 The benchmark result shows no significant change in performance. Therefore an exhaustive evaluation with multiple testruns is dropped in favor of a detailed bottle neck analysis. In the next section we will use a more precise benchmark method to inspect the search characteristics.
 

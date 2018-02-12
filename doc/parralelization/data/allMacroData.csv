@@ -1,0 +1,6 @@
+atomics-t1-b0,atomics-t1-b100,atomics-t20-b100,atomics-t2-b100,atomics-t3-b100,atomics-t4-b100,atomics-t50-b100,maraIntegration-t1-b0,maraIntegration-t1-b1000,maraIntegration-t1-b100,maraIntegration-t20-b1000,maraIntegration-t20-b100,maraIntegration-t2-b1000,maraIntegration-t2-b100,maraIntegration-t3-b1000,maraIntegration-t3-b100,maraIntegration-t4-b1000,maraIntegration-t4-b100,maraIntegration-t50-b1000,maraIntegration-t50-b100,maraPThread-t1-b0,maraPThread-t1-b1000,maraPThread-t1-b100,maraPThread-t20-b1000,maraPThread-t20-b100,maraPThread-t2-b1000,maraPThread-t2-b100,maraPThread-t3-b1000,maraPThread-t3-b100,maraPThread-t4-b1000,maraPThread-t4-b100,maraPThread-t50-b1000,maraPThread-t50-b100,master-t1-b0,master-t1-b100,master-t20-b100,master-t2-b100,master-t3-b100,master-t4-b100,master-t50-b100,
+#313,218,72,173,104,83,878,179,197,197,14,14,92,92,66,66,52,52,15,15,184,243,243,17,17,129,129,94,94,73,73,13,13,212,90,71,71,71,71,70,
+#239,211,76,131,142,88,854,224,197,200,15,17,108,109,71,68,55,58,13,22,222,267,254,16,22,130,142,90,99,55,86,13,16,209,70,85,73,90,70,84,
+#353,211,82,160,107,102,882,194,200,197,15,15,100,108,72,71,55,55,13,13,209,272,267,16,16,137,130,94,90,72,55,14,13,210,82,85,73,90,72,72,
+
+301,213,76,154,117,91,871,199,198,402,14,31,100,209,69,141,54,110,13,35,205,260,517,16,39,132,271,92,186,66,145,13,29,210,80,80,72,83,71,75,

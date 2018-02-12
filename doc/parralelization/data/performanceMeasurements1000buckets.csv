@@ -1,5 +1,7 @@
-threads,    mara-atomics1000,   mara-pthread1000,    mara-atomics100,   mara-pthread100
-1,          152,                173,                181,                153
-5,          41,                 40,                 43,                 45
-20,         12,                 11,                 15,                 17
-60,         14,                 6,                  46,                 12
+threads,    mara-atomics,   mara-pthread
+1,          173,            170
+2,          96,             140
+3,          74,             93
+4,          54,             74
+20,         15,             16
+60,         18,             14
