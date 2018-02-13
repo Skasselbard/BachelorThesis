@@ -320,9 +320,12 @@ Altering LoLA in that way we now can start another benchmark to see if the chang
 
 \section{Results}
 \subsection{Profiling}
-\input{pictures/MacroNOBucketsAll}
-\input{pictures/Macro100Buckets}
-\input{pictures/MacroMultipleBuckets}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{pictures/perfReportMara.png}
+    \caption{perf report output}
+    \label{perf_record_sample}
+\end{figure}
 - same environment like the previous prof env\\
 - PIC: data\\
 - libcalloc calls are gone -> under significance threshold\\
@@ -330,6 +333,9 @@ Altering LoLA in that way we now can start another benchmark to see if the chang
 - meaning the greatest bottleneck seems to be gone\\
 
 \subsection{Macrobenchmark}
+\input{pictures/MacroNOBucketsAll}
+\input{pictures/Macro100Buckets}
+\input{pictures/MacroMultipleBuckets}
 - knowing a major bottleneck is gone, execution and scaling of the whole program is of interest\\
 - simple measurement of execution time is sufficient\\
 - since multiple threads will influence time consumption directly\\
