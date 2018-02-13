@@ -162,7 +162,7 @@ LoLA will spend most of the time inside the depth first search of the state expl
 
 Unfortunately a simple testrun on the VM reveals that there is no performance gain. Figure TODO:ref shows that the new implementation is actually slower than the previous. But as stated in TODO:ref, the performance of the original implementation always stayed behind the sequential algorithm. This means that a relevant speedup would divide the execution time by an order of the used threads. Taking this expectation as base, both implementations still can be considered in the same order of performance. Thus, we can conclude that we either missed the cause of the bottleneck, or the new implementation faces similar challenges.
 
-\input{pictures/performanceComparisonMacroNOBuckets}
+\input{pictures/MacroNOBucketsSimple}
 
 The benchmark result shows no significant change in performance. Therefore an exhaustive evaluation with multiple testruns is dropped in favor of a detailed bottle neck analysis. In the next section we will use a more precise benchmark method to inspect the search characteristics.
 
@@ -320,6 +320,9 @@ Altering LoLA in that way we now can start another benchmark to see if the chang
 
 \section{Results}
 \subsection{Profiling}
+\input{pictures/MacroNOBucketsAll}
+\input{pictures/Macro100Buckets}
+\input{pictures/MacroMultipleBuckets}
 - same environment like the previous prof env\\
 - PIC: data\\
 - libcalloc calls are gone -> under significance threshold\\

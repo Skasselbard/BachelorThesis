@@ -1,0 +1,39 @@
+\begin{figure}
+\centering
+\begin{tikzpicture}
+    \begin{axis}[
+        width=0.9\textwidth, 
+        height=0.3\textheight,
+        xbar, axis on top,
+        xmajorgrids=true,
+        bar width=16,
+        title={Macro Benchmark},
+        xtick={0,50,100,150,200,250,300},
+        xmin=0,
+        x tick label style={/pgf/number format/1000 sep=},
+        xlabel={seconds},
+        ytick={1,2,3,4},
+        yticklabels={PThread,CAS,Mara Pthread,Mara CAS},
+        y tick label style={/pgf/number format/1000 sep=},
+        bar shift=0,
+        enlarge y limits=0.5,
+        nodes near coords,
+        nodes near coords align={horizontal},
+        %
+        legend style={
+            at={(0.5,-0.15)},
+            anchor=north,
+            legend columns=2,
+            /tikz/every even column/.append style={column sep=0.5cm}
+        }
+        ]
+        \legend{PThread, Compare And Swap, Mara Pthread, Mara Compare And Swap}
+
+        \addplot table [x=master-t1-b0, y expr=1, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot table [x=atomics-t1-b0, y expr=2, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot table [x=maraPThread-t1-b0, y expr=3, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot table [x=maraIntegration-t1-b0, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
+    \end{axis}
+\end{tikzpicture}
+\caption{Macro benchmark comparison between the original (PThread) implementation and the substitute (Compare and swap)\\ LoLA call: "lola --check=full --threads=4 ../tests/testfiles/phils1000.lola" }
+\end{figure}

@@ -1,0 +1,65 @@
+\begin{figure}
+\centering
+\begin{tikzpicture}
+    \begin{axis}[
+        width=0.9\textwidth, 
+        height=0.95\textheight,
+        xbar=-11.5, axis on top,
+        xbar legend,
+        xmajorgrids=true,
+        bar width=14,
+        title={Macro Benchmark},
+        xmin=0,
+        x tick label style={/pgf/number format/1000 sep=},
+        xlabel={seconds},
+        ymin=1,
+        ymax=6,
+        ylabel={thread count},
+        ytick={1,2,3,4,5,6},
+        yticklabels={1,2,3,4,20,50},
+        y tick label style={/pgf/number format/1000 sep=},
+        enlarge y limits=0.12,
+        nodes near coords,
+        nodes near coords align={horizontal},
+        %
+        legend entries={Mara CAS 100 buckets,,,,,,Mara Pthread 100 buckets,,,,,,Mara CAS 1000 buckets,,,,,,Mara Pthread 1000 buckets},
+        % legend style={
+        %     at={(0.5,-0.1)},
+        %     anchor=north,
+        %     legend columns=2,
+        %     /tikz/every even column/.append style={column sep=0.5cm}
+        % } 
+        ]
+
+        \addplot [blue, fill=blue!30] table [x=maraIntegration-t1-b100, y expr=1, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [blue, fill=blue!30] table [x=maraIntegration-t2-b100, y expr=2, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [blue, fill=blue!30] table [x=maraIntegration-t3-b100, y expr=3, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [blue, fill=blue!30] table [x=maraIntegration-t4-b100, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [blue, fill=blue!30] table [x=maraIntegration-t20-b100, y expr=5, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [blue, fill=blue!30] table [x=maraIntegration-t50-b100, y expr=6, col sep=comma,trim cells=true] {data/allMacroData.csv};
+
+        \addplot [red, fill=red!30] table [x=maraPThread-t1-b100, y expr=1, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [red, fill=red!30] table [x=maraPThread-t2-b100, y expr=2, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [red, fill=red!30] table [x=maraPThread-t3-b100, y expr=3, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [red, fill=red!30] table [x=maraPThread-t4-b100, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [red, fill=red!30] table [x=maraPThread-t20-b100, y expr=5, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [red, fill=red!30] table [x=maraPThread-t50-b100, y expr=6, col sep=comma,trim cells=true] {data/allMacroData.csv};
+
+        \addplot [green, fill=green!30] table [x=maraIntegration-t1-b1000, y expr=1, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [green, fill=green!30] table [x=maraIntegration-t2-b1000, y expr=2, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [green, fill=green!30] table [x=maraIntegration-t3-b1000, y expr=3, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [green, fill=green!30] table [x=maraIntegration-t4-b100, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [green, fill=green!30] table [x=maraIntegration-t20-b1000, y expr=5, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [green, fill=green!30] table [x=maraIntegration-t50-b1000, y expr=6, col sep=comma,trim cells=true] {data/allMacroData.csv};
+
+        \addplot [orange, fill=orange!30] table [x=maraPThread-t1-b1000, y expr=1, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [orange, fill=orange!30] table [x=maraPThread-t2-b1000, y expr=2, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [orange, fill=orange!30] table [x=maraPThread-t3-b1000, y expr=3, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [orange, fill=orange!30] table [x=maraPThread-t4-b1000, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [orange, fill=orange!30] table [x=maraPThread-t20-b1000, y expr=5, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [orange, fill=orange!30] table [x=maraPThread-t50-b1000, y expr=6, col sep=comma,trim cells=true] {data/allMacroData.csv};
+    \end{axis}
+\end{tikzpicture}
+%TODO:Caption ändern
+\caption{Macro benchmark comparison between the original (PThread) implementation and the substitute (Compare and swap)\\ LoLA call: "lola --check=full --threads=4 ../tests/testfiles/phils1000.lola" }
+\end{figure}
