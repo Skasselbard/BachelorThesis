@@ -27,8 +27,8 @@ export CXXFLAGS=-std=c++11
 ./configure
 make -j4
 
-./src/lola --json="test-atomics-t1-b100.json" --check=full --threads=1 ./tests/testfiles/phils1000.lola
-./src/lola --json="test-atomics-t1-b0.json" --check=full --threads=1 --bucketing=100 ./tests/testfiles/phils1000.lola
+./src/lola --json="test-atomics-t1-b0.json" --check=full --threads=1 ./tests/testfiles/phils1000.lola
+./src/lola --json="test-atomics-t1-b100.json" --check=full --threads=1 --bucketing=100 ./tests/testfiles/phils1000.lola
 ./src/lola --json="test-atomics-t2-b100.json" --check=full --threads=2 --bucketing=100 ./tests/testfiles/phils1000.lola
 ./src/lola --json="test-atomics-t3-b100.json" --check=full --threads=3 --bucketing=100 ./tests/testfiles/phils1000.lola
 ./src/lola --json="test-atomics-t4-b100.json" --check=full --threads=4 --bucketing=100 ./tests/testfiles/phils1000.lola
