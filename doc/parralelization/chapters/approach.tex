@@ -162,6 +162,7 @@ LoLA will spend most of the time inside the depth first search of the state expl
 
 Unfortunately a simple testrun on the VM reveals that there is no performance gain. Figure TODO:ref shows that the new implementation is actually slower than the previous. But as stated in TODO:ref, the performance of the original implementation always stayed behind the sequential algorithm. This means that a relevant speedup would divide the execution time by an order of the used threads. Taking this expectation as base, both implementations still can be considered in the same order of performance. Thus, we can conclude that we either missed the cause of the bottleneck, or the new implementation faces similar challenges.
 
+%TODO: remeasure with the configuration stated in the caption
 \input{pictures/MacroNOBucketsSimple}
 
 The benchmark result shows no significant change in performance. Therefore an exhaustive evaluation with multiple testruns is dropped in favor of a detailed bottle neck analysis. In the next section we will use a more precise benchmark method to inspect the search characteristics.
@@ -284,64 +285,88 @@ Knowing the basics for the perf usage, we can now look closer into the generated
 
 %ergebnis
 \subsection{Result and Conclusion}
+\label{first_perf_results}
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{pictures/perfReportSample.png}
     \caption{perf report output}
     \label{perf_record_sample}
 \end{figure}
-Figure \ref{perf_record_sample} shows that over 95\% of the samples where taken somewhere in the \texttt{threadedExploration}. This is expected because it is where the search of LoLA is implemented and almost all what LoLA does is searching. We can also see that nearly half of the samples where taken inside the \texttt{searchAndInsert} method of the global store. This observation corresponds to the hint we took from the manual benchmark approach. The two different \texttt{searchAndInsert} methods are caused by the implementation of the \texttt{HashingWrapperStore} which associate each bucket with a \texttt{PrefixTreeStore} and forwards each \texttt{searchAndInsert} to the corresponding \texttt{PrefixTreeStore}.
-The new information that we get from the data is that the most samples inside the \texttt{searchAndInsert} methods are taken in a \texttt{\_\_lib\_calloc} call. Almost the half the samples of all taken originate here. They are almost certainly caused by allocating memory on the heap with \texttt{malloc}, \texttt{calloc}, or \texttt{new}. This makes perfect sense, since the perpose of the \texttt{searchAndInsert} method is to store newly discovered net states, which has to be done on the heap. In fact a simplified high level view on the search could be described as:
+Figure \ref{perf_record_sample} shows that over 95\% of the samples where taken somewhere in the \texttt{threadedExploration}. This is expected because it is where the search of LoLA is implemented and almost all what LoLA does is searching. We can also see that nearly half of the samples where taken inside the \texttt{searchAndInsert} method of the global store. This observation corresponds to the hint we took from the manual benchmark approach. The different \texttt{searchAndInsert} methods are caused by the implementation of the \texttt{HashingWrapperStore} which associate each bucket with a \texttt{PrefixTreeStore} and forwards each \texttt{searchAndInsert} to the corresponding \texttt{PrefixTreeStore}.
+The new information that we get from the data is that the most samples inside the \texttt{searchAndInsert} methods are taken in a \texttt{\_\_lib\_calloc} call. Almost half the samples of all taken originate here. They are almost certainly caused by allocating memory on the heap with \texttt{malloc}, \texttt{calloc}, or \texttt{new}. This makes perfect sense, since the perpose of the \texttt{searchAndInsert} method is to store newly discovered net states, which has to be done on the heap. In fact a simplified high level view on the search could be described as:
 \begin{enumerate}
     \item Discover a net state
     \item Store the net state
     \item Repeat until all states are discovered
 \end{enumerate}
-Discovering net states is done by firing a transition from the fire list (a list of al transitions that can be fired from the current net state). Beside the \texttt{searchAndInsert} method we can see this behavior in the profiling data too. Getting the fire list is the second most sampled method inside the \texttt{threadedExploration} and firing the transition was also sampled often enough to account for almost 1\% of all samples.
+Discovering net states is done by firing a transition from the fire list (a list of all transitions that can be fired from the current net state). Beside the \texttt{searchAndInsert} method we can see this behavior in the profiling data too. Getting the fire list is the second most sampled method inside the \texttt{threadedExploration} and firing the transition was also sampled often enough to account for almost 1\% of all samples.
 
-The calls inside lib calloc are a variety of system calls. Understanding what they really do is outside of the scope of this work. But the last sampled functions containing words like 'lock' or 'wake'. These are probably used to synchronize threads and lock memory regions. Ultimately the allocator has to be thread safe too. Allocating heap space in high frequencies is no common use case, thus the assumption that the allocator just blocks until a request was fully processed seems to be reasonable. Additionally there is only one system allocator for multiple threads. If they all call the same allocator it is likely that they get in each others ways with higher frequent calls and with an increasing amount of used threads.
+The calls inside \texttt{libcalloc} are a variety of system calls. Understanding what they really do is outside of the scope of this work. But the last sampled functions containing words like 'lock' or 'wake'. These are probably used to synchronize threads and lock memory regions. Ultimately the allocator has to be thread safe too. Allocating heap space in high frequencies is no common use case, thus the assumption that the allocator just blocks until a request was fully processed seems to be reasonable. Additionally there is only one system allocator for multiple threads. If they all call the same allocator it is likely that they get in each others ways with higher frequent calls and with an increasing amount of used threads.
 
-With perfs data and the previous assumptions we can be quite confident that changing the way we allocate heap space can have an impact on LoLA performance. For example we can reduce the frequent and complex calls to the allocator, by using bigger preallocated chunks of memory (from the system allocator) and manage them by our selfs. This would not only reduce the calls to lib calloc needed, it also has the potential of reducing the overall consumed memory, since we already store pointers to each net state inside the global store. The fact that we store them permanently until LoLA is terminated makes it unnecessary to manage additional data for defragmentation handling. This information can get quite big in the system allocator, especially when allocating a lot of small data like LoLA does. The chunks can also be associated with each thread or each bucket of the \texttt{HashingWrapperStore} to make their access thread safe. This way we can access multiple memory locations by multiple threads. If thread synchronization is really a problem by the system allocator like previously assumed, this potentially resolves the issue of the general sequential performance of LoLA with the parallel implementation.
+With perfs data and the previous assumptions we can be quite confident that changing the way we allocate heap space can have an impact on LoLAs performance. For example we can reduce the frequent and complex calls to the allocator, by using bigger preallocated chunks of memory (from the system allocator) and manage them by our selfs. This would not only reduce the calls to \texttt{libcalloc} needed, it also has the potential of reducing the overall consumed memory, since we already store pointers to each net state inside the global store. The fact that we store them permanently until LoLA is terminated makes it unnecessary to manage additional data for defragmentation handling. This information can get quite big in the system allocator, especially when allocating a lot of small data like LoLA does. The chunks can also be associated with each thread or each bucket of the \texttt{HashingWrapperStore} to make their access thread safe. This way we can access multiple memory locations by multiple threads. If thread synchronization is really a problem by the system allocator like previously assumed, this potentially resolves the issue of the general sequential performance of LoLA with the parallel implementation.
 
 An implementation for this approach requires a custom allocator that wraps the system calls. Fortunately we have access to exactly such an allocator from a previous project at our chair called 'mara'. The participation of the author of this work at the development of mara is another advantage. The results of this circumstances lead to an integration of mara into LoLA for the net state search.
 
 \section{Allocation strategie change}
 In the last chapter we saw that the profiling results lead deeper into the \texttt{searchAndInsert} method. The data suggest that high frequent calls to the system allocator might be the cause of the bottleneck. To see if this assumption is true, we have to change the way LoLA uses the heap und measure the performance again.
 
-We will use the Memory and Resource Allocator (mara) to wrap calls to the system allocator. Mara was previously developed at the chair of theoretical computer science as a student project by Julian Gaede, Marian Stein and Tom Meyer. The later use in LoLA was a part of the project aims.
+We will use the Memory and Resource Allocator (mara) to wrap calls to the system allocator. Mara was previously developed at the chair of theoretical computer science as a student project by Julian Gaede, Marian Stein and Tom Meyer. The later use in LoLA was a part of the project goals.
 
-A major part of maras constraints was that once allocated memory will never be rearranged and never be freed until program termination. Thus it can be freed by the operating system and mara is allowed to drop references that where previously shared. This allows mara to reduce the overhead for heap allocation in space and time.
+A major part of maras constraints was that once allocated memory will never be rearranged and never be freed until program termination. Thus mara is allowed to drop references that where previously shared and it can be freed by the operating system. This allows mara to reduce the overhead for heap allocation in space and time.
 
-Mara publishes a class that can be used as a custom allocator. A call to its \texttt{staticNew} method will return a pointer into a previously allocated chunk of memory. The next call to \texttt{staticNew} will return another pointer inside the same chunk that is adjacent to the previously returned memory segment. This memory management is equivalent to a stack. Once the chunk is filled, a new one is allocated with a call to the system allocator. The old chunk is not stored and there is now possibility to access it again with mara (but the previously shared pointers remain valid). Each object of the mara class manages disjoint parts of the heap.
+Mara publishes a class that can be used as a custom allocator. A call to its \texttt{staticNew} method will return a pointer into a previously allocated chunk of memory. The next call to \texttt{staticNew} will return another pointer inside the same chunk that is adjacent to the previously returned memory segment. This memory management is equivalent to a stack. Once the chunk is filled, a new one is allocated with a call to the system allocator. The old chunk is not stored and there is no possibility to access it again with mara (but the previously shared pointers remain valid). Each object of the mara class manages disjoint parts of the heap.
 
-With memory allocated by mara we can very easily distribute LoLAs net state memory to make it thread safe. With the \texttt{HashingWrapperStore} we already have a method to store net states in independent \texttt{PrefixTreeStore}s (inside the buckets). The access to them is already restricted to one thread at a time, while other buckets still can be accessed by other threads. This means that we don not need to consider parallelization issues inside the buckets \texttt{PrefixTreeStore}. All memory access inside can only be done by a single thread. To use mara as allocator, we just have to create one instance of the mara class and substitute all calls to \texttt{malloc}, \texttt{calloc} and \texttt{new} inside the \texttt{PrefixTreeStore} with a call to maras \texttt{staticNew} method. Because calls to delete and free will now produce undefined behavior, these calls have to be removed. The operating system will free the memory on program termination. After that, all heap allocation for the net states is wrapped by mara. 
+With memory allocated by mara we can very easily distribute LoLAs net state memory to make it thread safe. With the \texttt{HashingWrapperStore} we already have a method to store net states in independent \texttt{PrefixTreeStore}s (inside the buckets). The access to them is already restricted to one thread at a time, while other buckets still can be accessed by other threads. This means that we do not need to consider parallelization issues inside the buckets of the \texttt{PrefixTreeStore}. All memory access inside can only be done by a single thread. To use mara as allocator, we just have to create one instance of the mara class and substitute all calls to \texttt{malloc}, \texttt{calloc} and \texttt{new} inside the \texttt{PrefixTreeStore} with a call to maras \texttt{staticNew} method. Because calls to delete and free will now produce undefined behavior, these calls have to be removed as well. The operating system will free the memory on program termination. After these steps, all heap allocation for the net states is wrapped by mara. 
 
-Altering LoLA in that way we now can start another benchmark to see if the changes impact LoLAs performance.
+Altering LoLA in that way we now can start another benchmark to see if the changes impact LoLAs performance. 
 
-\section{Results}
-\subsection{Profiling}
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{pictures/perfReportMara.png}
-    \caption{perf report output}
-    \label{perf_record_sample}
+    \caption{perf report output of LoLA with mara integration}
+    \label{perf_record_mara}
 \end{figure}
-- same environment like the previous prof env\\
-- PIC: data\\
-- libcalloc calls are gone -> under significance threshold\\
-- mem... calls and fire list calls are now the most significant values\\
-- meaning the greatest bottleneck seems to be gone\\
+
+\section{Results}
+\subsection{Profiling}
+To compare the old and the new implementation, we have to rerun our benchmark. Figure \ref{perf_record_mara} shows the output of the same mara call we used in chapter \ref{first_perf_results}.
+
+We can see that the data changed in many ways. The \texttt{searchAndInsert} and the \texttt{getFirelist} methods now contribute for roughly the same amount of samples. They are also the both functions with the highest 'Self' time. This means the most samples where taken directly in this functions and not in one of their sub functions.
+
+The most importend fact however is that the calls to \texttt{libcalloc} are completely gone, meaning they are under the significance threshold or where not sampled at all. Instead we can see that maras \texttt{staticNew} method contributes for 0.4\% of all samples.
+
+It seems that the integration of mara has a great impact on LoLAs performance. We seem to greatly improved the way mara uses the heap. But we do not get any information on the execution time and the thread scaling from the profiling data. To draw any conclusion we have to make additional macro benchmarks to see how the changes affects the execution time.
 
 \subsection{Macrobenchmark}
 \input{pictures/MacroNOBucketsAll}
+There are different questions that are of interest with the new implementation. To address a variety of them multiple tests were issued. We can divide them into three categories:
+\begin{enumerate}
+    \item Single thread performance,
+    \item Implementation comparison and
+    \item Bucket influence.
+\end{enumerate}
+The single thread performance will be compared without the use of the \texttt{HashingWrapperStore}. This way we can observe any efficiency difference that are caused by mara or the compare and swap (CAS) synchronization.
+To have insight into the thread scaling we will compare all implementations with use of the \texttt{HashingWrapperStore} combined with a different amount of threads.
+And to see how the amount of used buckets influences the results, we will look at the implementations that are scaling with the threads.
+
+We will investigate all implementation changes. The preexisting unchanged implementation will be called 'PThread', The implementation with the changed synchronization method will be called 'CAS' and implementation with the integration of mara will be called 'Mara PThread'. Additionally we will look at an implementation where the CAS synchronization and the mara integration was used. It will be called 'Mara CAS'.
+
+In this case we will run the benchmarks on ebro because it can access up to 64 threads. However we will limit the thread count to a maximum of 50 so that other tasks are unlikely to interfere with our benchmark.
+
+%TODO: check if this statement is true
+The benchmark values will be an average of 10 runs, so that performance deviations are compensated.
+
+In the single thread benchmark - shown in figure \ref{SingleThreadBenchmark} - a quite homogeneous characteristic can be observed. The difference between the CAS and the Pthread implementation is insignificant. Between the the mara and non mara implementation a slight speedup is observable. But the difference remain in a lower one-digit percentage magnitude.
+
 \input{pictures/Macro100Buckets}
+The benchmark for the implementation comparison shows that the original implementation is quite consistent between the used threads. This is due to bugs that will be explained in chapter \ref{evaluation}. We can see again that the CAS implementation nether really outperforms the original implementation but with the addition that at a very high thread count the execution time rises again to very high levels. The both mara implementation however are able to outperform the PThread implementation at a certain thread count, even though they are performing considerably worse on a lower thread count.
+
 \input{pictures/MacroMultipleBuckets}
-- knowing a major bottleneck is gone, execution and scaling of the whole program is of interest\\
-- simple measurement of execution time is sufficient\\
-- since multiple threads will influence time consumption directly\\
-- lola can log that itself\\
-- all implementations are benchmarked (master, CAS, MaraCas, MaraPthread)\\
-- significant values are: single thread performance, scaling with threads, scaling with bucket count\\
-- PIC: measurements\\
+But to utilize a maximum of the parallelization capabilities, the memory has to be used efficiently. Increasing the amount of threads will increase the probability of concurrent access of the same bucket. In this case the bucket will grant access to a single thread and will lock the execution of the others. Thus a higher thread count will ultimately a again decreasing performance at least of a single thread.
+
+We can can decrease the chances of concurrent access by increasing the amount of used buckets. Therefore figure \ref{MaraBucketComparison} shows the performance of the mara implementations with a different amount of buckets. We can observe a general performance gain with a higher amount of buckets. Even single threaded. The difference slowly diminishes with more threads. TODO: prüfen! For example with 4 threads the CAS implementation is with both amounts of buckets similar fast. However, a greater bucket count preserves a better thread scaling. We can se a further decreasing of the execution time with more buckets on a higher thread count.
+
+At this point we can summerize that we have affected the performance with the new implementations. In some cases even for the better. In the next chapter we will evaluate the data in more detail.
 
 \section{Evaluation}
+\label{evaluation}

@@ -60,6 +60,6 @@
         \addplot [orange, fill=orange!30] table [x=maraPThread-t50-b1000, y expr=6, col sep=comma,trim cells=true] {data/allMacroData.csv};
     \end{axis}
 \end{tikzpicture}
-%TODO:Caption ändern
-\caption{Macro benchmark comparison between the original (PThread) implementation and the substitute (Compare and swap)\\ LoLA call: "lola --check=full --threads=4 ../tests/testfiles/phils1000.lola" }
+\caption{Mara comparison with 100 and 1000 buckets\\ LoLA call: "lola --check=full --threads=\{1,2,3,4,20,50\} --bucketing=\{100,1000\} ../tests/testfiles/phils1000.lola" }
+\label{MaraBucketComparison}
 \end{figure}
