@@ -2,8 +2,6 @@
 #redirect output
 exec > test.out                                                                      
 exec 2>&1
-
-CXXFLAGS='-std=c++11'
 #testiteration
 for i in 1 2 3 4 5 6 7 8 9 10
 do
@@ -18,7 +16,7 @@ do
       #build
       libtoolize
       autoreconf -i
-      $PWD/configure
+      $PWD/configure CXXFLAGS='-std=c++11'
       make -j4
       #execute
       if [ $j = 1 ] || [ $j = 4 ]; then
