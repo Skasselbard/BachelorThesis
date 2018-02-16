@@ -1,4 +1,5 @@
 #!/bin/bash
+CXXFLAGS=-std=c++11
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 git checkout -f master
@@ -6,7 +7,6 @@ git pull
 
 libtoolize
 autoreconf -i
-export CXXFLAGS=-std=c++11
 ./configure
 make -j4
 
@@ -23,7 +23,6 @@ git pull
 
 libtoolize
 autoreconf -i
-export CXXFLAGS=-std=c++11
 ./configure
 make -j4
 
@@ -40,7 +39,6 @@ git pull
 
 libtoolize
 autoreconf -i
-export CXXFLAGS=-std=c++11
 ./configure
 make -j4
 
@@ -64,7 +62,6 @@ git pull
 
 libtoolize
 autoreconf -i
-export CXXFLAGS=-std=c++11
 ./configure
 make -j4
 
