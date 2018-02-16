@@ -178,7 +178,7 @@ In the next step measurements have to be inserted at the relevant sections. Howe
 
 The time was measured with the functions provided by \texttt{std::chrono} from the c++ standard library. The exact code is considered trivial and will not be discussed further.
 
-Table TODO:ref is listing the performance of the code pieces that are considered relevant. Over less important measurements are omitted to keep a clear view. Here is an explanation of the values:
+Table \ref{ManualBenchmark} is listing the performance of the code pieces that are considered relevant. Over less important measurements are omitted to keep a clear view. Here is an explanation of the values:
 \begin{itemize}
     \item Total Thread Time - The cumulative time spend in each thread is called total thread time.
     \item Synchronization Time - Time spend to synchronize the threads with mutexes.
@@ -202,6 +202,7 @@ Table TODO:ref is listing the performance of the code pieces that are considered
             No Work & 0.5s & 0.5s & 0.5s & 0.5s \\ \hline
         \end{tabular}
         \caption{Manual meso benchmark of the \texttt{ParallelExploration}}
+        \label{ManualBenchmark}
     \end{table}
 \end{center}
 
@@ -356,7 +357,7 @@ In this case we will run the benchmarks on ebro because it can access up to 64 t
 %TODO: check if this statement is true
 The benchmark values will be an average of 10 runs, so that performance deviations are compensated.
 
-In the single thread benchmark - shown in figure \ref{SingleThreadBenchmark} - a quite homogeneous characteristic can be observed. The difference between the CAS and the Pthread implementation is insignificant. Between the the mara and non mara implementation a slight speedup is observable. But the difference remain in a lower one-digit percentage magnitude.
+In the single thread benchmark - shown in figure \ref{SingleThreadBenchmark} - a quite homogeneous characteristic can be observed. The difference between the CAS and the Pthread implementation is insignificant. But we can observe a speedup between the mara and non mara implementations. With a single thread the pthread mutexes seem to work slightly faster than the compare and swap approach.
 
 \input{pictures/Macro100Buckets}
 The benchmark for the implementation comparison shows that the original implementation is quite consistent between the used threads. This is due to bugs that will be explained in chapter \ref{evaluation}. We can see again that the CAS implementation nether really outperforms the original implementation but with the addition that at a very high thread count the execution time rises again to very high levels. The both mara implementation however are able to outperform the PThread implementation at a certain thread count, even though they are performing considerably worse on a lower thread count.
@@ -364,9 +365,39 @@ The benchmark for the implementation comparison shows that the original implemen
 \input{pictures/MacroMultipleBuckets}
 But to utilize a maximum of the parallelization capabilities, the memory has to be used efficiently. Increasing the amount of threads will increase the probability of concurrent access of the same bucket. In this case the bucket will grant access to a single thread and will lock the execution of the others. Thus a higher thread count will ultimately a again decreasing performance at least of a single thread.
 
-We can can decrease the chances of concurrent access by increasing the amount of used buckets. Therefore figure \ref{MaraBucketComparison} shows the performance of the mara implementations with a different amount of buckets. We can observe a general performance gain with a higher amount of buckets. Even single threaded. The difference slowly diminishes with more threads. TODO: prüfen! For example with 4 threads the CAS implementation is with both amounts of buckets similar fast. However, a greater bucket count preserves a better thread scaling. We can se a further decreasing of the execution time with more buckets on a higher thread count.
+We can can decrease the chances of concurrent access by increasing the amount of used buckets. Therefore figure \ref{MaraBucketComparison} shows the performance of the mara implementations with a different amount of buckets. We can observe a general performance gain with a higher amount of buckets. Even single threaded. The difference slowly diminishes with more threads. However, a greater bucket count preserves a better thread scaling. We can se a further decreasing of the execution time with more buckets on a higher thread count, whereas the execution time of CAS with 100 buckets increases again between 20 and 50 used threads.
 
 At this point we can summerize that we have affected the performance with the new implementations. In some cases even for the better. In the next chapter we will evaluate the data in more detail.
 
-\section{Evaluation}
+\subsection{Evaluation}
 \label{evaluation}
+We saw that the new implementations perform differently in the results of the benchmark. We can now analyze what the causes for these differences are.
+
+But before that it should be stated again that the benchmarks where run on a single petri net and on a single machine. While the used hardware should hardly influence the relative performance differences, the test data can have a major effect. For example a petri net, where always at most on transition is fireable in each state, can not be searched in parallel by the current algorithm. In such a case we would see no benefit by using multiple threads and parallelization would certainly perform worse due to its synchronization overhead.
+
+Additionally the use of LoLA with the \texttt{--check=full} parameter is by far not the only possible use of LoLA. It is probably most used with a predicate to check. In that case, the petri net is often reduced to a smaller (in respect to the predicate) äquivalent net, before the search is done. This again can influence the number of fireable transistions and therefore the potential of the parallel search.
+
+That said, the following should be seen as a constrictive comparison between the sequential and parallel capabilities of LoLA not as an exhaustive one.
+
+\subsubsection{Single thread performance}
+We have two different results on the single thread performance of LoLA. If the \texttt{HashingWrapperStore} is used all new implementations perform worse than the initial implementation. If it is not used the mara implementations perform better.
+
+The performance gain in the latter can be explained exactly by the use of mara. Benchmarks in the development of mara showed that it is faster than a call to \texttt{malloc}, because it can reduce an allocation call to basically three stack operations:
+\begin{enumerate}
+    \item Save the current stack pointer
+    \item Increase the stack pointer by the size of the requested data
+    \item Return the saved pointer
+\end{enumerate}
+Because LoLA requests a lot of heap space, this adds up to a significant amount of time.
+
+But when we introduce the \texttt{HashingWrapperStore} with its buckets, the performance of all new implementations drop considerably, while the initial implementation gains performance. 
+
+The performance gain can be explained by the concept of the \texttt{HashingWrapperStore}. When we distribute all states evenly between the buckets, we can do an informed search later because we know the bucket associated with our hash value. Since every insert of a net state implies a previous search to avoid duplicates, it is possible to reduce the execution time with a suitable amount of buckets.
+
+The performance loss can be explained by the implementation of the \texttt{HashingWrapperStore}. The original implementation was not guarded by mutexes and therefore not thread safe. Additionally the bucket count from the lola call was ignored and a hard coded value was used instead. This suggest that the implementation was incomplete and the use of buckets was experimental. For the use in the new implementations, the \texttt{HashingWrapperStore} had to be altered. Now, before a bucket will be accessed via hash, a mutex has to be passed to prevent concurrent access and a modulo check is done to assure that a bucket to insert exists. These new operations can accumulate to a lot of time with frequent use by LoLA.
+
+However, asside from the synchronization issues it seems that mara has the potential to speed up the execution in general. The heap allocation is independent from the depth first search and the optimization techniques incorporated by LoLA. 
+
+Also it might be possible to affect the memory space consumption with mara. Though not benchmarked explicitly, while testing the implementations during development, a considerable memory reduction was observed. While the 1000 philosophers caused a premature termination of the tests with the \texttt{HashingWrapperStore}, the mara integration enabled LoLA to finish the test successful under the right circumstances. With the approximately 17GB of RAM on the VM, the original implementation terminated at about the half of net states to discover. But with a chunk size of 500MB it was possible to fit all net states in the memory. It can be assumed that this is a saving of multiple giga bytes and might be a matter that is worth investigating more in depth.
+
+To address the worse performance with the changes in the \texttt{HashingWrapperStore}, it might be possible to reduce the execution time by checking with how many threads LoLA runs. A condition to skip the mutexe blocks when using only one thread or a completely new class that is loaded dynamically single threaded can be implemented. Anyway, the performance gap between the hashed and unhashed execution of the PThread implementation suggest that this matter can buy in execution time at expense for memory space.

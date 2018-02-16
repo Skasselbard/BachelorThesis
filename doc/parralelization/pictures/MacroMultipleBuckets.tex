@@ -10,6 +10,7 @@
         bar width=14,
         title={Macro Benchmark},
         xmin=0,
+        xmax=350,
         x tick label style={/pgf/number format/1000 sep=},
         xlabel={seconds},
         ymin=1,
@@ -48,7 +49,7 @@
         \addplot [green, fill=green!30] table [x=maraIntegration-t1-b1000, y expr=1, col sep=comma,trim cells=true] {data/allMacroData.csv};
         \addplot [green, fill=green!30] table [x=maraIntegration-t2-b1000, y expr=2, col sep=comma,trim cells=true] {data/allMacroData.csv};
         \addplot [green, fill=green!30] table [x=maraIntegration-t3-b1000, y expr=3, col sep=comma,trim cells=true] {data/allMacroData.csv};
-        \addplot [green, fill=green!30] table [x=maraIntegration-t4-b100, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
+        \addplot [green, fill=green!30] table [x=maraIntegration-t4-b1000, y expr=4, col sep=comma,trim cells=true] {data/allMacroData.csv};
         \addplot [green, fill=green!30] table [x=maraIntegration-t20-b1000, y expr=5, col sep=comma,trim cells=true] {data/allMacroData.csv};
         \addplot [green, fill=green!30] table [x=maraIntegration-t50-b1000, y expr=6, col sep=comma,trim cells=true] {data/allMacroData.csv};
 
