@@ -1,4 +1,8 @@
 #!/bin/bash
+#redirect output
+exec > test.out                                                                      
+exec 2>&1
+
 CXXFLAGS=-std=c++11
 #testiteration
 for i in 1 2 3 4 5 6 7 8 9 10
@@ -14,15 +18,15 @@ do
       #build
       libtoolize
       autoreconf -i
-      ./configure
+      $PWD/configure
       make -j4
       #execute
       if [ $j = 1 ] || [ $j = 4 ]; then
-        ./src/lola --json="test-$branch-t$j-b0.json" --check=full --threads=$j ./tests/testfiles/phils1000.lola
+        $PWD/src/lola --json="test-$branch-t$j-b0.json" --check=full --threads=$j ./tests/testfiles/phils1000.lola
       fi
       ./src/lola --json="test-$branch-t$j-b100.json" --check=full --threads=$j --bucketing=100 ./tests/testfiles/phils1000.lola
       if [ $branch = maraPThread ] || [ $branch = maraPThread ]; then
-        ./src/lola --json="test-$branch-t$j-b1000.json" --check=full --threads=$j --bucketing=1000 ./tests/testfiles/phils1000.lola
+        $PWD/src/lola --json="test-$branch-t$j-b1000.json" --check=full --threads=$j --bucketing=1000 ./tests/testfiles/phils1000.lola
       fi      
     done
   done
