@@ -23,7 +23,7 @@ do
         $PWD/src/lola --json="test-$branch-t$j-b0.json" --check=full --threads=$j ./tests/testfiles/phils1000.lola
       fi
       ./src/lola --json="test-$branch-t$j-b100.json" --check=full --threads=$j --bucketing=100 ./tests/testfiles/phils1000.lola
-      if [ $branch = maraPThread ] || [ $branch = maraPThread ]; then
+      if [ $branch = maraPThread ] || [ $branch = maraIntegration ]; then
         $PWD/src/lola --json="test-$branch-t$j-b1000.json" --check=full --threads=$j --bucketing=1000 ./tests/testfiles/phils1000.lola
       fi      
     done
