@@ -13,7 +13,9 @@
     caption, %tabbellen beschreibungen
     listings %code blöcke
     }
-\usetikzlibrary{positioning,shapes,shadows,arrows, arrows.meta, calc}
+\usetikzlibrary{positioning,shapes,shadows,arrows, arrows.meta, calc,
+    automata, petri %petri netze
+    }
 %\usepackage[a4paper,left=27mm,right=27mm, top=1cm, bottom=2cm]{geometry}
 
 \renewcommand{\name}{Tom Meyer}
@@ -21,7 +23,7 @@
 \renewcommand{\stadt}{18057 Rostock}
 \renewcommand{\matrikel}{Matrikel-Nr.: 8200839}
 \renewcommand{\course}{Informatik}
-\renewcommand{\betreuer}{Prof. Dr. rer. nat. habil. Karsten Wolf}
+\renewcommand{\betreuer}{Prof. Dr. rer. nat. habil. Karsten Wolf\\apl. Prof. Dr. rer. nat. habil Van Bang Le}
 \renewcommand{\Titel}{Parallele Zustandsraumsuche}
 \renewcommand{\Type}{Bachelorarbeit } %Bachelorarbeit, Projektarbeit, Literaturarbeit, etc.
 \newcommand*\justify{%
@@ -47,7 +49,7 @@
 \newpage
 \markright{\nomname}
 \printnomenclature
-\addcontentsline{toc}{chapter}{\nomname}
+%\addcontentsline{toc}{chapter}{\nomname}
 % Abbildungsverzeichnis
 %\newpage
 %\addcontentsline{toc}{chapter}{\listfigurename}
