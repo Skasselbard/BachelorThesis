@@ -1,17 +1,39 @@
 % !TEX root = ../main.tex
 \chapter{Related Work}
 
-\section{Parallelization History}
-\section{Synchronization Methods}
+\section{Parallel computing}
+Sequential computing reached its physical limits in the past. Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However this trend was replaced by the tendency to to add multiple processing units on recent processors. For this reason, software that wants to exploit the whole processing capacities of current hardware, has to adapt some parallel computing paradigms.
+
+Parallel computing can be described as the concurrent execution of multiple operations at the same time. Though there are different levels on witch these operations can reside.
+
+Beside bit-level parallelism - where an arithmetic logical operation is executed on multiple bits (e.g. 32bit and 64bit architectures), and instruction-level parallelism \cite{wall1991limits} - where different processor actions (e.g loading memory, alu operations, writing memory) can be executed simultaneously, we will focus on the more abstract level of parallel tasks.
+
+A task may be some arbitrary routine that can be processed on a processor. Independent tasks can obviously be executed independent and therefore in parallel. But tasks that work as part of the same workflow or on the same data, might conflict with each other in some way. This is typically the case if we try to distribute an existing program to different subtasks that can be executed simultaneously. Some of these subtasks might depend on a result of a previous task or have to change globally shared data. This results in some problems that arise with parallel computing.
+
+\subsection{Limits in concurrency}
+There are limits to the potential of parallelizing tasks. Ideally a program which is executed with n processing units or threads will terminate in $\frac{1}{n}$ of the time. But programs tend to have some parts that have to be executed sequentially. For example: to write to a file it has to be opened previously.
+Amdahl already formulated in the 1960's \cite{amdahl1967validity} that the speedup of a program is limited by its sequential parts. From his work a formula was extracted that is known as Amdahls law.
+
+Gustafson later reavaluated that... %TODO: yadayada 
+
+\subsection{Data inegrity}
+race conditions
+- können durch Synchronization vermieden werden
+
+\section{Synchronization Concepts}
 - mutexe\\
 - semaphores\\
 - compare and swap\\
 - spin locks\\
+
 \section{Depth First Search Parallelization}
+- was ist dfs
 - what is a graph
+- welche möglichkeiten zur Parallelization
 - Tarjan
+- torstens papers
 
 \section{petri nets}
--reachability
-- what means firing a transition
+- reachability und andere eigenschaften
+- Parallelization
 
