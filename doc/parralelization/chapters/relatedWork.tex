@@ -12,19 +12,35 @@ A task may be some arbitrary routine that can be processed on a processor. Indep
 
 \subsection{Limits in concurrency}
 There are limits to the potential of parallelizing tasks. Ideally a program which is executed with n processing units or threads will terminate in $\frac{1}{n}$ of the time. But programs tend to have some parts that have to be executed sequentially. For example: to write to a file it has to be opened previously.
-Amdahl already formulated in the 1960's \cite{amdahl1967validity} that the speedup of a program is limited by its sequential parts. From his work a formula was extracted that is known as Amdahls law.
+Amdahl already formulated in the 1960's \cite{amdahl1967validity} that the speedup of a program is limited by its sequential parts. This implies that the thread scaling reach its limits with relatively achievable amounts of threads. From his work a formula was extracted that is known as Amdahls law. 
 
-Gustafson later reavaluated that... %TODO: yadayada 
+Gustafson later reavaluated that formula \cite{gustafson1988reevaluating} and points out that Amdahl assumes a fixed problem size. This is often true in academic research, but practical programs often scale the size of the problem with number of processors. He introduces a new formula with a variable problem size and a much more optimistic scaling.
 
-\subsection{Data inegrity}
-race conditions
-- können durch Synchronization vermieden werden
+In any both cases, it should be kept in mind, that a practical parallel program typically needs some kind of overhead to synchronize work that will prevent an optimal scaling. 
+
+\subsection{Data integrity}
+Another major concern in the design of parallel applications is the data access. Often different parts of a program need to read or write the same information. Doing this step by step is trivial, but if two parallel executed task trying to access the same memory regions concurrently, data corruptions quickly strike the careless.
+
+While concurrent reading is typically unproblematic, a single writing task can interfere with all other tasks. It not only can cause a reader to return an incomplete written data segment, also accurately written data might be bound to a different program state, which does not fit to what the reader assumed at the time the read was scheduled.
+
+If such behavior is not handled correctly, the corresponding memory segment depends on the first arriving task and are therefore called race conditions. A more detailed analysis of that term was done by Netzer et. al.\cite{netzer1992race}.
+
+To assure data integrity of shared memory, some kind of synchronization has to be done. This is typically achieved by blocking the access to the memory (especially operations involving writing) to one thread at a time. This necessity supports the development of some general synchronization concepts.
 
 \section{Synchronization Concepts}
-- mutexe\\
-- semaphores\\
-- compare and swap\\
-- spin locks\\
+Global memory with access restrictions can introduce bottlenecks which quickly degrades the hole program to sequential (or worse) speeds if done too frequently. One way to avoid that is to allocate thread local memory. This is genrally advised for data that depends on a single thread anyway, however often there is some global memory that has to be shared between threads.
+
+To keep this memory upright some rules to access it are required. An often used way is to simply block the access in some way, so that it can only be used by one thread at a time. We will look at some of such concepts here before we will come across them later.
+ 
+A simple lock could be a flag with the two states locked and unlocked. Memory protected by such a lock would be accessible only if the flag is set to unlocked. Keeping the integrity of the states would the duty of the implementor.
+
+A more advanced version of such a lock was introduced by Dijkstra \cite{dijkstra1968cooperating} and are called \textbf{semaphores}. Semaphores assumes an amount of a resource that can be distributed. It has a value that can be incremented or decremented. If it is decremented to zero, the next task that is trying to access the resource has to wait until another task increments the semaphore again. For example the set of keys of an apartment can be such a resource where the available count is a semaphore. If someone leaves the apartment he or she will want to take a key from the set to be able to come back again. By taking a key the left amount is decreased. If there is no key left and somebody wants to leave the apartment (and come back later) this person has to wait until somebody else returns a key.
+
+If there is only one resource available (a semaphore with the maximum value of one) the semaphore is equivalent to the previously described lock. such a construct is typically referred to as \textbf{mutex}.
+
+Often a thread that wants to access a resource, has to access it before it can do any further work. If the thread cannot be suspended, some sort of waiting has to be implemented. A trivial algorithm of that kind just loops until the resource is freed and blocks the resource again immediately. Such a behavior is called \textbf{spinlock} because of its cycling behavior.
+
+This rather trivial algorithm already introduces a quite concealed race condition. A very possible chance exists that two threads examine an unlocked mutex and upon that access the underlying resource. To resolve such problems atomic operations are introduced. Such operations are guaranteed to be executed completely or not at all, without any possible remote access. One of them is called \textbf{compare and swap}. It will compare a resource with an expected value and will change the resource on equality. Such atomic operations are often implemented in state of the art hardware for maximum performance.
 
 \section{Depth First Search Parallelization}
 - was ist dfs
@@ -34,6 +50,7 @@ race conditions
 - torstens papers
 
 \section{petri nets}
+- erreichbarkeitsgraf
 - reachability und andere eigenschaften
 - Parallelization
 

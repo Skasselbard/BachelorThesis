@@ -34,16 +34,6 @@ below). \cite{freeman1991parallel}
 The intuition is also similar: RNCis the set of
 all problems that have fast parallel randomized algorithms. \cite{freeman1991parallel}
 
-Profiling:
-\begin{itemize}
-    \item gprof braucht exit() statt _exit und liefert keine ergebnisse
-    \item valgrind sequenziert die einzelnen threads
-    \item operf (oprofile) funktioniert nicht out of the box -> permission errors unter root, kann nicht ohne weiteres auf ebro gebaut oder installiert werden
-    \item perf scheint zu funktionieren
-    \item profiling ist teilweise hardwareabhängig und benötigt möglicherweise debug kernel
-\end{itemize}
-
-perf install and sources
 https://askubuntu.com/questions/50145/how-to-install-perf-monitoring-tool#50148
 
 Erkenntnisse:
