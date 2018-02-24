@@ -1,77 +1,88 @@
-\tikzset{
-  place/.style={
-    circle,
-    thick,
-    draw=blue!75,
-    fill=blue!20,
-    minimum size=6mm
-  },
-  transition/.style={
-    rectangle,
-    thick,
-    draw=black,
-    %fill=black,
-    minimum width=8mm,
-    minimum height=4.5mm,
-    inner ysep=2pt
+\begin{figure}
+  \centering
+  \tikzset{
+    place/.style={
+      circle,
+      thick,
+      draw=blue!75,
+      fill=blue!20,
+      minimum size=6mm
+    },
+    transition/.style={
+      rectangle,
+      thick,
+      draw=black,
+      %fill=black,
+      minimum width=8mm,
+      minimum height=4.5mm,
+      inner ysep=2pt
+      }
+    }            
+
+  \begin{tikzpicture}[node distance=1.3cm,>=stealth',bend angle=45,auto]
+
+      \begin{scope}[]
+          \node [place,tokens=1] (w1) {};
+          \node (center) [below of=w1]{};
+          \node [place,tokens=0] (w2) [below of=center]{};
+
+          \node [transition] (e1) [right of=center]{}
+          edge [pre,bend right]    (w1)
+          edge [post,bend left]  (w2);
+
+          \node [transition] (e2) [left of=center]{}
+          edge [pre,bend right]   (w2)
+          edge [post,bend left]   (w1);
+
+          \node(caption) [below of=e1,label=center:A]{};
+      \end{scope}
+
+      \begin{scope}[xshift=0.5cm, yshift=-4cm]
+        \node [place,tokens=0] (w1) {};
+        \node [transition] (e1) [left of=w1] {}
+        edge [pre]                  (w1);
+        \node(caption) [right of=w1,label=left:B]{};
+      \end{scope}
+
+      \begin{scope}[xshift=0.5cm, yshift=-5.5cm]
+        \node [transition] (e1) {};
+        \node [place,tokens=0] (w1) [left of=e1] {}
+        edge [pre]                  (e1);
+        \node(caption) [right of=e1,label=left:C]{};
+      \end{scope}
+
+      \begin{scope}[xshift=5cm]
+        \node [place,tokens=2] (w1) {};
+        \node [transition] (e1) [below of=w1]{}
+        edge [pre]    (w1);
+        \node [place,tokens=0] (w2-1) [below of=e1,xshift=-20]{}
+        edge [pre]    (e1);
+        \node [place,tokens=0] (w2-2) [below of=e1,xshift=20]{}
+        edge [pre]    (e1);
+        \node [transition] (e2-1) [below of=w2-1]{}
+        edge [pre]    (w2-1);
+        \node [transition] (e2-2) [below of=w2-2]{}
+        edge [pre]    (w2-2);
+        \node [place,tokens=0] (w3) [below of=e2-1,xshift=20]{}
+        edge [pre]    (e2-1)
+        edge [pre]    (e2-2);
+
+        \node(caption) [right of=w3,label=left:D]{};
+    \end{scope}
+
+    \begin{scope}[xshift=8cm]
+      \node [transition] (e1) [label=right:Transition]{};
+      \node [place,tokens=0] (w1) [below of=e1,label=right:Place without marks] {};
+      \node [place,tokens=2] (w2) [below of=w1,label=right:Place with two marks] {};
+    \end{scope}
+
+  \end{tikzpicture}
+  \caption{
+    Petri net examples\\
+    \textbf{Net A}: Net can always fire one transition. One of the places will always have a mark. If one has a mark, the over will be unmarked.\\
+    \textbf{Net B}: The transition cannot be fired because the place has no marks. If the place would have n marks, the transition could fire exactly n times. After that, the pictured state would be reached.\\
+    \textbf{Net C}: Transition can always be fired, since all preceeding places (of which there are none) are marked. The place can have virtually infinit marks.\\
+    \textbf{Net D}: Fireing the top transition will consume one mark from the top place and produce two marks: one on the left place and one on the right place. At the final net state, the bottom place will hold four marks and the others will hold none.
     }
-  }            
-
-\begin{tikzpicture}[node distance=1.3cm,>=stealth',bend angle=45,auto]
-
-    \begin{scope}
-        \node [place,tokens=1] (w1)                                    {};
-        \node [place] (c1) [below of=w1]                      {};
-        \node [place] (s)  [below of=c1,label=above:$s\le 3$] {};
-        \node [place] (c2) [below of=s]                       {};
-        \node [place,tokens=1] (w2) [below of=c2]                      {};
-
-        \node [transition] (e1) [left of=c1] {}
-        edge [pre,bend left]                  (w1)
-        edge [post,bend right]                (s)
-        edge [post]                           (c1);
-
-        \node [transition] (e2) [left of=c2] {}
-        edge [pre,bend right]                 (w2)
-        edge [post,bend left]                 (s)
-        edge [post]                           (c2);
-
-        \node [transition] (l1) [right of=c1] {}
-        edge [pre]                            (c1)
-        edge [pre,bend left]                  (s)
-        edge [post,bend right] node[swap] {2} (w1);
-
-        \node [transition] (l2) [right of=c2] {}
-        edge [pre]                            (c2)
-        edge [pre,bend right]                 (s)
-        edge [post,bend left]  node {2}       (w2);
-    \end{scope}
-
-    \begin{scope}[xshift=6cm]
-        \node [place,tokens=1] (w1)                                    {};
-        \node [place] (c1) [below of=w1]                      {};
-        \node [place] (s)  [below of=c1,label=above:$s\le 3$] {};
-        \node [place] (c2) [below of=s]                       {};
-        \node [place,tokens=1] (w2) [below of=c2]                      {};
-
-        \node [transition] (e1) [left of=c1] {}
-        edge [pre,bend left]                  (w1)
-        edge [post,bend right]                (s)
-        edge [post]                           (c1);
-
-        \node [transition] (e2) [left of=c2] {}
-        edge [pre,bend right]                 (w2)
-        edge [post,bend left]                 (s)
-        edge [post]                           (c2);
-
-        \node [transition] (l1) [right of=c1] {}
-        edge [pre]                            (c1)
-        edge [pre,bend left]                  (s)
-        edge [post,bend right] node[swap] {2} (w1);
-
-        \node [transition] (l2) [right of=c2] {}
-        edge [pre]                            (c2)
-        edge [pre,bend right]                 (s)
-        edge [post,bend left]  node {2}       (w2);
-    \end{scope}
-\end{tikzpicture}
+    \label{petrNetExamples}
+\end{figure}

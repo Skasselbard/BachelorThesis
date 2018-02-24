@@ -9,15 +9,13 @@ A petri net is a mathematical construction to describe the behavior of distribut
 
 If all edges that point to a transition are connected to a place that hold an equal or greater amount of tokens than the connecting edges \textbf{weight} (W), this transition can \textbf{fire} at an arbitrary time point. Fireing a transition will \textbf{consume} tokens from all places that point \textbf{to} the transition with a connecting edge, and it will \textbf{produce} tokens on all places where an edge points \textbf{from} this transition. The produced and consumed amount of tokens is equal to the corresponding edge weight.
 
-With the complete mathematical background, Petri Nets can be used to check a variety of their properties. Figure TODO:ref shows some examples of Petri Nets.
+With the complete mathematical background, Petri Nets can be used to check a variety of their properties. Figure \ref{petrNetExamples} shows some examples of Petri Nets.
 
 \input{pictures/petriExamples}
 
 \textbf{LoLA}:
 LoLAs development startet in 1998. It was aimed to be used by third party tools to check properties of petri nets \cite{schmidt2000lola}. Since then it was steadily updated to compete with other state of the art tools. Recurring prizes in a model checking contest with focus on petri nets suggest a success in this attempt \cite{MCC2017}.
 The internal property evaluation however, is still most performant single threaded. To evaluate a property of a petri net, LoLA searches all necessary net states that can be reached from the initial one. The search is a depth first search on an undirected graph, which is discovered during the search itself.
-
-%Parallelization of depth first search is a difficult matter. Although rather general algorithms exist TODO:ref, they usually make use of an assumption which cannot be made with LoLA.
 
 For the quite specialized search in LoLA, a previous attempt of parallelization exists. Unfortunately the performance is usually worse then the single threaded approach. It can even get worse the more threads are used.
 
