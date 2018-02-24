@@ -72,17 +72,17 @@
 
     \begin{scope}[xshift=8cm]
       \node [transition] (e1) [label=right:Transition]{};
-      \node [place,tokens=0] (w1) [below of=e1,label=right:Place without marks] {};
-      \node [place,tokens=2] (w2) [below of=w1,label=right:Place with two marks] {};
+      \node [place,tokens=0] (w1) [below of=e1,label=right:Place without tokens] {};
+      \node [place,tokens=2] (w2) [below of=w1,label=right:Place with two tokens] {};
     \end{scope}
 
   \end{tikzpicture}
   \caption{
     Petri net examples\\
-    \textbf{Net A}: Net can always fire one transition. One of the places will always have a mark. If one has a mark, the over will be unmarked.\\
-    \textbf{Net B}: The transition cannot be fired because the place has no marks. If the place would have n marks, the transition could fire exactly n times. After that, the pictured state would be reached.\\
-    \textbf{Net C}: Transition can always be fired, since all preceeding places (of which there are none) are marked. The place can have virtually infinit marks.\\
-    \textbf{Net D}: Fireing the top transition will consume one mark from the top place and produce two marks: one on the left place and one on the right place. At the final net state, the bottom place will hold four marks and the others will hold none.
+    \textbf{Net A}: Net can always fire one transition. One of the places will always have a token. If one has a token, the over will be unmarked.\\
+    \textbf{Net B}: The transition cannot be fired because the place has no tokens. If the place would have n tokens, the transition could fire exactly n times. After that, the pictured state would be reached.\\
+    \textbf{Net C}: Transition can always be fired, since all preceeding places (of which there are none) hold tokens. The place can have virtually infinit tokens.\\
+    \textbf{Net D}: Fireing the top transition will consume one token from the top place and produce two tokens: one on the left place and one on the right place. At the final net state, the bottom place will hold four tokens and the others will hold none.
     }
     \label{petrNetExamples}
 \end{figure}

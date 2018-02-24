@@ -55,7 +55,7 @@ In this case, performance means execution time. The expectation is that the exec
 
 As test systems the both machines described in \ref{env} where used.
 
-As test data a predefined petrinet of the dining philosophers was used. It is a common concept in theoretical computer science to illustrate problems and risks of parallel processes and was originally introduced by Dijkstra \cite{dijkstra1971hierarchical}. The philosophers count can be scaled to an arbitrary amount. This is useful to increase the complexity (and therefore the execution time) of the net to a convenient level. The reachability graph is also reasonably branched to allow a parallel discovery. The actual used net is a version with one thousand philosophers.
+As test data a predefined petrinet of the dining philosophers was used. It is a common concept in theoretical computer science to illustrate problems and risks of parallel processes and was originally introduced by Dijkstra\cite{dijkstra1971hierarchical}. The philosophers count can be scaled to an arbitrary amount. This is useful to increase the complexity (and therefore the execution time) of the net to a convenient level. The reachability graph is also reasonably branched to allow a parallel discovery. The actual used net is a version with one thousand philosophers.
 %TODO: reachability graph of dining philosophers
 
 LoLA is executed with the \inline{--threads=[threadCount]} and \inline{--check=full} switches. The first switch simply sets the amount of threads that should be used for the state exploration. The second switch cause LoLA to explore the whole state space without exploring a property. This ensures that the application will terminate after all states have been discovered and no varying discovery paths can influence the execution time.
@@ -142,7 +142,7 @@ But before learning to us a profiling tool, we have to know which one we want to
 In the following a short overview on the candidates shall be given with a reason that this candidate will or will not be used. This will be no detailed comparison with a conclusion why the choice is the best in our case. Instead it should only give insight on why the choice was made.
 
 \subsubsection{Gprof}
-Gprof is a profiler that was developed in the 1980's. It generates a flat and a call graph profile \cite{graham1982gprof}. In the flat profile is listet how often a routine was called and the cumulative time spent in it. The call graph lists which routine calls another and by which itself was called.
+Gprof is a profiler that was developed in the 1980's. It generates a flat and a call graph profile\cite{graham1982gprof}. In the flat profile is listet how often a routine was called and the cumulative time spent in it. The call graph lists which routine calls another and by which itself was called.
 
 The profiler is is integrated into the gcc. Passing the \inline{-pg} switch to the gcc will add code to the compiled executable that is needed for profiling. A program that is compiled in this way can be executed normally, but during execution it will gather data that is later be written to an output file.
 
@@ -153,18 +153,18 @@ It is quite easy to change the behavior of LoLA to call the default \inline{exit
 As a result, gprof is dropped as a candidate at this point to move to next candidate.
 
 \subsubsection{Valgrind}
-"Valgrind is a dynamic binary instrumentation framework designed for building heavyweight dynamic binary analysis tools" \cite{nethercote2007valgrind}. Dynamic binary analysis is used to "analyse programs at run-time at the level of machine code". The code that is needed for the analysis "is added to the original code of the client program at run-time" which is what is called dynamic binary instrumentation.
+"Valgrind is a dynamic binary instrumentation framework designed for building heavyweight dynamic binary analysis tools"\cite{nethercote2007valgrind}. Dynamic binary analysis is used to "analyse programs at run-time at the level of machine code". The code that is needed for the analysis "is added to the original code of the client program at run-time" which is what is called dynamic binary instrumentation.
 
 This means that valgrind can inject code into existing applications and recompile the whole program. What code should be injected can be defined in a plugin for valgrind. A widely known plugin is "memcheck". With its help, inconsistencies of allocated memory can be discovered. Valgrind also publishes the "callgrind" profiling plugin that is able to generate call graphs of an executed application.
 
-The code injections and recompilation of valgrind have a great impact on the performance of the analysed program. For example the speed of an application analysed with memcheck is reduced by a factor of 10 to 30 \cite{valgrindTools}. But an even more problematic detail for our szenario is, that parallel programs will be executed serially. Some problems and behaviors like race conditions will be obscured this way. And most important: the speedup that a parallel program can achieve over a sequential one cannot be observed. This makes valgrind inapplicable for our performance measurement.
+The code injections and recompilation of valgrind have a great impact on the performance of the analysed program. For example the speed of an application analysed with memcheck is reduced by a factor of 10 to 30\cite{valgrindTools}. But an even more problematic detail for our szenario is, that parallel programs will be executed serially. Some problems and behaviors like race conditions will be obscured this way. And most important: the speedup that a parallel program can achieve over a sequential one cannot be observed. This makes valgrind inapplicable for our performance measurement.
 
 \subsubsection{Perf}
 Perf is a profiler that is directly integrated into the linux kernel. It uses hardware performance counters which are unique registers on the processor, that count certain events like cache misses or branch mispredictions. This OS and hardware proximity make the use of perf very low cheap in execution time. The accumulated data however, can get quite big very fast.
 
 The documentation of perf leaves a lot to be desired, but the usage is reasonable straight forward and produces good organized data. It is easy possible to trace for bottlenecks down to the (with debug symbols annotated) disassembly. But interpreting the data demands some effort for the user. For example one must know how to read the disassembly and how find the corresponding sections in the source code, to utilize the potential that comes with this feature.
 
-Perf can be configured to count and measure innumerous events. Understanding the complete complexity would be way out of scope for this work. But with a bit of searching, guides can be found that introduce perf calls and explain what they are doing \cite{perfExamples}. Testing and refining these examples gave some usable data that was used as a basis for further modifications to LoLA. In the next section we see how perf was used und what data it collects.
+Perf can be configured to count and measure innumerous events. Understanding the complete complexity would be way out of scope for this work. But with a bit of searching, guides can be found that introduce perf calls and explain what they are doing\cite{perfExamples}. Testing and refining these examples gave some usable data that was used as a basis for further modifications to LoLA. In the next section we see how perf was used und what data it collects.
 
 \subsubsection{Use of perf}
 The examples which where used to get to know perf uncovered a new possible bottleneck quickly. But before we look at the data, we should take a look at the used perf call and its effect. The actual measurement was done on the vm since special rights are needed for execution.
