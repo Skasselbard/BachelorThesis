@@ -7,11 +7,11 @@ In den letzten Jahren haben sich im Hardwarebereich jedoch mehrkern Prozessorarc
 In dieser Arbeit wird gezeigt das es möglich ist, eine Performanceverbesserung durch Nutzung von mehreren Threads, zu erzielen. Wir werden den vorangegangenen Versuch analysieren und die Implementation so anpassen, dass eine Skalierung der Performance mit der Anzahl der genutzten Threads zu beobachten ist. Die Verbesserung wird dabei an einem verbreiteten Petri Netz gezeigt.
 
 \section*{Parallel state space search}
-The LowLevelAnalyzer (LoLA) is a useful tool to analyze properties of a petri net by expanding and evaluating its state space. To search for new states LoLA makes use of a sequential depth first search algorithm.
+The LowLevelAnalyzer (LoLA) is a useful tool to analyze properties of a Petri net by expanding and evaluating its state space. To search for new states LoLA makes use of a sequential depth first search algorithm.
 
-However recent hardware development introduced multi core architectures that cannot be fully exploited with LoLAs implementation. For this reason the previously single threaded search algorithm was adapted to use multiple threads. Unfortunately the sequential algorithm always beats the parallel in the matter of execution time for a yet unknown reason.
+However recent hardware development introduced multi-core architectures that cannot be fully exploited with LoLAs implementation. For this reason the previously single threaded search algorithm was adapted to use multiple threads. Unfortunately the sequential algorithm always beats the parallel in the matter of execution time for a yet unknown reason.
 
-In this work it is shown that it is possible to utilize multiple threads for the state space expansion. For that we will analyze the previous parallel implementation of LoLA and improve it to achieve a performance scaling with the amount of used threads. We will show that a common used petri net will benefit from the new implementation.
+In this work it is shown that it is possible to utilize multiple threads for the state space expansion. For that we will analyze the previous parallel implementation of LoLA and improve it to achieve a performance scaling with the number of used threads. We will show that a commonly used Petri net will benefit from the new implementation.
 
 
 
