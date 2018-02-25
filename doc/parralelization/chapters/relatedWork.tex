@@ -1,5 +1,6 @@
 % !TEX root = ../main.tex
 \chapter{Background and related work}
+Before we start, we will look at the background of this work. We will see an overview over parallel computing and some challenges that arises with parallel computation. We will investigate some related work in parallel search algorithms, and settle some basic terms of performance measurement. At the end of this chapter we will look at some relevant implementation details of LoLA, and at the hardware that was used for this work.
 
 \section{Parallel computing}
 Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However this trend was replaced by the tendency to to add multiple processing units on recent processors. For this reason, software that wants to exploit the whole processing capacities of current hardware, has to adapt some parallel computing paradigms.
@@ -33,12 +34,11 @@ To keep this memory upright some rules to access it are required. An often used 
  
 A simple lock could be a flag with the two states \inline{locked} and \inline{unlocked}. Memory protected by such a lock would be accessible only if the flag is set to \inline{unlocked}. Keeping the integrity of the states would be the duty of the implementor.
 
-A more advanced version of such a lock was introduced by Dijkstra\cite{dijkstra1968cooperating} and are called \textbf{semaphores}. Semaphores assumes an amount of a resource that can be distributed. It has a value that can be incremented or decremented. If it is decremented to zero, the next task that is trying to access the resource has to wait until another task increments the semaphore again. For example the set of keys of an apartment can be such a resource where the available count is a semaphore. If someone leaves the apartment he or she will want to take a key from the set to be able to come back again. By taking a key the left amount is decreased. If there is no key left and somebody wants to leave the apartment (and come back later) this person has to wait until somebody else returns a key.
+A more advanced version of such a lock was introduced by Dijkstra\cite{dijkstra1968cooperating} and are called \textbf{semaphores}. Semaphores assumes an amount of a resource that can be distributed. It has a value that can be incremented or decremented. If it is decremented to zero, the next task that is trying to access the resource has to wait until another task increments the semaphore again. For example the set of keys of an apartment can be such a resource where the available count is a semaphore. If someone leaves the apartment he or she will want to take a key from the set to be able to come back again. By taking a key, the left amount is decreased. If there is no key left and somebody wants to leave the apartment (and come back later) this person has to wait until somebody else returns a key.
 
 If there is only one resource available (a semaphore with the maximum value of one) the semaphore is equivalent to the previously described lock. Such a construct is typically referred to as \textbf{mutex}.
 
-%TODO: überleitung
-Often a thread that wants to access a resource, cannot do any further work. If the thread cannot be suspended, some sort of waiting has to be implemented. A trivial algorithm of that kind just loops until the resource is freed and blocks the resource again immediately. Such a behavior is called \textbf{spinlock} because of its cycling behavior.
+A locked resource met by a thread, can force a thread to delay its work. If the thread cannot be suspended, some sort of waiting has to be implemented. A trivial algorithm of that kind just loops until the resource is freed and blocks the resource again immediately. Such a behavior is called \textbf{spinlock} because of its cycling behavior.
 
 This rather trivial algorithm already introduces a quite concealed race condition. A very possible chance exists that two threads examine an unlocked mutex and upon that, access the underlying resource before it could be locked by the contender. To resolve such problems, atomic operations were developed. Atomic operations are guaranteed to be executed completely, or not at all, without any possible remote influence. One of them is called \textbf{compare and swap}. It will compare a resource with an expected value and will change the resource on equality. Atomic operations are often implemented in state of the art hardware for maximum performance.
 
@@ -56,10 +56,9 @@ Others value the same convenient properties and so Bloemen et. al. recently prov
 \section{Performance Measurement}
 \label{benchmarking}
 \subsection{A distinction between different views on software}
-%TODO: change intro
-The performance of a program is a property which is always of interest somehow. Even if it is not a critical aspect in the working environment. But as reachable the concept of performance might look at first, the complicated it can get.
+Comparing the performance of different implementations - like we want to do later, can be a bit more complicated as it might appear initially. Just like that, what is called a performant application is highly dependent on its environment. 
 
-Just like that, what is called a performant application is highly dependent on its environment. The possibly most obvious characteristic would be the time it takes to execute a program or a subroutine. But in a lot of szenarios, the time consumption actually does not matter that much. A user might not even notice a factor of 1000 between routines that operate in an order of micro seconds. At the same time he might worry that the program can access enough memory to finish its task. That means before measuring the performance of a program or subroutine, one must define the characteristics that define the performance of exactly that given program or subroutine. Other characteristics beside execution time and memory consumption can be network latency, energy consumption or responsibility. Ultimately it is everything that increases the useability of a program.
+A common characteristic is the time it takes to execute a program or a subroutine. But in a lot of szenarios, the time consumption actually does not matter that much. A user might not even notice a factor of 1000 between routines that operate in an order of micro seconds. At the same time he might worry that the program can access enough memory to finish its task. That means before measuring the performance of a program or subroutine, one must define the characteristics that define the performance of exactly that given program or subroutine. Other characteristics beside execution time and memory consumption can be network latency, energy consumption or responsibility. Ultimately it is everything that increases the useability of a program.
 
 After knowing what will be measured, the next concern is how it will be measured. The act of measuring is typically called benchmark and the approach here is influenced by the scope of the measurement. The java community describes a general distinction between macro, meso and micro benchmarks\cite{oaks2014java}. Each type addresses a different scope of a programm.
 
@@ -104,7 +103,7 @@ To keep global data consistent, a synchronization method is needed. A common way
 
 Since LoLA computes a lot of short and low level instructions, locking and unlocking data segments might sum up to a significant amount of time. So the locking mechanism used by LoLA might also be a good starting point to search for a reason for that unexpected performance that LoLA shows.
 
-Behnke used locks from the pthread library TODO:cite. A possible substitute would be an own implementation with a Compare And Swap instruction as spin lock. This has the potential to keep the overhead for the locks at a bare minimum.
+Behnke used locks from the c++ pthread library. A possible substitute would be an own implementation with a Compare And Swap instruction as spin lock. This has the potential to keep the overhead for the locks at a bare minimum.
 
 \section{Environment}
 \label{env}
