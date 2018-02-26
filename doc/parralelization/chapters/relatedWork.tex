@@ -103,13 +103,13 @@ To keep global data consistent, a synchronization method is needed. A common way
 
 Since LoLA computes a lot of short and low level-instructions, locking and unlocking data segments might sum up to a significant amount of time. So the locking mechanism used by LoLA might also be a good starting point to search for a reason for that unexpected performance that LoLA shows.
 
-Behnke used locks from the c++ pthread library. A possible substitute would be an own implementation with a Compare And Swap instruction as spinlock. This has the potential to keep the overhead for the locks at a bare minimum.
+Behnke used locks from the c++ pthread library. A possible substitute would be an own implementation with a Compare and Swap instruction as spinlock. This has the potential to keep the overhead for the locks at a bare minimum.
 
 \section{Environment}
 \label{env}
 The used development environment consists of two machines. The general development is done on a virtual machine (VM). It runs with 4 threads on an Intel(R) Core(TM) i7-4770S CPU @ 3.10GHz with 4 physical cores. Each core supports hyperthreading which makes a sum of 8 threads on the host of the VM. A total of 17.4 GB of physical memory is available for use inside the VM. Kubuntu 17.04 is running as operating system.
 
-As a performant test system, a server (ebro) was used. Ebro has 4 AMD Opteron\texttrademark 6284 SE processors. Each with 16 cores and 2.7GHz base clock with a max boost of 3.4GHz\cite{AMDSpecs}. This sums up to 64 physical cpu cores (and threads) in total. As physical memory, 995.2 GHz are installed. The operating system is CentOS Linux 7 Core (collected with the hostnamectl command).
+As a performant test system, a server (ebro) was used. Ebro has 4 AMD Opteron\texttrademark 6284 SE processors. Each with 16 cores and 2.7GHz base clock with a max boost of 3.4GHz\cite{AMDSpecs}. This sums up to 64 physical cpu cores (and threads) in total. As physical memory, 995.2 GB are installed. The operating system is CentOS Linux 7 Core (collected with the hostnamectl command).
 
 If no other source is provided the data was collected with the proc filesystem provided by the linux distributions.
 \begin{center}
