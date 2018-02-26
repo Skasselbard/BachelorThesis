@@ -4,28 +4,19 @@
 
 The LowLevelAnalyzer (LoLA) is a model checking tool for Petri nets, but as of today it utilizes only a single thread in productive use.
 
-\textbf{Petri net basics}:
-A Petri net is a mathematical construction to describe the behavior of distributed systems. Petri nets were first defined by Carl Adam Petri\cite{Petri1962kommunikation}. A Petri net is defined by a five tuple: (P, T, F, W, m0). It consists of \textbf{places} (P) that can hold infinite \textbf{tokens} (or marks). The initial amount of tokens on each place is defined by the initial \textbf{marking} (m0). Places can be connected with transitions (T) via directed \textbf{edges} (F for flow). Places (transitions) cannot be connected to other places (transitions). 
+\paragraph*{Petri net basics}
+A Petri net is a mathematical construction to describe the behavior of distributed systems. Petri nets were first defined by Carl Adam Petri\cite{Petri1962kommunikation}. A Petri net is defined by a five tuple: (P, T, F, W, m0). It consists of \textbf{places} (P) that can hold infinite \textbf{tokens} (or marks). The initial amount of tokens on each place is defined by the initial \textbf{marking} (m0). Places can be connected with transitions (T) via directed \textbf{edges} (F for flow). Places cannot be connected to other places and transitions cannot be connected to other transitions.
 
-If all edges that point to a transition are connected to a place that holds an equal or greater amount of tokens than \textbf{weight} (W) of the connecting edges, this transition can \textbf{fire} at an arbitrary time point. Firing a transition will \textbf{consume} tokens from all places that point \textbf{to} the transition with a connecting edge, and it will \textbf{produce} tokens on all places where an edge point \textbf{from} this transition. The produced and consumed amount of tokens is equal to the corresponding edge weight.
+If all edges that point to a transition are connected to a place that holds an equal or greater amount of tokens than \textbf{weight} (W) of the connecting edges, this transition can \textbf{fire} at an arbitrary point in time. Firing a transition will \textbf{consume} tokens from all places that point \textbf{to} the transition with a connecting edge. At the same time it will \textbf{produce} tokens on all places where an edge points \textbf{from} this transition. The produced and consumed amount of tokens is equal to the corresponding edge weight.
 
 With the complete mathematical background, Petri Nets can be used to check a variety of their properties. Figure \ref{petrNetExamples} shows some examples of Petri Nets.
 
 \input{pictures/petriExamples}
 
-\textbf{LoLA}:
-LoLAs development started in 1998. It was aimed to be used by third party tools to check properties of Petri nets\cite{schmidt2000lola}. Since then it was steadily updated to compete with other - state of the art tools. Recurring prizes in a model checking contest with a focus on Petri nets suggest a success in this attempt\cite{MCC2017}.
-The internal property evaluation, however, is still most performant single threaded. To evaluate a property of a Petri net, LoLA searches all necessary net states that can be reached from the initial one. The search is a depth first search on a directed graph, which is discovered during the search itself.
+\paragraph*{LoLA}
+LoLAs development started in 1998. It was developed to be used by third party tools to check properties of Petri nets\cite{schmidt2000lola}. Since then it was steadily updated to compete with other - state of the art tools. Recurring prizes in a model checking contest with a focus on Petri nets suggest a success in this attempt\cite{MCC2017}.
+The internal property evaluation, however, is still most performant single threaded. To evaluate a property of a Petri net, LoLA searches all necessary net states that can be reached from the initial one. The search is a depth-first search on a directed graph, which is discovered during the search itself.
 
-For the specialized search in LoLA, a previous attempt of parallelization exists. Unfortunately, the performance is usually worse than the single threaded approach. It can even get worse the more threads are used.
+For the specialized search in LoLA, a previous attempt of a parallelized implementation exists. Unfortunately, the performance is usually worse than the single threaded approach. It can even get worse the more threads are used.
 
 In this work, we will explore LoLA to find the part which is not performing as expected. The most important task is to find the bottleneck. We will measure the performance of LoLA in different ways, so that we can compare the base version with an improved one that we will develop. The improved version should hopefully outperform the single threaded algorithm with a reasonable amount of threads. Additionally a desirable result would show a linear scaling of the performance with the number of threads.
-
-%TODO: explain the contents
-
-% A thesis statement should do the following:
-
-% Explain the readers how you interpret the subject of the research
-% Tell the readers what to expect from your paper
-% Answer the question you were asked
-% Present your claim which other people may want to dispute

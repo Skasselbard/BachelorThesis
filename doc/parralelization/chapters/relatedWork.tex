@@ -3,7 +3,7 @@
 Before we start, we will look at the background of this work. We will see an overview of parallel computing and some challenges that arise with parallel computation. We will investigate some related work in parallel search algorithms, and settle some basic terms of performance measurement. At the end of this chapter, we will look at some relevant implementation details of LoLA, and at the hardware that was used for this work.
 
 \section{Parallel computing}
-Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However, this trend was replaced by the tendency to add multiple processing units on recent processors. For this reason, software that wants to exploit the whole processing capacities of current hardware has to adopt some parallel computing paradigms.
+Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However, this trend was replaced by the tendency to add multiple processing units on recent processors. For this reason, software that wants to exploit all processing capacities of current hardware has to adopt some parallel computing paradigms.
 
 Parallel computing can be described as the concurrent execution of multiple operations at the same time. There are different levels on which these operations can reside. Beside bit-level parallelism - where an arithmetic logical operation is executed on multiple bits (e.g. 32bit and 64bit architectures), and instruction-level parallelism\cite{wall1991limits} - where different processor actions (e.g loading memory, alu operations, writing memory) can be executed simultaneously, we will focus on the more abstract level of parallel tasks.
 
