@@ -4,7 +4,7 @@
 \chapter{Approach}
 After some insight in the underlying matter, we will now try to figure out where the actual bottleneck resides. We will try to change the underlying synchronization mechanism and see if the change has any effect. We will also rework LoLAs heap allocation strategy. At the end of the chapter, we will evaluate the results of different benchmarks.
 
-\section{Switching The Synchronization}
+\section{Switching the synchronization}
 The first step taken was switching from the pthread library to a compare and swap (CAS) algorithm. Since C++ 11 there is an equivalent implementation in the standard library called \texttt{bool std::atomic::compare\_exchange\_weak(T\& expected, T val)} (or \texttt{bool std::atomic::compare\_exchange\_strong(T\& expected, T val)}) that was used for this task. This function compares the current value of an \texttt{std::atomic} with \texttt{expected} and replaces it with \texttt{val} if the comparison returns true. If it returns false it replaces \texttt{expected} with the actual value of the atomic. The weak version is allowed to return false in favor of a general performance gain, even if the compared values are actually equal.
 
 To represent a lock that can either be locked or unlocked, a boolean as value is sufficient. To shape a spinlock like mutexes and semaphores with a CAS function, they have to loop until the expected value compares equal. There are two reasonable modes to lock: the first is to just wait until an observed lock is unlocked and the second is to wait for an unlock with an immediate locking. The first approach can be helpful to suspend the execution of the current thread until an external thread is signalling a continuation. The second approach can be used to block access to a resource until all necessary manipulations are completed. The resulting implementation is shown in listing \ref{CASIMPL}.
@@ -64,7 +64,7 @@ Unfortunately, a simple testrun on the VM reveals that there is no performance g
 
 Since the benchmark result shows no positive change in performance, an exhaustive evaluation is dropped in favor of a detailed bottleneck analysis. In the next section, we will use a more precise benchmark method to inspect the search characteristics.
 
-\subsection{Searching for inefficient application components}
+\subsection{Manual benchmarking}
 To develop a deeper understanding of the internal processes, we have to examine the individual program parts. The most important one remains the search for net states which is done in the \texttt{ParallelExploration} class.
 
 LoLA will call the \texttt{depth\_first()} method of the \texttt{ParallelExploration} to initiate the search. There, all search threads will be initialized, started and destroyed (after they finished their work). Starting and destroying the threads takes constant time per thread. Since we will work with very few threads in relation to the number of states we will handle, these parts are insignificant for the performance measurement and can be ignored. But each thread will execute the \texttt{threadedExploration} method. This method is the algorithm for the actual search. It will loop until a given predicate is satisfied by any thread. For these reasons, we will focus our measurements on this method.
@@ -103,7 +103,7 @@ Table \ref{ManualBenchmark} is listing the performance of the code pieces that a
     \end{table}
 \end{center}
 
-\subsection{Following the hints}
+\subsection{Evaluating the first data}
 The benchmark results are quite inconsistent. On the one hand, they give some insight where the bottleneck might be. On the over hand, the values do not add up correctly.
 
 Most problematic is that the time inside the search loop (sum of 'Work' and 'No Work') is not anywhere near the total time spent inside the search. This is very unexpected because almost all the time must be spent there. An unlisted measurement of the time before the loop also could not uncover a missing gap. This is a strong hint that this approach is not applicable in our scenario.
@@ -132,7 +132,7 @@ The second problem refers to the kind of time that is measured. Especially in mu
 
 Since the time for this work is limited and the author is a novice in the field of benchmarking, the manual approach is put aside for a more refined third-party solution.
 
-\subsection{Accepting help}
+\subsection{Profiling tool evaluation}
 If a challenge gets to difficult to face it alone, getting help is something worth considering. In our case, the difficulties and the trust in the own approach depleted so much that the use of a well-designed tool seems to outweigh the effort that has to be spent to use one efficiently.
 
 But before learning to use a profiling tool, we have to know which one we want to use. There are countless profilers to choose from, making an exhaustive evaluation impossible in the scope of this work. As such it was decided to select some candidates from an internet research, that are mentioned often in similar environments.
@@ -188,7 +188,7 @@ To analyze the data, perf provide the perf report command. It will process the g
 Knowing the basics for the perf usage, we can now look closer into the generated data and make more reliable assumptions about the possible location of the bottleneck.
 
 %ergebnis
-\subsection{Result and Conclusion}
+\subsection{Result and conclusion}
 \label{first_perf_results}
 \begin{figure}
     \centering

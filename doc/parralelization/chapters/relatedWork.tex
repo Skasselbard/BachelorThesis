@@ -2,10 +2,11 @@
 \chapter{Background and related work}
 Before we start, we will look at the background of this work. We will see an overview of parallel computing and some challenges that arise with parallel computation. We will investigate some related work in parallel search algorithms, and settle some basic terms of performance measurement. At the end of this chapter, we will look at some relevant implementation details of LoLA, and at the hardware that was used for this work.
 
+%TODO: Definition überdenken
 \section{Parallel computing}
 Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However, this trend was replaced by the tendency to add multiple processing units on recent processors. For this reason, software that wants to exploit all processing capacities of current hardware has to adopt some parallel computing paradigms.
 
-Parallel computing can be described as the concurrent execution of multiple operations at the same time. There are different levels on which these operations can reside. Beside bit-level parallelism - where an arithmetic logical operation is executed on multiple bits (e.g. 32bit and 64bit architectures), and instruction-level parallelism\cite{wall1991limits} - where different processor actions (e.g loading memory, alu operations, writing memory) can be executed simultaneously, we will focus on the more abstract level of parallel tasks.
+Parallel computing can be described as the simultaneous execution of multiple related operations at the same time. There are different levels on which these operations can reside. Beside bit-level parallelism - where an arithmetic logical operation is executed on multiple bits (e.g. 32bit and 64bit architectures) and instruction-level parallelism\cite{wall1991limits} - where different processor actions (e.g loading memory, alu operations, writing memory) can be executed simultaneously, we will focus on the more abstract level of parallel tasks.
 
 A task may be some arbitrary routine that can be processed on a processor. It can be thought of as a thread. Independent tasks can obviously be executed independent and therefore in parallel. But tasks that work as part of the same workflow or on the same data, might conflict with each other in some way. This is typically the case if we try to distribute an existing program to different subtasks that can be executed simultaneously. Some of these subtasks might depend on a result of a previous task or have to change globally shared data. This results in some problems that arise with parallel computing.
 
@@ -27,7 +28,7 @@ If such behavior is not handled correctly, the corresponding memory segment depe
 
 To assure data integrity of shared memory, some kind of synchronization has to be done. This is typically achieved by blocking the access to the memory (especially operations involving writing) to one thread at a time. This necessity supports the development of some general synchronization concepts.
 
-\section{Synchronization Concepts}
+\section{Synchronization concepts}
 Global memory with access restrictions can introduce bottlenecks which quickly degrades the whole program to sequential (or worse) speeds if done too frequently. One way to avoid that is to allocate thread local memory. This is genrally advised for data that depends on a single thread anyway, however often there is some global memory that has to be shared between threads.
 
 To keep this memory upright some rules to access it are required. An often used way is to simply block the access so that it can only be used by one thread at a time. We will look at some of such concepts here before we will come across them later:
@@ -42,7 +43,7 @@ A locked resource met by a thread can force a thread to delay its work. If the t
 
 This rather trivial algorithm already introduces a quite concealed race condition. A possible chance exists that two threads examine an unlocked mutex and upon that, access the underlying resource before it could be locked by the contender. To resolve such problems, atomic operations were developed. Atomic operations are guaranteed to be executed completely, or not at all, without any possible remote influence. One of them is called \textbf{compare and swap}. It will compare a resource with an expected value and will change the resource on equality. Atomic operations are often implemented in state of the art hardware for maximum performance.
 
-\section{Depth-First Search parallelization}
+\section{Depth-First search parallelization}
 LoLA uses a kind of depth-first search over a Petri nets possible (reachable) states, to evaluate a predicate. A depth-first search discovers graphs\cite[chapter~1]{bondy1976graph} by traversing the first possible edge of the current vertex. If no unknown edge is left for the current vertex, backtracking\cite{golomb1965backtrack} is used, to find a previously discovered vertex with untraversed edges. The graph is completely discovered if no traversable edges are left.
 
 As stated before, Petri nets are analyzed by LoLA, by searching for a set of net states that satisfy a given property. This means that one of the primary (possibly the single important) computation of LoLA is the depth-first search (beside some optimizations like net reduction techniques). Parallel execution of the search might imply parallel execution of LoLA. For this reason, utilizing a parallel depth-first search is much desired.
@@ -53,7 +54,7 @@ LoLAs sequential approach is based on "strongly connected components (SCC)" intr
 
 Others value the same convenient properties and so Bloemen et. al. recently provided an algorithm based on Tarjan's SCC's that preserve them\cite{bloemen2016multi}.
 
-\section{Performance Measurement}
+\section{Performance measurement}
 \label{benchmarking}
 \subsection{A distinction between different views on software}
 Comparing the performance of different implementations - like we want to do later, can be a bit more complicated as it might appear initially. Just like that, what is called a performant application is highly dependent on its environment. 
@@ -81,8 +82,8 @@ Profilers aid automate processes that otherwise would have to be implemented man
 
 With the general techniques in mind, we can proceed to the actual software and its characteristics that will be examined in this work.
 
-\section{Implementation Details}
-\subsection{Code Base}
+\section{Implementation details}
+\subsection{Code base}
 \label{codeBase}
 This work is based on a previous attempt by Gregor Behnke to use multiple threads for LoLA. For this reason, his code will be taken as a base implementation for the parallel search. In the LoLA project structure, this would correspond to the \inline{ParallelExploration} class in src/Exploration.
 
@@ -98,7 +99,7 @@ The store which is used by LoLA in the default case (\inline{PluginStore} ) does
 
 The actual classes which are used at runtime to expand the search tree, are determent by the call switches which are handed to the LoLA executable. The relevant switches for the parallel exploration are \inline{--threads=[threadCount]} and \inline{--bucketing=[bucketCount]}. A thread count greater than 1 will tell LoLA to use the \inline{ParallelExploration} class and the bucketing switch will signal to use a hashing store.
 
-\subsection{Data Synchronization}
+\subsection{Data synchronization}
 To keep global data consistent, a synchronization method is needed. A common way to achieve this, is to restrict the access to one thread at a time. For this, the concept of mutexes and semaphores are often used as locks for access control. The downside of this approach is a bottleneck at the global data. If access is granted to at most one thread, every calculation that is done while accessing is also done at most with the speed that a single thread can provide. Therefore accessing these regions (including locking and unlocking them) should be done as infrequent and as quick as possible.
 
 Since LoLA computes a lot of short and low level-instructions, locking and unlocking data segments might sum up to a significant amount of time. So the locking mechanism used by LoLA might also be a good starting point to search for a reason for that unexpected performance that LoLA shows.
