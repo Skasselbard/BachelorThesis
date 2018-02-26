@@ -9,9 +9,9 @@ In dieser Arbeit wird gezeigt das es möglich ist, eine Performanceverbesserung 
 \section*{Parallel state space search}
 The LowLevelAnalyzer (LoLA) is a useful tool to analyze properties of a Petri net by expanding and evaluating its state space. To search for new states LoLA makes use of a sequential depth first search algorithm.
 
-However recent hardware development introduced multi-core architectures that cannot be fully exploited with LoLAs implementation. For this reason the previously single threaded search algorithm was adapted to use multiple threads. Unfortunately the sequential algorithm always beats the parallel in the matter of execution time for a yet unknown reason.
+However recent hardware development introduced multi-core architectures that cannot be fully exploited with LoLAs implementation. For this reason, the previously single threaded search algorithm was adapted to use multiple threads. Unfortunately, the sequential algorithm always beats the parallel in the matter of execution time for a yet unknown reason.
 
-In this work it is shown that it is possible to utilize multiple threads for the state space expansion. For that we will analyze the previous parallel implementation of LoLA and improve it to achieve a performance scaling with the number of used threads. We will show that a commonly used Petri net will benefit from the new implementation.
+In this work, it is shown that it is possible to utilize multiple threads for the state space expansion. For that, we will analyze the previous parallel implementation of LoLA and improve it to achieve a performance scaling with the number of used threads. We will show that a commonly used Petri net will benefit from the new implementation.
 
 
 
