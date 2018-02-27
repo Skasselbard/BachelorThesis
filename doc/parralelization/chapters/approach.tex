@@ -44,9 +44,9 @@ static inline void unlock(std::atomic<bool>* lock){
 \end{lstlisting}
 
 \section{Finding the bottleneck}
-\subsection{Benchmark characteristics}
 We have now an application with a bottleneck and a possible solution to fix that bottleneck. Next, we will compare the performances.
 
+\subsection{Benchmark characteristics}
 In this case, performance means execution time. The expectation is that the execution time decreases with an increased amount of threads. The time is, therefore, the characteristic of interest.
 
 As test systems, the machines described in \ref{env} were used.
@@ -234,10 +234,10 @@ Altering LoLA in that way we now can start another benchmark to see if the chang
 \end{figure}
 
 \section{Results}
-\subsection{Profiling}
-To compare the old and the new implementation, we have to rerun our benchmark. Figure \ref{perf_record_mara} shows the output of the same mara call we used in chapter \ref{first_perf_results}.
+To compare the old and the new implementation, we have to rerun our benchmarks. We will look again at the results of a new perf run. After that, we will run new macro-benchmarks to compare the different implementations.
 
-We can see that the data changed in many ways. The \texttt{searchAndInsert} and the \texttt{getFirelist} methods now contribute to roughly the same amount of samples. They are also the functions with the highest 'Self' time. This means most samples were taken directly in this functions and not in one of their sub-functions.
+\subsection{Profiling}
+ Figure \ref{perf_record_mara} shows the output of the same mara call we used in chapter \ref{first_perf_results}.We can see that the data changed in many ways. The \texttt{searchAndInsert} and the \texttt{getFirelist} methods now contribute to roughly the same amount of samples. They are also the functions with the highest 'Self' time. This means most samples were taken directly in this functions and not in one of their sub-functions.
 
 The most important fact, however, is that the calls to \texttt{libcalloc} are completely gone, meaning they are under the significance threshold or where not sampled at all. Instead, we can see that maras \texttt{staticNew} method contributes to 0.4\% of all samples.
 
@@ -322,7 +322,7 @@ bool depth_first SimpleProperty, NetState, Store<void>, Firelist, threadid_t)
 \end{lstlisting}
  This probably causes an additional entry in the objects virtual table, so that the \texttt{depth\_first} method appears multiple times with the two different signatures. Since LoLA calls the search method in the \texttt{ParallelExploration} with the first signature, the (sequential) base implementation is used instead of the new one. The bug is fixed simply by changing the child signatures \texttt{threadid\_t} to an \texttt{int}.
 
-If this bug is resolved we can observe an increasing performance with an increasing amount of threads. At least in the lower thread range. With 50 threads the CAS implementation performs worst. Since the test was run with 100 buckets, this behavior can be explained with an increased blocking of threads not only on entering a bucket but also on allocating heap memory with \texttt{calloc}. The latter seems to have a greater effect if we compare the results with the mara implementations.
+If this bug is resolved we can observe an increasing performance with an increasing amount of threads. At least in the lower thread range. With 50 threads the CAS implementation performs worst (the striking outlier). Since the test was run with 100 buckets, this behavior can be explained with an increased blocking of threads not only on entering a bucket but also on allocating heap memory with \texttt{calloc}. The latter seems to have a greater effect if we compare the results with the mara implementations.
 
 After switching to mara, the allocator blocking seems to be gone as expected. The mara implementations are the first to beat the single-threaded implementation with a high amount of threads. This leads to the assumption that allocating heap space with the system allocator was the main cause of the previous bottleneck. We can even see a linear scaling in the range from two to four threads. Only between one and two threads, the performance does not split in half, because the single-threaded algorithm does use the original \texttt{DFSExploration} which comes with much less synchronization overhead.
 

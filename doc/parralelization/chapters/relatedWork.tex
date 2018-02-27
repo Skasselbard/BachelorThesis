@@ -4,7 +4,7 @@ Before we start, we will look at the background of this work. We will see an ove
 
 %TODO: Definition überdenken
 \section{Parallel computing}
-Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However, this trend was replaced by the tendency to add multiple processing units on recent processors. For this reason, software that wants to exploit all processing capacities of current hardware has to adopt some parallel computing paradigms.
+Until the first decade of the 21st century, the computing power of processors could be scaled with higher clock frequencies. However, this trend was replaced by the tendency to add multiple processing units on recent processors. For this reason, software that wants to exploit all processing capacities of current hardware has to adopt parallel computing paradigms.
 
 Parallel computing can be described as the simultaneous execution of multiple related operations at the same time. There are different levels on which these operations can reside. Beside bit-level parallelism - where an arithmetic logical operation is executed on multiple bits (e.g. 32bit and 64bit architectures) and instruction-level parallelism\cite{wall1991limits} - where different processor actions (e.g loading memory, alu operations, writing memory) can be executed simultaneously, we will focus on the more abstract level of parallel tasks.
 
@@ -15,12 +15,14 @@ There are limits to the potential of parallelizing tasks. Ideally, a program whi
 
 Amdahl already formulated in the 1960's\cite{amdahl1967validity} that the speedup of a program is limited by its sequential parts. This implies that thread scaling reaches its limits with relatively achievable amounts of threads. From his work a formula was extracted that is known as Amdahl's law. 
 
-Gustafson later reevaluated that formula\cite{gustafson1988reevaluating} and points out that Amdahl assumes a fixed problem size. This is often true in academic research, but practical programs scale the size of the problem with the number of processors. He introduces a new formula with a variable problem size and a much more optimistic scaling.
+Gustafson later reevaluated that formula\cite{gustafson1988reevaluating} and points out that Amdahl assumes a fixed problem size. This is often true in academic research, but practical programs scale the size of the problem with the number of processors. He introduces a new formula with a variable problem size and a much more optimistic scaling (Gustafson paper gives a great view on the formulas and their meaning).
 
 In both cases, it should be kept in mind, that a practical parallel program typically needs some kind of overhead to synchronize work that will prevent an optimal scaling. 
 
 \subsection{Data integrity}
-Another major concern in the design of parallel applications is the data access. Often different parts of a program need to read or write the same information. Doing this step by step is trivial, but if two parallel executed task trying to access the same memory regions concurrently, data corruptions quickly strike the careless.
+Another major concern in the design of parallel applications is the data access. Often different parts of a program need to read or write the same information. Doing this step by step is trivial, but if two parallel executed task trying to access the same memory regions concurrently, data corruptions quickly strike the careless. 
+
+For example, let us assume there are two threads that need a list of data for a parallel search. The list shall be deleted after the search is finished. Now, if one thread searches the list for some data while the other just finished the search, the list might be freed by the second thread before the first thread is done reading. This will cause a segmentation violation since the memory is no longer accessible.
 
 While concurrent reading is typically unproblematic, a single writing task can interfere with all other tasks. Not only can it cause a reader to return an incomplete written data segment, also accurately written data might be bound to a different program state, which does not fit to what the reader assumed at the time the read was scheduled.
 
@@ -46,7 +48,7 @@ This rather trivial algorithm already introduces a quite concealed race conditio
 \section{Depth-First search parallelization}
 LoLA uses a kind of depth-first search over a Petri nets possible (reachable) states, to evaluate a predicate. A depth-first search discovers graphs\cite[chapter~1]{bondy1976graph} by traversing the first possible edge of the current vertex. If no unknown edge is left for the current vertex, backtracking\cite{golomb1965backtrack} is used, to find a previously discovered vertex with untraversed edges. The graph is completely discovered if no traversable edges are left.
 
-As stated before, Petri nets are analyzed by LoLA, by searching for a set of net states that satisfy a given property. This means that one of the primary (possibly the single important) computation of LoLA is the depth-first search (besides some optimizations like net reduction techniques). Parallel execution of the search might imply parallel execution of LoLA. For this reason, utilizing a parallel depth-first search is much desired.
+As stated before, Petri nets are analyzed by LoLA, by searching for a set of net states that satisfy a given property. This means that one of the primary (possibly the single important) computation of LoLA is the depth-first search (besides some optimizations like net reduction techniques). A search that scales with the number of threads might imply LoLA scales with the number of threads. For this reason, utilizing a parallel depth-first search is much desired.
 
 However, parallelizing depth-first search is not trivial. Freeman summarizes that it, in fact, was long thought to be inherently sequential\cite{freeman1991parallel}. He gives an overview of the breakthroughs and history of depth-first search, and  directly reviews the history of parallel algorithms. Those often exploit a specific trait of the given problem. For example, Smith gave an algorithm that works for planar graphs\cite{smith1986parallel} and Roa et. al. gave an algorithm for disjoint graphs\cite{rao1987parallel}. Another algorithm form Aggarwal et. al. exists that works on general directed graphs\cite{Aggarwal:1989:PDS:73007.73035}, but it assumes that the complete graph is already known before the search is initiated.
 
@@ -56,12 +58,12 @@ Others value the same convenient properties and so Bloemen et. al. recently prov
 
 \section{Performance measurement}
 \label{benchmarking}
-\subsection{A distinction between different views on software}
-Comparing the performance of different implementations - like we want to do later, can be a bit more complicated as it might appear initially. Just like that, what is called a performant application is highly dependent on its environment. 
+Comparing the performance of different implementations - like we want to do later, can be a bit more complicated as it might appear initially. Just like that, what is called a performant application is highly dependent on its environment.
 
+\subsection{A distinction between different views on software}
 A common characteristic is the time it takes to execute a program or a subroutine. But in a lot of scenarios, the time consumption actually does not matter that much. A user might not even notice a factor of 1000 between routines that operate in an order of microseconds. At the same time, he might worry that the program can access enough memory to finish its task. That means before measuring the performance of a program or subroutine, one must define the characteristics that define the performance of exactly that given program or subroutine. Other characteristics besides execution time and memory consumption can be network latency, energy consumption or responsibility. Ultimately it is everything that increases the usability of a program.
 
-After knowing what will be measured, the next concern is how it will be measured. The act of measuring is typically called benchmark and the approach here is influenced by the scope of the measurement. The java community describes a general distinction between macro, meso and micro benchmarks\cite{oaks2014java}. Each type addresses a different scope of a program.
+After knowing what will be measured, the next concern is how it will be measured. The act of measuring is typically called benchmark and the approach here is influenced by the scope of the measurement. The java community describes a general distinction between macro-, meso- and micro-benchmarks\cite{oaks2014java}. Each type addresses a different scope of a program.
 
 \textbf{Macro-benchmarks} give an overview of the entire execution. The data collection is often less complicated since it is done over the whole application runtime and hardly requires any modifications to it. Measuring the runtime of a program is as simple as it gets: the time difference between the end and the start of the program. Memory allocation can often also be measured with simple tools that the operating system or other third party software provide. The downside is that a lot of software cannot be measured at all in this scope. So it is a property of event-driven programs that they do not terminate at a fixed point in time and therefore the execution time is of limited use.
 
@@ -74,7 +76,7 @@ After the previous scopes described a detailed view and an overview, the last sc
 \label{BenchMethods}
 For the actual measurements, two basic approaches can be distinguished: manual implementation or usage of a tool.
 
-The quickest and most precise approach is to make own measurements. Self-written and therefore known software can be easily extended e.g. by counters for variables or measurements of time periods. All measurements can be tailored to the individual use case and results can be exported in the most convenient format. On the over hand, this approach can come with several downsides. Some of them might be that the maintenance of the measurements can get increasingly complex the more numerous they get, added code will influence the performance of the software itself, and own mistakes might hide behind seemingly satisfying results. There are probably other reasons that can be thought of. But short and temporary measurements of this kind might give o quick overview other the own software.
+The quickest and most precise approach is to make own measurements. Self-written and therefore known software can be easily extended e.g. by counters for variables or measurements of time periods. All measurements can be tailored to the individual use case and results can be exported in the most convenient format. On the over hand, this approach can come with several downsides. Some of them might be that the maintenance of the measurements can get increasingly complex the more numerous they get, added code will influence the performance of the software itself, and own mistakes might hide behind seemingly satisfying results. There are probably other reasons that can be thought of. But short and temporary measurements of this kind might give a quick overview other the own software.
 
 Probably the safer approach is the usage of a tool. There exist a variety of tools which are build for the inherent purpose to measure application performance with common metrics and use cases. Since the metrics reflect some characteristics of an application - a profile - these tools are typically called \textbf{profilers}. Using established profilers for performance measurement can help avoiding common traps and mistakes especially when they were designed by experienced developers who are skilled in this area. But it also means to invest time and effort to learn how to use them and how to interpret their results.
 
@@ -83,6 +85,8 @@ Profilers aid automate processes that otherwise would have to be implemented man
 With the general techniques in mind, we can proceed to the actual software and its characteristics that will be examined in this work.
 
 \section{Implementation details}
+We will not be able to improve LoLA, without knowing some basic implementation characteristics. Hence, we will look at some relevant parts of the code in this chapter.
+
 \subsection{Codebase}
 \label{codeBase}
 This work is based on a previous attempt by Gregor Behnke to use multiple threads for LoLA. For this reason, his code will be taken as a base implementation for the parallel search. In the LoLA project structure, this would correspond to the \inline{ParallelExploration} class in src/Exploration.
@@ -110,7 +114,7 @@ Behnke used locks from the c++ pthread library. A possible substitute would be a
 \label{env}
 The used development environment consists of two machines. The general development is done on a virtual machine (VM). It runs with 4 threads on an Intel(R) Core(TM) i7-4770S CPU @ 3.10GHz with 4 physical cores. Each core supports hyperthreading which makes a sum of 8 threads on the host of the VM. A total of 17.4 GB of physical memory is available for use inside the VM. Kubuntu 17.04 is running as operating system.
 
-As a performant test system, a server (ebro) was used. Ebro has 4 AMD Opteron\texttrademark 6284 SE processors. Each with 16 cores and 2.7GHz base clock with a max boost of 3.4GHz\cite{AMDSpecs}. This sums up to 64 physical cpu cores (and threads) in total. As physical memory, 995.2 GB are installed. The operating system is CentOS Linux 7 Core (collected with the hostnamectl command).
+As a performant test system, a server (ebro) was used. Ebro has 4 AMD Opteron\texttrademark 6284 SE processors. Each with 16 cores and 2.7GHz base clock with a max boost of 3.4GHz\cite{AMDSpecs}. This sums up to 64 physical cpu cores (and threads) in total. As physical memory, 995.2 GB are installed. The operating system is CentOS Linux 7 Core (collected with the \texttt{hostnamectl} command).
 
 If no other source is provided the data was collected with the proc filesystem provided by the linux distributions.
 \begin{center}
