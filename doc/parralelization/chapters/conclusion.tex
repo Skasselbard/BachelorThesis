@@ -8,6 +8,6 @@ Another part that could have been improved is the benchmarking approach. The thi
 
 The data produced by the tools lead to the mara integration in LoLA, which is able to utilize additional threads for a higher performance. Though the synchronization overhead prevents an early improvement, we saw that there exist Petri nets which can be searched faster with these implementations and enough threads. Using more buckets can enhance this effect further. Additionally, the new heap allocation strategy can improve the general performance of LoLA independent of the parallelization.
 
-In contrast - as implied earlier - the switch between the Compare and Swap synchronization and the PThread synchronization has no major effect on the performance. The Compare and Swap algorithm tends to perform generally slower than the PTread mutexes. It seems that the system allocator is the root cause of the bottleneck.
+In contrast - as implied earlier - the switch between the Compare and Swap synchronization and the PThread synchronization has no major effect on the performance. The compare and swap algorithm tends to perform generally slower than the PTread mutexes. It seems that the system allocator is the root cause of the bottleneck.
 
 The real-life benefit of the parallelization still has to be validated. but with the insights of this work, LoLA can be understood better and we can deviate some work that can be done to further improve LoLA. 
