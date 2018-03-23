@@ -49,6 +49,12 @@
 # Profiling Ergebnisse
 # Mara
 # Profiling nach Mara Integration
+# HashingWrapperStore
 # Macro Benchmarks
 # Zusammenfassung
+- LoLA kann von Parallelisierung profitieren
+    - zumindest für 1000 Philosophen 
+- Unterschied zwischen CAS und Pthread ist zu vernachlässigen
+- Speziallisierte Heapverwaltung z.B. durch Mara ist Vorraussetzung für Parallelisierung von LoLA
+    - Bietet außerdem potential generell Zeit und Speicher zu sparen
 # Auswertung
