@@ -5,29 +5,6 @@
     - loadbalancing für verschiedene threads in tiefensuche
     - ist leider unabhängig von anzahl der threads in etwa so schnell wie der sequentielle algorithmus
 
-# Petrinetze
-- Model das LoLa zugrunde liegt
-- von Carl Adam Petri entwickelt
-- Beschreibung nebenläufiger prozesse
-- Gerichteter Graph aus stellen und Transitionen
-    - Stellen Können Marken haben
-    - Transitionen Konsumieren und produzieren Marken
-- Präziese Mathematische Beschreibung macht es möglich Eigenschaften zu beschreiben wie 
-    - Lebendigkeit
-    - Erreichbarkeit
-    - Beschränktheit
-
-# Synchronisation
-- Semaphore
-    - von Dijkstra entwickelt
-    - Verwaltung von Anzahl von Ressourcen
-    - resource nehmen -> decrement
-    - resource zurückgeben -> increment
-    - keine resource da -> warten bis anderer process eine resource wieder frei gibt
-- Mutex 
-    - binäres Semaphore
-    - entweder blockiert oder nicht
-
 # Compare And Swap
 - bottleneck wurde bei der synchronisation vermutet
     - andere programmteile sind unverändert
