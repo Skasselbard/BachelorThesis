@@ -28,10 +28,6 @@
     - binäres Semaphore
     - entweder blockiert oder nicht
 
-# Testsysteme
-- VM zum entwickeln und für kurze tests
-- Ebro zum testen von vielen threads
-
 # Compare And Swap
 - bottleneck wurde bei der synchronisation vermutet
     - andere programmteile sind unverändert
@@ -58,37 +54,20 @@
 - macro benchmark deutet darauf hin das es keine verbesserung gibt
 - genaue suche des bottlenecks ist erforderlich
 
-# Manuelle Instrumentierung
-- manuelles einfügen von code zum messen der suchzeit
-- berechnen von start und endzeiten
-- fokus auf synchronisationsstellen
-- versuch die ganze suche zu überdecken
-###
-- Zeiten sind inkonsistent
-- gesamtzeit in threads is eine größenordnung größer als "work" und "work" (sollten die suche überdecken)
-- **Aber:** die meiste zeit in searchAndInsert
-- Erkenntnis das die aktuelle suche im speicher nicht thread safe ist
-- in zukunft nur suche mit hashingWrapper (**Bild**)
-    - verwaltet mehrere speicher die nur von einem thread betreten werden dürfen
-    - bucket wird durch hash des gesuchten zustands bestimmt
+# Testsysteme
+- VM zum entwickeln und für kurze tests
+- Ebro zum testen von vielen threads
 
-# HashingWrapperStore
-- Bei genauer auswertung der zustand speicherung -> aktueller aufruf ist nicht thread safe
-- Nutzen des hashingWrapper stores
-    - Teilt den speicher in mehrere buckets
-    - In einen bucket kommen nur zustände mit bestimmten hash
-    - Jeder bucket kann nur von einem thread zur selben zeit betreten werden -> thread sicherheit
 
 # Profiling Einführung
-- Andere herangehensweise zur bottleneck suche ist erforderlich
+- Nach gescheitertem manuellem versuch doch profiling
 - Entscheidung zu nutzung des Perf Profiling tools
 - Sampled Programzustände
     - in welcher funktion befinde ich mich (in diesem sample)
     - durch welche funktionsaufrufe habe ich diese funktion erreicht
     - Sample Häufigkeit korreliert mit ausführungszeit
 - so können die zeitintensievsten funktionen ermittelt werden und der weg wie diese erreicht werden
-- keine manuelle anpassung des programs nötig
-- funktionsweise und ausgabedaten müssen allerdings verstanden werden
+
 
 # Profiling Ergebnisse
 - call graph weist auf großen zeitaufwand innerhalb von libcalloc hin
