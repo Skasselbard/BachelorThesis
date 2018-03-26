@@ -31,11 +31,6 @@
 - macro benchmark deutet darauf hin das es keine verbesserung gibt
 - genaue suche des bottlenecks ist erforderlich
 
-# Testsysteme
-- VM zum entwickeln und für kurze tests
-- Ebro zum testen von vielen threads
-
-
 # Profiling Einführung
 - Nach gescheitertem manuellem versuch doch profiling
 - Entscheidung zu nutzung des Perf Profiling tools
@@ -44,7 +39,6 @@
     - durch welche funktionsaufrufe habe ich diese funktion erreicht
     - Sample Häufigkeit korreliert mit ausführungszeit
 - so können die zeitintensievsten funktionen ermittelt werden und der weg wie diese erreicht werden
-
 
 # Profiling Ergebnisse
 - call graph weist auf großen zeitaufwand innerhalb von libcalloc hin
