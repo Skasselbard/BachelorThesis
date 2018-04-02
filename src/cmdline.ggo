@@ -802,9 +802,24 @@ option "threads" -
   "Set number of threads to be used for parallelization"
   details="
 If the machine running LoLA has several cores, LoLA can parallelize the
-access to the stored markings to the given number of threads.
+access to the stored markings to the given number of threads. Depends on the bucketing 
+option.
 "
   short
   typestr="THREADS"
   optional
   default="1"
+  dependon="bucketing"
+
+option "prealloc" -
+  "Set size of preallocated memory in kb"
+  details="
+LoLA uses a custom memory allocation strategy. With this parameter a custom size of 
+memory can be configured. The internal allocator will allocate chunks of the given size 
+from the system. A higher value can reduce the overall memory consumption. If used with 
+the bucketing option, every bucket will allocate at least one chunk of system memory.
+"
+  int
+  typestr="PREALLOC"
+  optional
+  default="512"
